@@ -9,7 +9,7 @@ scde.expression.prior(models, counts, length.out = 400, show.plot = F,
   max.value = NULL)
 }
 \arguments{
-\item{models}{models determiend by \code{\link{scde.error.models}}}
+\item{models}{models determined by \code{\link{scde.error.models}}}
 
 \item{counts}{count matrix}
 
@@ -33,11 +33,11 @@ Use existing count data to determine a prior distribution of genes in the datase
 }
 \examples{
 \donttest{
-data(es.mef.small);
-cd <- es.mef.small; cd <- cd[rowSums(cd)>0,]; cd <- cd[,colSums(cd)>1e4];
-sg <- factor(gsub("(MEF|ESC).*","\\\\1",colnames(cd)),levels=c("ESC","MEF")); names(sg) <- colnames(cd);
-o.ifm <- scde.error.models(counts=cd,groups=sg,n.cores=10,threshold.segmentation=T);
-o.prior <- scde.expression.prior(models=o.ifm,counts=cd,length.out=400,show.plot=F)
+data(es.mef.small)
+cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
+sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
+o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 }
 }
 

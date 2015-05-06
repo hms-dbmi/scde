@@ -9,9 +9,9 @@ scde.failure.probability(models, magnitudes = NULL, counts = NULL)
 \arguments{
 \item{models}{models determiend by \code{\link{scde.error.models}}}
 
-\item{magnitudes}{a vector (\code{length(counts)==nrows(models)}) or a matrix (columns correspond to cells) of expression magnitudes, given on a log scale}
+\item{magnitudes}{a vector (\code{length(counts) == nrows(models)}) or a matrix (columns correspond to cells) of expression magnitudes, given on a log scale}
 
-\item{counts}{a vector (\code{length(counts)==nrows(models)}) or a matrix (columns correspond to cells) of read counts from which the expression magnitude should be estimated}
+\item{counts}{a vector (\code{length(counts) == nrows(models)}) or a matrix (columns correspond to cells) of read counts from which the expression magnitude should be estimated}
 }
 \value{
 a vector or a matrix of drop-out probabilities
@@ -21,17 +21,17 @@ Returns estimated drop-out probability for each cell (row of \code{models} matri
 }
 \examples{
 \donttest{
-data(es.mef.small);
-cd <- es.mef.small; cd <- cd[rowSums(cd)>0,]; cd <- cd[,colSums(cd)>1e4];
-sg <- factor(gsub("(MEF|ESC).*","\\\\1",colnames(cd)),levels=c("ESC","MEF")); names(sg) <- colnames(cd);
-o.ifm <- scde.error.models(counts=cd,groups=sg,n.cores=10,threshold.segmentation=T);
-o.prior <- scde.expression.prior(models=o.ifm,counts=cd,length.out=400,show.plot=F)
+data(es.mef.small)
+cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
+sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
+o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 # calculate probability of observing a drop out at a given set of magnitudes in different cells
-mags <- c(1.0,1.5,2.0)
-p <- scde.failure.probability(o.ifm,magnitudes=mags)
+mags <- c(1.0, 1.5, 2.0)
+p <- scde.failure.probability(o.ifm, magnitudes = mags)
 # calculate probability of observing the dropout at a magnitude corresponding to the
 # number of reads actually observed in each cell
-self.p <- scde.failure.probability(o.ifm,counts=cd)
+self.p <- scde.failure.probability(o.ifm, counts = cd)
 }
 }
 

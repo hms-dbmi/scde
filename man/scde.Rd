@@ -6,7 +6,7 @@
 \alias{scde-package}
 \title{Single-cell Differential Expression}
 \description{
-SCDE implements routines for analysis single-cell RNA-seq data, including fitting of error models and testing of differential expression. Please see Kharchenko et al., Nat. Methods 2014 Jul;11(7):740-2. doi: 10.1038/nmeth.2967.
+SCDE implements routines for analysis single-cell RNA-seq data, including fitting of error models and testing of differential expression. Please see Kharchenko et al., Nat. Methods 2014 Jul11(7):740-2. doi: 10.1038/nmeth.2967.
 See vignette("diffexp") for a brief tutorial.
 More extensive tutorials are available at \url{http://pklab.med.harvard.edu/scde/index.html}.
 }

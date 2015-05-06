@@ -34,13 +34,13 @@ scde.expression.difference(models, counts, prior, groups = NULL,
 a data frame with the following fields:
 \itemize{
 \item{lb, mle, ub} {lower bound, maximum likelihood estimate, and upper bound of the 95% confidence interval for the expression fold change on log2 scale.}
-\item{ce} { conservative estimate of expression-fold change (equals to the min(abs(c(lb,ub))), or 0 if the CI crosses the 0}
+\item{ce} { conservative estimate of expression-fold change (equals to the min(abs(c(lb, ub))), or 0 if the CI crosses the 0}
 \item{Z} { uncorrected Z-score of expression difference}
 \item{cZ} {expression difference Z-score corrected for multiple hypothesis testing using Holm procedure}
 }
  If batch correction has been performed (\code{batch} has been supplied), analogous data frames are returned in slots \code{$batch.adjusted} for batch-corrected results, and \code{$batch.effect} for the differences explained by batch effects alone.
 }}
-\subsection{return.posteriors=T}{
+\subsection{return.posteriors = T}{
 A list is returned, with the default results data frame given in the \code{$resutls} slot.
 \code{difference.posterior} returns a matrix of estimated expression difference posteriors (rows - genes, columns correspond to different magnitudes of fold-change - log2 values are given in the column names)
 \code{joint.posteriors} a list of two joint posterior matrices (rows - genes, columns correspond to the expression levels, given by prior$x grid)
@@ -51,14 +51,14 @@ Use the individual cell error models to test for differential expression between
 }
 \examples{
 \donttest{
-data(es.mef.small);
-cd <- es.mef.small; cd <- cd[rowSums(cd)>0,]; cd <- cd[,colSums(cd)>1e4];
-sg <- factor(gsub("(MEF|ESC).*","\\\\1",colnames(cd)),levels=c("ESC","MEF")); names(sg) <- colnames(cd);
-o.ifm <- scde.error.models(counts=cd,groups=sg,n.cores=10,threshold.segmentation=T);
-o.prior <- scde.expression.prior(models=o.ifm,counts=cd,length.out=400,show.plot=F)
+data(es.mef.small)
+cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
+sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
+o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 # make sure groups corresponds to the models (o.ifm)
-groups <- factor(gsub("(MEF|ESC).*","\\\\1",rownames(o.ifm)),levels=c("ESC","MEF")); names(groups) <- row.names(o.ifm);
-ediff <- scde.expression.difference(o.ifm,cd,o.prior,groups=groups,n.randomizations=100,n.cores=n.cores,verbose=1)
+groups <- factor(gsub("(MEF|ESC).*", "\\\\1", rownames(o.ifm)), levels = c("ESC", "MEF")) names(groups) <- row.names(o.ifm)
+ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups = groups, n.randomizations = 100, n.cores = n.cores, verbose = 1)
 }
 }
 

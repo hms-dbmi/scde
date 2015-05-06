@@ -37,22 +37,22 @@ scde.test.gene.expression.difference(gene, models, counts, prior,
 
 \item{show.individual.posteriors}{whether the individual cell expression posteriors should be plotted}
 
-\item{n.cores}{number of cores to use (default=1)}
+\item{n.cores}{number of cores to use (default = 1)}
 }
 \value{
-by default returns MLE of log2 expression difference, 95% CI (upper, lower bound), and a Z-score testing for expression difference. If return.details=T, a list is returned containing the above structure, as well as the expression fold difference posterior itself.
+by default returns MLE of log2 expression difference, 95% CI (upper, lower bound), and a Z-score testing for expression difference. If return.details = T, a list is returned containing the above structure, as well as the expression fold difference posterior itself.
 }
 \description{
 The function performs differential expression test and optionally plots posteriors for a specified gene.
 }
 \examples{
 \donttest{
-data(es.mef.small);
-cd <- es.mef.small; cd <- cd[rowSums(cd)>0,]; cd <- cd[,colSums(cd)>1e4];
-sg <- factor(gsub("(MEF|ESC).*","\\\\1",colnames(cd)),levels=c("ESC","MEF")); names(sg) <- colnames(cd);
-o.ifm <- scde.error.models(counts=cd,groups=sg,n.cores=10,threshold.segmentation=T);
-o.prior <- scde.expression.prior(models=o.ifm,counts=cd,length.out=400,show.plot=F)
-scde.test.gene.expression.difference("Tdh",models=o.ifm,counts=cd,prior=o.prior)
+data(es.mef.small)
+cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
+sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
+o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
+scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior = o.prior)
 }
 }
 

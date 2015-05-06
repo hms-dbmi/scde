@@ -17,7 +17,7 @@ scde.error.models(counts, groups = NULL, min.nonfailed = 3,
 
 \item{groups}{an optional factor describing grouping of different cells. If provided, the cross-fits and the expected expression magnitudes will be determined separately within each group. The factor should have the same length as ncol(counts).}
 
-\item{min.nonfailed}{minimal number of non-failed observations required for a gene to be used in the final model fitting;}
+\item{min.nonfailed}{minimal number of non-failed observations required for a gene to be used in the final model fitting}
 
 \item{threshold.segmentation}{use a fast threshold-based segmentation during cross-fit (default: T)}
 
@@ -29,7 +29,7 @@ scde.error.models(counts, groups = NULL, min.nonfailed = 3,
 
 \item{save.crossfit.plots}{whether png files showing cross-fit segmentations should be written out (default: F)}
 
-\item{save.model.plots}{whether pdf files showing model fits should be written out (default=T)}
+\item{save.model.plots}{whether pdf files showing model fits should be written out (default = T)}
 
 \item{n.cores}{number of cores to use}
 
@@ -51,10 +51,10 @@ Fit error models given a set of single-cell data (counts) and an optional groupi
 }
 \examples{
 \donttest{
-data(es.mef.small);
-cd <- es.mef.small; cd <- cd[rowSums(cd)>0,]; cd <- cd[,colSums(cd)>1e4];
-sg <- factor(gsub("(MEF|ESC).*","\\\\1",colnames(cd)),levels=c("ESC","MEF")); names(sg) <- colnames(cd);
-o.ifm <- scde.error.models(counts=cd,groups=sg,n.cores=10,threshold.segmentation=T);
+data(es.mef.small)
+cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
+sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 }
 }
 

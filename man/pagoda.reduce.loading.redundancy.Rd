@@ -28,7 +28,7 @@ pagoda.reduce.loading.redundancy(tam, pwpca, clpca = NULL, plot = F,
 \item{...}{additional arguments are passed to the pagoda.view.aspects() method during plotting}
 }
 \value{
-a list structure analogous to that returned by pagoda.top.aspects(), but with addition of a $cnam element containing a list of aspects summarized by each row of the new (reduced) $xv and $xvw;
+a list structure analogous to that returned by pagoda.top.aspects(), but with addition of a $cnam element containing a list of aspects summarized by each row of the new (reduced) $xv and $xvw
 }
 \description{
 Examines PC loading vectors underlying the identified aspects and clusters aspects based

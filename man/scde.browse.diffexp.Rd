@@ -9,7 +9,7 @@ scde.browse.diffexp(results, models, counts, prior, groups = NULL,
   port = NULL)
 }
 \arguments{
-\item{results}{result object returned by \code{scde.expression.difference()}. Note to browse group posterior levels, use \code{return.posteriors=T} in the \code{scde.expression.difference()} call.}
+\item{results}{result object returned by \code{scde.expression.difference()}. Note to browse group posterior levels, use \code{return.posteriors = T} in the \code{scde.expression.difference()} call.}
 
 \item{models}{model matrix}
 
@@ -21,7 +21,7 @@ scde.browse.diffexp(results, models, counts, prior, groups = NULL,
 
 \item{batch}{batch information}
 
-\item{geneLookupURL}{The URL that will be used to construct links to view more information on gene names. By default (if can't guess the organism) the links will forward to ENSEMBL site search, using \code{geneLookupURL="http://useast.ensembl.org/Multi/Search/Results?q={0}"}. The "{0}" in the end will be substituted with the gene name. For instance, to link to GeneCards, use \code{"http://www.genecards.org/cgi-bin/carddisp.pl?gene={0}"}.}
+\item{geneLookupURL}{The URL that will be used to construct links to view more information on gene names. By default (if can't guess the organism) the links will forward to ENSEMBL site search, using \code{geneLookupURL = "http://useast.ensembl.org/Multi/Search/Results?q = {0}"}. The "{0}" in the end will be substituted with the gene name. For instance, to link to GeneCards, use \code{"http://www.genecards.org/cgi-bin/carddisp.pl?gene = {0}"}.}
 
 \item{server}{optional previously returned instance of the server, if want to reuse it.}
 
@@ -36,14 +36,14 @@ The arguments generally correspond to the \code{scde.expression.difference()} ca
 }
 \examples{
 \donttest{
-data(es.mef.small);
-cd <- es.mef.small; cd <- cd[rowSums(cd)>0,]; cd <- cd[,colSums(cd)>1e4];
-sg <- factor(gsub("(MEF|ESC).*","\\\\1",colnames(cd)),levels=c("ESC","MEF")); names(sg) <- colnames(cd);
-o.ifm <- scde.error.models(counts=cd,groups=sg,n.cores=10,threshold.segmentation=T);
-o.prior <- scde.expression.prior(models=o.ifm,counts=cd,length.out=400,show.plot=F)
+data(es.mef.small)
+cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
+sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
+o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 # make sure groups corresponds to the models (o.ifm)
-groups <- factor(gsub("(MEF|ESC).*","\\\\1",rownames(o.ifm)),levels=c("ESC","MEF")); names(groups) <- row.names(o.ifm);
-ediff <- scde.expression.difference(o.ifm,cd,o.prior,groups=groups,n.randomizations=100,n.cores=n.cores,verbose=1)
+groups <- factor(gsub("(MEF|ESC).*", "\\\\1", rownames(o.ifm)), levels = c("ESC", "MEF")) names(groups) <- row.names(o.ifm)
+ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups = groups, n.randomizations = 100, n.cores = n.cores, verbose = 1)
 }
 }
 

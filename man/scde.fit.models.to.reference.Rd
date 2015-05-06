@@ -17,7 +17,7 @@ scde.fit.models.to.reference(counts, reference, n.cores = 10,
 
 \item{zero.count.threshold}{read count to use as an initial guess for the zero threshold}
 
-\item{nrep}{number independent of mixture fit iterations to try (default=1)}
+\item{nrep}{number independent of mixture fit iterations to try (default = 1)}
 
 \item{save.plots}{whether to write out a pdf file showing the model fits}
 
@@ -25,7 +25,7 @@ scde.fit.models.to.reference(counts, reference, n.cores = 10,
 
 \item{verbose}{verbose level}
 
-\item{min.fpm}{minimum reference fpm of genes that will be used to fit the models (defaults to 1). Note: fpm is calculated from the reference count vector as reference/sum(reference)*1e6;}
+\item{min.fpm}{minimum reference fpm of genes that will be used to fit the models (defaults to 1). Note: fpm is calculated from the reference count vector as reference/sum(reference)*1e6}
 }
 \value{
 matrix of scde models
@@ -39,20 +39,20 @@ to fit individual cell error models relative to that reference
 # since we don't have bulk reference in this dataset, we'll make a fake one
 # by calculating average expression of each gene across single cells
 # fit the models first
-data(es.mef.small);
-cd <- es.mef.small; cd <- cd[rowSums(cd)>0,]; cd <- cd[,colSums(cd)>1e4];
-sg <- factor(gsub("(MEF|ESC).*","\\\\1",colnames(cd)),levels=c("ESC","MEF")); names(sg) <- colnames(cd);
-o.ifm <- scde.error.models(counts=cd,groups=sg,n.cores=10,threshold.segmentation=T);
-o.prior <- scde.expression.prior(models=o.ifm,counts=cd,length.out=400,show.plot=F)
+data(es.mef.small)
+cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
+sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
+o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 # calculate joint posteriors across all cells
-jp <- scde.posteriors(models=o.ifm,cd,o.prior,n.cores=10,return.individual.posterior.modes=T,n.randomizations=100)
+jp <- scde.posteriors(models = o.ifm, cd, o.prior, n.cores = 10, return.individual.posterior.modes = T, n.randomizations = 100)
 # use expected expression magnitude for each gene
 av.mag <- as.numeric(jp$jp \%*\% as.numeric(colnames(jp$jp)))
 # translate into counts
-av.mag.counts <- as.integer(round(av.mag));
+av.mag.counts <- as.integer(round(av.mag))
 
 # now, fit alternative models using av.mag as a reference (normally this would correspond to bulk RNA expression magnitude)
-ref.models <- scde.fit.models.to.reference(cd,av.mag.counts,n.cores=10)
+ref.models <- scde.fit.models.to.reference(cd, av.mag.counts, n.cores = 10)
 }
 }
 

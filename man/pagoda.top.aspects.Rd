@@ -24,7 +24,7 @@ pagoda.top.aspects(pwpca, clpca = NULL, n.cells = NULL,
 
 \item{plot}{whether to plot the cv/n vs. dataset size scatter showing significance models}
 
-\item{adjust.scores}{whether the normalization of the aspect patterns should be based on the adjusted Z scores - qnorm(0.05/2,lower.tail=F)}
+\item{adjust.scores}{whether the normalization of the aspect patterns should be based on the adjusted Z scores - qnorm(0.05/2, lower.tail = F)}
 
 \item{score.alpha}{significance lelvel of the confidence interval for determining upper/lower bounds}
 
@@ -33,7 +33,7 @@ pagoda.top.aspects(pwpca, clpca = NULL, n.cells = NULL,
 \item{effective.cells.start}{starting value for the pagoda.effective.cells() call}
 }
 \value{
-if return.table=F and return.genes=F (default) returns a list structure containing the following items:
+if return.table = F and return.genes = F (default) returns a list structure containing the following items:
 \itemize{
 \item{xv} {a matrix of normalized aspect patterns (rows- significant aspects, columns- cells}
 \item{xvw} { corresponding weight matrix }

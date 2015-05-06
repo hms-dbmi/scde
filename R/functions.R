@@ -1,6 +1,6 @@
 ##' Single-cell Differential Expression
 ##'
-##' SCDE implements routines for analysis single-cell RNA-seq data,  including fitting of error models and testing of differential expression. Please see Kharchenko et al.,  Nat. Methods 2014 Jul11(7):740-2. doi: 10.1038/nmeth.2967.
+##' SCDE implements routines for analysis single-cell RNA-seq data, including fitting of error models and testing of differential expression. Please see Kharchenko et al., Nat. Methods 2014 Jul11(7):740-2. doi: 10.1038/nmeth.2967.
 ##' See vignette("diffexp") for a brief tutorial.
 ##' More extensive tutorials are available at \url{http://pklab.med.harvard.edu/scde/index.html}.
 ##'
@@ -22,9 +22,9 @@ NULL
 
 ##' Fit single-cell error/regression models
 ##'
-##' Fit error models given a set of single-cell data (counts) and an optional grouping factor (groups). The cells (within each group) are first cross-compared to determine a subset of genes showing consistent expression. The set of genes is then used to fit a mixture model (Poisson-NB mixture,  with expression-dependent concomitant).
-##' @param counts read count matrix. The rows correspond to genes (should be named),  columns correspond to individual cells. The matrix should contain integer counts
-##' @param groups an optional factor describing grouping of different cells. If provided,  the cross-fits and the expected expression magnitudes will be determined separately within each group. The factor should have the same length as ncol(counts).
+##' Fit error models given a set of single-cell data (counts) and an optional grouping factor (groups). The cells (within each group) are first cross-compared to determine a subset of genes showing consistent expression. The set of genes is then used to fit a mixture model (Poisson-NB mixture, with expression-dependent concomitant).
+##' @param counts read count matrix. The rows correspond to genes (should be named), columns correspond to individual cells. The matrix should contain integer counts
+##' @param groups an optional factor describing grouping of different cells. If provided, the cross-fits and the expected expression magnitudes will be determined separately within each group. The factor should have the same length as ncol(counts).
 ##' @param min.nonfailed minimal number of non-failed observations required for a gene to be used in the final model fitting
 ##' @param threshold.segmentation use a fast threshold-based segmentation during cross-fit (default: T)
 ##' @param min.count.threshold the number of reads to use to guess which genes may have "failed" to be detected in a given measurement during cross-cell comparison (default 4 reads)
@@ -37,7 +37,7 @@ NULL
 ##' @param max.pairs maximum number of cross-fit comparisons that should be performed per group (default 5000)
 ##' @param min.pairs.per.cell minimum number of pairs that each cell should be cross-compared with
 ##' @param verbose 1 for increased output
-##' @return a model matrix,  with rows corresponding to different cells,  and columns representing different parameters of the determined models
+##' @return a model matrix, with rows corresponding to different cells, and columns representing different parameters of the determined models
 ##' @useDynLib scde
 ##' @return a data frame containing model parameters
 ##' @examples
@@ -48,7 +48,8 @@ NULL
 ##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 ##' }
 ##' @export
-scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshold.segmentation = T, min.count.threshold = 4, zero.count.threshold = min.count.threshold, zero.lambda = 0.1, save.crossfit.plots = F, save.model.plots = T, n.cores = 12, min.size.entries = 2e3, max.pairs = 5000, min.pairs.per.cell = 10, verbose = 0,  linear.fit = F,  local.theta.fit = T,  theta.fit.range = c(1e-2, 1e2)) {
+scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshold.segmentation = T, min.count.threshold = 4, zero.count.threshold = min.count.threshold, zero.lambda = 0.1, save.crossfit.plots = F, save.model.plots = T, n.cores = 12, min.size.entries = 2e3, max.pairs = 5000, min.pairs.per.cell = 10, verbose = 0, linear.fit = F, local.theta.fit = T, theta.fit.range = c(1e-2, 1e2)) {
+  # default same group
   if(is.null(groups)) {
     groups <- as.factor(rep("cell", ncol(counts)))
   }
@@ -57,26 +58,29 @@ scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshol
     cat("cross-fitting cells.\n")
   }
   cfm <- calculate.crossfit.models(counts, groups, n.cores = n.cores, threshold.segmentation = threshold.segmentation, min.count.threshold = min.count.threshold, zero.lambda = zero.lambda, max.pairs = max.pairs, save.plots = save.crossfit.plots, min.pairs.per.cell = min.pairs.per.cell)
+  # error mdoel for each cell
   if(verbose) {
     cat("building individual error models.\n")
   }
-  ifm <- calculate.individual.models(counts, groups, cfm, min.nonfailed = min.nonfailed, zero.count.threshold = zero.count.threshold, n.cores = n.cores, save.plots = save.model.plots, linear.fit = linear.fit, return.compressed.models = T, verbose = verbose, min.size.entries = min.size.entries,  local.theta.fit = local.theta.fit, theta.fit.range = theta.fit.range)
-  rm(cfm) gc()
+  ifm <- calculate.individual.models(counts, groups, cfm, min.nonfailed = min.nonfailed, zero.count.threshold = zero.count.threshold, n.cores = n.cores, save.plots = save.model.plots, linear.fit = linear.fit, return.compressed.models = T, verbose = verbose, min.size.entries = min.size.entries, local.theta.fit = local.theta.fit, theta.fit.range = theta.fit.range)
+  rm(cfm)
+  gc()
   return(ifm)
 }
+
 
 ##' Estimate prior distribution for gene expression magnitudes
 ##'
 ##' Use existing count data to determine a prior distribution of genes in the dataset
-##' @param models models determiend by \code{\link{scde.error.models}}
+##' @param models models determined by \code{\link{scde.error.models}}
 ##' @param counts count matrix
 ##' @param length.out number of points (resolution) of the expression magnitude grid (default: 400). Note: larger numbers will linearly increase memory/CPU demands.
 ##' @param show.plot show the estimate posterior
 ##' @param pseudo.count pseudo-count value to use (default 1)
 ##' @param bw smoothing bandwidth to use in estimating the prior (default: 0.1)
 ##' @param max.quantile determine the maximum expression magnitude based on a quantile (default : 0.999)
-##' @param max.value alternatively,  specify the exact maximum expression magntiude value
-##' @return a structure describing expression magnitude grid ($x,  on log10 scale) and prior ($y)
+##' @param max.value alternatively, specify the exact maximum expression magntiude value
+##' @return a structure describing expression magnitude grid ($x, on log10 scale) and prior ($y)
 ##' @examples
 ##' \donttest{
 ##' data(es.mef.small)
@@ -105,7 +109,7 @@ scde.expression.prior <- function(models, counts, length.out = 400, show.plot = 
   gep$y <- gep$y+pseudo.count/nrow(fpkm) # pseudo-count
   gep$y <- gep$y/sum(gep$y)
   if(show.plot) {
-    par(mfrow = c(1, 1), mar = c(3.5, 3.5, 3.5, 0.5),  mgp = c(2.0, 0.65, 0),  cex = 0.9)
+    par(mfrow = c(1, 1), mar = c(3.5, 3.5, 3.5, 0.5), mgp = c(2.0, 0.65, 0), cex = 0.9)
     plot(gep$x, gep$y, col = 4, panel.first = abline(h = 0, lty = 2), type = 'l', xlab = "log10( signal+1 )", ylab = "probability density", main = "signal prior")
   }
   gep$lp <- log(gep$y)
@@ -125,7 +129,7 @@ scde.expression.prior <- function(models, counts, length.out = 400, show.plot = 
 ##' @param counts read count matrix
 ##' @param prior gene expression prior as determiend by \code{\link{scde.expression.prior}}
 ##' @param groups a factor determining the two groups of cells being compared. The factor entries should correspond to the rows of the model matrix. The factor should have two levels. NAs are allowed (cells will be omitted from comparison).
-##' @param batch a factor (corresponding to rows of the model matrix) specifying batch assignment of each cell,  to perform batch correction
+##' @param batch a factor (corresponding to rows of the model matrix) specifying batch assignment of each cell, to perform batch correction
 ##' @param n.randomizations number of bootstrap randomizations to be performed
 ##' @param n.cores number of cores to utilize
 ##' @param batch.models (optional) separate models for the batch data (if generated using batch-specific group argument). Normally the same models are used.
@@ -134,17 +138,17 @@ scde.expression.prior <- function(models, counts, length.out = 400, show.plot = 
 ##' @return \subsection{default}{
 ##' a data frame with the following fields:
 ##' \itemize{
-##' \item{lb,  mle,  ub} {lower bound,  maximum likelihood estimate,  and upper bound of the 95% confidence interval for the expression fold change on log2 scale.}
-##' \item{ce} { conservative estimate of expression-fold change (equals to the min(abs(c(lb, ub))),  or 0 if the CI crosses the 0}
+##' \item{lb, mle, ub} {lower bound, maximum likelihood estimate, and upper bound of the 95% confidence interval for the expression fold change on log2 scale.}
+##' \item{ce} { conservative estimate of expression-fold change (equals to the min(abs(c(lb, ub))), or 0 if the CI crosses the 0}
 ##' \item{Z} { uncorrected Z-score of expression difference}
 ##' \item{cZ} {expression difference Z-score corrected for multiple hypothesis testing using Holm procedure}
 ##' }
-##'  If batch correction has been performed (\code{batch} has been supplied),  analogous data frames are returned in slots \code{$batch.adjusted} for batch-corrected results,  and \code{$batch.effect} for the differences explained by batch effects alone.
+##'  If batch correction has been performed (\code{batch} has been supplied), analogous data frames are returned in slots \code{$batch.adjusted} for batch-corrected results, and \code{$batch.effect} for the differences explained by batch effects alone.
 ##' }}
 ##' \subsection{return.posteriors = T}{
-##' A list is returned,  with the default results data frame given in the \code{$resutls} slot.
-##' \code{difference.posterior} returns a matrix of estimated expression difference posteriors (rows - genes,  columns correspond to different magnitudes of fold-change - log2 values are given in the column names)
-##' \code{joint.posteriors} a list of two joint posterior matrices (rows - genes,  columns correspond to the expression levels,  given by prior$x grid)
+##' A list is returned, with the default results data frame given in the \code{$resutls} slot.
+##' \code{difference.posterior} returns a matrix of estimated expression difference posteriors (rows - genes, columns correspond to different magnitudes of fold-change - log2 values are given in the column names)
+##' \code{joint.posteriors} a list of two joint posterior matrices (rows - genes, columns correspond to the expression levels, given by prior$x grid)
 ##' }
 ##' @examples
 ##' \donttest{
@@ -160,17 +164,20 @@ scde.expression.prior <- function(models, counts, length.out = 400, show.plot = 
 ##'
 ##' @export
 scde.expression.difference <- function(models, counts, prior, groups = NULL, batch = NULL, n.randomizations = 150, n.cores = 10, batch.models = models, return.posteriors = F, verbose = 0) {
-  if(!all(rownames(models) %in% colnames(counts))) { stop("ERROR: provided count data does not cover all of the cells specified in the model matrix") }
+  if(!all(rownames(models) %in% colnames(counts))) {
+      stop("ERROR: provided count data does not cover all of the cells specified in the model matrix")
+  }
+
   ci <- match(rownames(models), colnames(counts))
   counts <- as.matrix(counts[, ci])
 
   if(is.null(groups)) { # recover groups from models
     groups <- as.factor(attr(models, "groups"))
-    if(is.null(groups)) stop("ERROR: groups factor is not provided,  and models structure is lacking groups attribute")
+    if(is.null(groups)) stop("ERROR: groups factor is not provided, and models structure is lacking groups attribute")
     names(groups) <- rownames(models)
   }
-  if(length(levels(groups))! = 2) {
-    stop(paste("ERROR: wrong number of levels in the grouping factor (", paste(levels(groups), collapse = " "), "),  but must be two.", sep = ""))
+  if(length(levels(groups)) != 2) {
+    stop(paste("ERROR: wrong number of levels in the grouping factor (", paste(levels(groups), collapse = " "), "), but must be two.", sep = ""))
   }
 
   correct.batch <- F
@@ -194,8 +201,8 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
       cat("controlling for batch effects. interaction:\n")
       print(bgti)
     }
-    #if(any(bgti =  = 0)) {
-    #  cat("ERROR: cannot control for batch effect,  as some batches are found only in one group:\n")
+    #if(any(bgti == 0)) {
+    #  cat("ERROR: cannot control for batch effect, as some batches are found only in one group:\n")
     #  print(bgti)
     #}
     if(bgti.ft$p.value<1e-3) {
@@ -264,18 +271,18 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
 
 ##' View differential expression results in a browser
 ##'
-##' Launches a browser app that shows the differential expression results,  allowing to sort,  filter,  etc.
-##' The arguments generally correspond to the \code{scde.expression.difference()} call,  except that the results of that call are also passed here. Requires \code{Rook} and \code{rjson} packages to be installed.
-##' @param results result object returned by \code{scde.expression.difference()}. Note to browse group posterior levels,  use \code{return.posteriors = T} in the \code{scde.expression.difference()} call.
+##' Launches a browser app that shows the differential expression results, allowing to sort, filter, etc.
+##' The arguments generally correspond to the \code{scde.expression.difference()} call, except that the results of that call are also passed here. Requires \code{Rook} and \code{rjson} packages to be installed.
+##' @param results result object returned by \code{scde.expression.difference()}. Note to browse group posterior levels, use \code{return.posteriors = T} in the \code{scde.expression.difference()} call.
 ##' @param models model matrix
 ##' @param counts count matrix
 ##' @param prior prior
 ##' @param groups group information
 ##' @param batch batch information
-##' @param geneLookupURL The URL that will be used to construct links to view more information on gene names. By default (if can't guess the organism) the links will forward to ENSEMBL site search,  using \code{geneLookupURL = "http://useast.ensembl.org/Multi/Search/Results?q = {0}"}. The "{0}" in the end will be substituted with the gene name. For instance,  to link to GeneCards,  use \code{"http://www.genecards.org/cgi-bin/carddisp.pl?gene = {0}"}.
-##' @param server optional previously returned instance of the server,  if want to reuse it.
+##' @param geneLookupURL The URL that will be used to construct links to view more information on gene names. By default (if can't guess the organism) the links will forward to ENSEMBL site search, using \code{geneLookupURL = "http://useast.ensembl.org/Multi/Search/Results?q = {0}"}. The "{0}" in the end will be substituted with the gene name. For instance, to link to GeneCards, use \code{"http://www.genecards.org/cgi-bin/carddisp.pl?gene = {0}"}.
+##' @param server optional previously returned instance of the server, if want to reuse it.
 ##' @param name app name (needs to be altered only if adding more than one app to the server using \code{server} parameter)
-##' @return server instance,  on which $stop() function can be called to kill the process.
+##' @return server instance, on which $stop() function can be called to kill the process.
 ##' @examples
 ##' \donttest{
 ##' data(es.mef.small)
@@ -288,7 +295,7 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
 ##' ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups = groups, n.randomizations = 100, n.cores = n.cores, verbose = 1)
 ##' }
 ##' @export
-scde.browse.diffexp <- function(results, models, counts, prior, groups = NULL, batch = NULL, geneLookupURL = NULL, server = NULL,  name = "scde", port = NULL) {
+scde.browse.diffexp <- function(results, models, counts, prior, groups = NULL, batch = NULL, geneLookupURL = NULL, server = NULL, name = "scde", port = NULL) {
   #require(Rook)
   #require(rjson)
   if(is.null(server)) { server <- get.scde.server(port) }
@@ -299,7 +306,7 @@ scde.browse.diffexp <- function(results, models, counts, prior, groups = NULL, b
 }
 ##' View pagoda or scde application
 ##'
-##' Installs a given pagoda app (or any other rook app) into a server,  optionally
+##' Installs a given pagoda app (or any other rook app) into a server, optionally
 ##' making a call to show it in the browser.
 ##' @param app pagoda app (output of make.pagoda.app()) or another rook app
 ##' @param name URL path name for this app
@@ -336,7 +343,7 @@ get.scde.server <- function(port = NULL, ip = '127.0.0.1') {
 #
 ##' Calculate joint expression magnitude posteriors across a set of cells
 ##'
-##' Calculates expression magnitude posteriors for the individual cells,  and then uses boostrap resampling to calculate a joint expression posterior for all the specified cells. Alternatively during batch-effect correction procedure,  the joint posterior can be calculated for a random composition of cells of different groups (see \code{batch} and \code{composition} parameters).
+##' Calculates expression magnitude posteriors for the individual cells, and then uses boostrap resampling to calculate a joint expression posterior for all the specified cells. Alternatively during batch-effect correction procedure, the joint posterior can be calculated for a random composition of cells of different groups (see \code{batch} and \code{composition} parameters).
 ##' @param models models models determiend by \code{\link{scde.error.models}}
 ##' @param counts read count matrix
 ##' @param prior gene expression prior as determiend by \code{\link{scde.expression.prior}}
@@ -346,10 +353,10 @@ get.scde.server <- function(port = NULL, ip = '127.0.0.1') {
 ##' @param return.individual.posteriors whether exprssion posteriors of each cell should be returned
 ##' @param return.individual.posterior.modes whether modes of expression posteriors of each cell should be returned
 ##' @param n.cores number of cores to utilize
-##' @return \subsection{default}{ a posterior probability matrix,  with rows corresponding to genes,  and columns to expression levels (as defined by \code{prior$x})
+##' @return \subsection{default}{ a posterior probability matrix, with rows corresponding to genes, and columns to expression levels (as defined by \code{prior$x})
 ##' }
-##' \subsection{return.individual.posterior.modes}{ a list is returned,  with the \code{$jp} slot giving the joint posterior matrix,  as described above. The \code{$modes} slot gives a matrix of individual expression posterior mode values on log scale (rows - genes,  columns -cells)}
-##' \subsection{return.individual.posteriors}{ a list is returned,  with the \code{$post} slot giving a list of individual posterior matrices,  in a form analogous to the joint posterior matrix,  but reported on log scale }
+##' \subsection{return.individual.posterior.modes}{ a list is returned, with the \code{$jp} slot giving the joint posterior matrix, as described above. The \code{$modes} slot gives a matrix of individual expression posterior mode values on log scale (rows - genes, columns -cells)}
+##' \subsection{return.individual.posteriors}{ a list is returned, with the \code{$post} slot giving a list of individual posterior matrices, in a form analogous to the joint posterior matrix, but reported on log scale }
 ##' @examples
 ##' \donttest{
 ##' data(es.mef.small)
@@ -370,15 +377,15 @@ scde.posteriors <- function(models, counts, prior, n.randomizations = 100, batch
   # order counts according to the cells
   ci <- match(rownames(models), colnames(counts))
   counts <- as.matrix(counts[, ci, drop = F])
-  marginals <- 10^prior$x - 1 marginals[marginals<0] <- 0 marginals <- log(marginals)
+  marginals <- 10^prior$x - 1
+  marginals[marginals<0] <- 0
+  marginals <- log(marginals)
 
   min.slope <- 1e-10
   if(any(models$corr.a<min.slope)) {
     cat("WARNING: the following cells have negatively-correlated or 0-slope fits: ", paste(rownames(models)[models$corr.a<min.slope], collapse = " "), ". Setting slopes to 1e-10.\n")
     models$corr.a[models$corr.a<min.slope] <- min.slope
   }
-
-
 
   postflag <- 0
   if(return.individual.posteriors) {
@@ -401,69 +408,83 @@ scde.posteriors <- function(models, counts, prior, n.randomizations = 100, batch
   mm <- matrix(NA, nrow(models), length(mn))
   mm[, which(!is.na(mc))] <- as.matrix(models[, mc[!is.na(mc)], drop = F])
 
-
-  chunk <- function(x,  n) split(x,  sort(rank(x) %% n.cores))
+  chunk <- function(x, n) split(x, sort(rank(x) %% n.cores))
   if(n.cores > 1 && nrow(counts) > n.cores) { # split by genes
     xl <- bplapply(chunk(1:nrow(counts), BPPARAM = MulticoreParam(workers = n.cores)), function(ii) {
       ucl <- lapply(seq_len(ncol(counts)), function(i) as.vector(unique(counts[ii, i, drop = F])))
       uci <- do.call(cbind, lapply(seq_len(ncol(counts)), function(i) match(counts[ii, i, drop = F], ucl[[i]])-1))
       #x <- logBootPosterior(models, ucl, uci, marginals, n.randomizations, 1, postflag)
       if(!is.null(batch)) {
-        x <- .Call("logBootBatchPosterior",  mm,  ucl,  uci, marginals, batchil, composition, n.randomizations, ii[1], postflag, localthetaflag, squarelogitconc,  PACKAGE = "scde")
+        x <- .Call("logBootBatchPosterior", mm, ucl, uci, marginals, batchil, composition, n.randomizations, ii[1], postflag, localthetaflag, squarelogitconc, PACKAGE = "scde")
       } else {
-        x <- .Call("logBootPosterior",  mm,  ucl,  uci, marginals, n.randomizations, ii[1], postflag,  localthetaflag,  squarelogitconc, ensembleflag, PACKAGE = "scde")
+        x <- .Call("logBootPosterior", mm, ucl, uci, marginals, n.randomizations, ii[1], postflag, localthetaflag, squarelogitconc, ensembleflag, PACKAGE = "scde")
       }
     }, mc.cores = n.cores)
-    if(postflag =  = 0) {
+    if(postflag == 0) {
       x <- do.call(rbind, xl)
-    } else if(postflag =  = 1) {
+    } else if(postflag == 1) {
       x <- list(jp = do.call(rbind, lapply(xl, function(d) d$jp)), modes = do.call(rbind, lapply(xl, function(d) d$modes)))
-    } else if(postflag =  = 2) {
+    } else if(postflag == 2) {
       x <- list(jp = do.call(rbind, lapply(xl, function(d) d$jp)), post = lapply(seq_along(xl[[1]]$post), function(pi) { do.call(rbind, lapply(xl, function(d) d$post[[pi]])) }))
-    } else if(postflag =  = 3) {
+    } else if(postflag == 3) {
       x <- list(jp = do.call(rbind, lapply(xl, function(d) d$jp)), modes = do.call(rbind, lapply(xl, function(d) d$modes)), post = lapply(seq_along(xl[[1]]$post), function(pi) { do.call(rbind, lapply(xl, function(d) d$post[[pi]])) }))
     }
-    rm(xl) gc()
+    rm(xl)
+    gc()
   } else {
     # unique count lists with matching indecies
     ucl <- lapply(seq_len(ncol(counts)), function(i) as.vector(unique(counts[, i, drop = F])))
     uci <- do.call(cbind, lapply(seq_len(ncol(counts)), function(i) match(counts[, i, drop = F], ucl[[i]])-1))
     #x <- logBootPosterior(models, ucl, uci, marginals, n.randomizations, 1, postflag)
     if(!is.null(batch)) {
-      x <- .Call("logBootBatchPosterior",  mm,  ucl,  uci, marginals, batchil, composition, n.randomizations, 1, postflag, localthetaflag,  squarelogitconc,  PACKAGE = "scde")
+      x <- .Call("logBootBatchPosterior", mm, ucl, uci, marginals, batchil, composition, n.randomizations, 1, postflag, localthetaflag, squarelogitconc, PACKAGE = "scde")
       } else {
-        x <- .Call("logBootPosterior",  mm,  ucl,  uci, marginals, n.randomizations, 1, postflag,  localthetaflag, squarelogitconc, ensembleflag, PACKAGE = "scde")
+        x <- .Call("logBootPosterior", mm, ucl, uci, marginals, n.randomizations, 1, postflag, localthetaflag, squarelogitconc, ensembleflag, PACKAGE = "scde")
       }
   }
-  if(postflag =  = 0) {
-    rownames(x) <- rownames(counts) colnames(x) <- as.character(exp(marginals))
-  } else if(postflag =  = 1) {
-    rownames(x$jp) <- rownames(counts) colnames(x$jp) <- as.character(exp(marginals))
-    rownames(x$modes) <- rownames(counts) colnames(x$modes) <- rownames(models)
-  } else if(postflag =  = 2) {
-    rownames(x$jp) <- rownames(counts) colnames(x$jp) <- as.character(exp(marginals))
+  if(postflag == 0) {
+    rownames(x) <- rownames(counts)
+    colnames(x) <- as.character(exp(marginals))
+  } else if(postflag == 1) {
+    rownames(x$jp) <- rownames(counts)
+    colnames(x$jp) <- as.character(exp(marginals))
+    rownames(x$modes) <- rownames(counts)
+    colnames(x$modes) <- rownames(models)
+  } else if(postflag == 2) {
+    rownames(x$jp) <- rownames(counts)
+    colnames(x$jp) <- as.character(exp(marginals))
     names(x$post) <- rownames(models)
-    x$post <- lapply(x$post, function(d) { rownames(d) <- rownames(counts) colnames(d) <- as.character(exp(marginals)) d })
-  } else if(postflag =  = 3) {
-    rownames(x$jp) <- rownames(counts) colnames(x$jp) <- as.character(exp(marginals))
-    rownames(x$modes) <- rownames(counts) colnames(x$modes) <- rownames(models)
+    x$post <- lapply(x$post, function(d) {
+        rownames(d) <- rownames(counts)
+        colnames(d) <- as.character(exp(marginals))
+        return(d)
+        })
+  } else if(postflag == 3) {
+    rownames(x$jp) <- rownames(counts)
+    colnames(x$jp) <- as.character(exp(marginals))
+    rownames(x$modes) <- rownames(counts)
+    colnames(x$modes) <- rownames(models)
     names(x$post) <- rownames(models)
-    x$post <- lapply(x$post, function(d) { rownames(d) <- rownames(counts) colnames(d) <- as.character(exp(marginals)) d })
+    x$post <- lapply(x$post, function(d) {
+        rownames(d) <- rownames(counts)
+        colnames(d) <- as.character(exp(marginals))
+        return(d)
+        })
   }
-  x
+  return(x)
 }
 
 
 # get estimates of expression magnitude for a given set of models
-# models - entire model matrix,  or a subset of cells (i.e. select rows) of the model matrix for which the estimates should be obtained
+# models - entire model matrix, or a subset of cells (i.e. select rows) of the model matrix for which the estimates should be obtained
 # counts - count data that covers the desired set of genes (rows) and all specified cells (columns)
 # return - a matrix of log(fpm) estimates with genes as rows and cells  as columns (in the model matrix order).
 ##' Return scaled expression magnitude estimates
 ##'
-##' Return point estimates of expression magnitudes of each gene across a set of cells,  based on the regression slopes determined during the model fitting procedure.
+##' Return point estimates of expression magnitudes of each gene across a set of cells, based on the regression slopes determined during the model fitting procedure.
 ##' @param models models determiend by \code{\link{scde.error.models}}
 ##' @param counts count matrix
-##' @return a matrix of expression magnitudes on a log scale (rows - genes,  columns - cells)
+##' @return a matrix of expression magnitudes on a log scale (rows - genes, columns - cells)
 ##' @examples
 ##' \donttest{
 ##' data(es.mef.small)
@@ -484,10 +505,10 @@ scde.expression.magnitude <- function(models, counts) {
 # returns a probability of a drop out event for every gene (rows) for every cell (columns)
 ##' Caclulate drop-out probabilities given a set of counts or expressio nmagnitudes
 ##'
-##' Returns estimated drop-out probability for each cell (row of \code{models} matrix),  given either an expression magnitude
+##' Returns estimated drop-out probability for each cell (row of \code{models} matrix), given either an expression magnitude
 ##' @param models models determiend by \code{\link{scde.error.models}}
-##' @param magnitudes a vector (\code{length(counts) =  = nrows(models)}) or a matrix (columns correspond to cells) of expression magnitudes,  given on a log scale
-##' @param counts a vector (\code{length(counts) =  = nrows(models)}) or a matrix (columns correspond to cells) of read counts from which the expression magnitude should be estimated
+##' @param magnitudes a vector (\code{length(counts) == nrows(models)}) or a matrix (columns correspond to cells) of expression magnitudes, given on a log scale
+##' @param counts a vector (\code{length(counts) == nrows(models)}) or a matrix (columns correspond to cells) of read counts from which the expression magnitude should be estimated
 ##' @return a vector or a matrix of drop-out probabilities
 ##' @examples
 ##' \donttest{
@@ -541,7 +562,7 @@ scde.failure.probability <- function(models, magnitudes = NULL, counts = NULL) {
 ##' @param prior expression magntiude prior
 ##' @param groups a two-level factor specifying between which cells (rows of the models matrix) the comparison should be made
 ##' @param batch optional multi-level factor assigning the cells (rows of the model matrix) to different batches that should be controlled for (e.g. two or more biological replicates). The expression difference estimate will then take into account the likely difference between the two groups that is explained solely by their difference in batch composition. Not all batch configuration may be corrected this way.
-##' @param batch.models optional set of models for batch comparison (typically the same as models,  but can be more extensive,  or recalculated within each batch)
+##' @param batch.models optional set of models for batch comparison (typically the same as models, but can be more extensive, or recalculated within each batch)
 ##' @param n.randomizations number of bootstrap/sampling iterations that should be performed
 ##' @param show.plots whether the plots should be shown
 ##' @param return.details whether the posterior should be returned
@@ -549,7 +570,7 @@ scde.failure.probability <- function(models, magnitudes = NULL, counts = NULL) {
 ##' @param ratio.range optionally specifies the range of the log2 expression ratio plot
 ##' @param show.individual.posteriors whether the individual cell expression posteriors should be plotted
 ##' @param n.cores number of cores to use (default = 1)
-##' @return by default returns MLE of log2 expression difference,  95% CI (upper,  lower bound),  and a Z-score testing for expression difference. If return.details = T,  a list is returned containing the above structure,  as well as the expression fold difference posterior itself.
+##' @return by default returns MLE of log2 expression difference, 95% CI (upper, lower bound), and a Z-score testing for expression difference. If return.details = T, a list is returned containing the above structure, as well as the expression fold difference posterior itself.
 ##' @examples
 ##' \donttest{
 ##' data(es.mef.small)
@@ -571,11 +592,11 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 
   if(is.null(groups)) { # recover groups from models
     groups <- as.factor(attr(models, "groups"))
-    if(is.null(groups)) stop("ERROR: groups factor is not provided,  and models structure is lacking groups attribute")
+    if(is.null(groups)) stop("ERROR: groups factor is not provided, and models structure is lacking groups attribute")
     names(groups) <- rownames(models)
   }
-  if(length(levels(groups))! = 2) {
-    stop(paste("ERROR: wrong number of levels in the grouping factor (", paste(levels(groups), collapse = " "), "),  but must be two.", sep = ""))
+  if(length(levels(groups)) != 2) {
+    stop(paste("ERROR: wrong number of levels in the grouping factor (", paste(levels(groups), collapse = " "), "), but must be two.", sep = ""))
   }
 
   if(verbose) {
@@ -592,7 +613,8 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 
   bdiffp.rep <- quick.distribution.summary(bdiffp)
 
-  nam1 <- levels(groups)[1] nam2 <- levels(groups)[2]
+  nam1 <- levels(groups)[1]
+  nam2 <- levels(groups)[2]
 
   # batch control
   correct.batch <- !is.null(batch) && length(levels(batch)) > 1
@@ -604,8 +626,8 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
     if(verbose) {
       cat("controlling for batch effects. interaction:\n")
     }
-    if(any(bgti =  = 0)) {
-      cat("ERROR: cannot control for batch effect,  as some batches are found only in one group:\n")
+    if(any(bgti == 0)) {
+      cat("ERROR: cannot control for batch effect, as some batches are found only in one group:\n")
       print(bgti)
     }
     if(bgti.ft$p.value<1e-3) {
@@ -626,8 +648,8 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
   if(show.plots) {
     # show each posterior
     layout(matrix(c(1:3), 3, 1, byrow = T), heights = c(2, 1, 2), widths = c(1), F)
-    par(mar = c(2.5, 3.5, 2.5, 3.5),  mgp = c(1.5, 0.65, 0),  cex = 0.9)
-    #par(mar = c(2.5, 3.5, 0.5, 3.5),  mgp = c(1.5, 0.65, 0),  cex = 0.9)
+    par(mar = c(2.5, 3.5, 2.5, 3.5), mgp = c(1.5, 0.65, 0), cex = 0.9)
+    #par(mar = c(2.5, 3.5, 0.5, 3.5), mgp = c(1.5, 0.65, 0), cex = 0.9)
 
     pp <- exp(do.call(rbind, lapply(jpl[[1]]$post, as.numeric)))
     cols <- rainbow(nrow(pp), s = 0.8)
@@ -651,7 +673,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
     # ratio plot
     if(is.null(ratio.range)) { ratio.range <- range(as.numeric(colnames(bdiffp))/log10(2)) }
 
-    par(mar = c(2.5, 3.5, 0.5, 3.5),  mgp = c(1.5, 0.65, 0),  cex = 0.9)
+    par(mar = c(2.5, 3.5, 0.5, 3.5), mgp = c(1.5, 0.65, 0), cex = 0.9)
     rv <- as.numeric(colnames(bdiffp))/log10(2)
     rp <- as.numeric(bdiffp[1, ])
     plot(rv, rp, xlab = "log2 expression ratio", ylab = "ratio posterior", type = 'l', lwd = ifelse(correct.batch, 1, 2), main = "", axes = F, xlim = ratio.range, ylim = c(0, max(bdiffp)))
@@ -689,8 +711,8 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
     }
 
     # distal plot
-    par(mar = c(2.5, 3.5, 2.5, 3.5),  mgp = c(1.5, 0.65, 0),  cex = 0.9)
-    #par(mar = c(2.5, 3.5, 0.5, 3.5),  mgp = c(1.5, 0.65, 0),  cex = 0.9)
+    par(mar = c(2.5, 3.5, 2.5, 3.5), mgp = c(1.5, 0.65, 0), cex = 0.9)
+    #par(mar = c(2.5, 3.5, 0.5, 3.5), mgp = c(1.5, 0.65, 0), cex = 0.9)
     dp <- exp(do.call(rbind, lapply(jpl[[2]]$post, as.numeric)))
     cols <- rainbow(nrow(dp), s = 0.8)
     plot(c(), c(), xlim = range(prior$x), ylim = range(c(0, dp)), xlab = "expression level", ylab = "individual posterior", main = nam2)
@@ -726,11 +748,10 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 }
 
 
-
 # fit models to external (bulk) reference
 ##' fit scde models relative to provided set of expression magnitudes
 ##'
-##' If group-average expression magnitudes are available (e.g. from bulk measurement),  this method can be used
+##' If group-average expression magnitudes are available (e.g. from bulk measurement), this method can be used
 ##' to fit individual cell error models relative to that reference
 ##' @param counts count matrix
 ##' @param reference a vector of expression magnitudes (read counts) corresponding to the rows of the count matrix
@@ -745,7 +766,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 ##' @return matrix of scde models
 ##' @examples
 ##' \donttest{
-##' # since we don't have bulk reference in this dataset,  we'll make a fake one
+##' # since we don't have bulk reference in this dataset, we'll make a fake one
 ##' # by calculating average expression of each gene across single cells
 ##' # fit the models first
 ##' data(es.mef.small)
@@ -760,12 +781,13 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 ##' # translate into counts
 ##' av.mag.counts <- as.integer(round(av.mag))
 ##'
-##' # now,  fit alternative models using av.mag as a reference (normally this would correspond to bulk RNA expression magnitude)
+##' # now, fit alternative models using av.mag as a reference (normally this would correspond to bulk RNA expression magnitude)
 ##' ref.models <- scde.fit.models.to.reference(cd, av.mag.counts, n.cores = 10)
 ##' }
 ##' @export
 scde.fit.models.to.reference <- function(counts, reference, n.cores = 10, zero.count.threshold = 1, nrep = 1, save.plots = F, plot.filename = "reference.model.fits.pdf", verbose = 0, min.fpm = 1) {
-  old.fit <- T return.compressed.models <- T
+  old.fit <- T
+  return.compressed.models <- T
   verbose <- 1
   ids <- colnames(counts)
   ml <- bplapply(seq_along(ids), function(i) {
@@ -775,7 +797,8 @@ scde.fit.models.to.reference <- function(counts, reference, n.cores = 10, zero.c
     if(return.compressed.models) {
       v <- get.compressed.v1.model(m1)
       cl <- clusters(m1)
-      rm(m1) gc()
+      rm(m1)
+      gc()
       return(list(model = v, clusters = cl))
     } else {
       return(m1)
@@ -785,7 +808,7 @@ scde.fit.models.to.reference <- function(counts, reference, n.cores = 10, zero.c
 
   # check if there were errors in the multithreaded portion
   lapply(seq_along(ml), function(i) {
-    if(class(ml[[i]]) =  = "try-error") {
+    if(class(ml[[i]]) == "try-error") {
       message("ERROR encountered in building a model for cell ", ids[i], ":")
       message(ml[[i]])
       tryCatch(stop(paste("ERROR encountered in building a model for cell ", ids[i])), error = function(e) stop(e))
@@ -798,7 +821,7 @@ scde.fit.models.to.reference <- function(counts, reference, n.cores = 10, zero.c
     pdf(file = plot.filename, width = ifelse(old.fit, 13, 15), height = 4)
     #l <- layout(matrix(seq(1, 4*length(ids)), nrow = length(ids), byrow = T), rep(c(1, 1, 1, 0.5), length(ids)), rep(1, 4*length(ids)), FALSE)
     l <- layout(matrix(seq(1, 4), nrow = 1, byrow = T), rep(c(1, 1, 1, ifelse(old.fit, 0.5, 1)), 1), rep(1, 4), FALSE)
-    par(mar = c(3.5, 3.5, 3.5, 0.5),  mgp = c(2.0, 0.65, 0),  cex = 0.9)
+    par(mar = c(3.5, 3.5, 3.5, 0.5), mgp = c(2.0, 0.65, 0), cex = 0.9)
     invisible(lapply(seq_along(ids), function(i) {
       df <- data.frame(count = counts[, ids[i]], fpm = reference/sum(reference)*1e6)
       df <- df[df$fpm > min.fpm, ]
@@ -835,16 +858,17 @@ scde.fit.models.to.reference <- function(counts, reference, n.cores = 10, zero.c
 ##' @param seed random seed
 ##' @param center whether mat should be centered (weighted centering)
 ##' @param n.shuffles optional number of per-observation randomizations that should be performed in addition to the main calculations to determine the lambda1 (PC1 eigenvalue) magnitude under such randomizations (returned in $randvar)
-##' @return a list containing eigenvector matrix ($rotation),  projections ($scores),  variance (weighted) explained by each component ($var),  total (weighted) variance of the dataset ($totalvar)
+##' @return a list containing eigenvector matrix ($rotation), projections ($scores), variance (weighted) explained by each component ($var), total (weighted) variance of the dataset ($totalvar)
 ##' @export
 bwpca <- function(mat, matw = NULL, npcs = 2, nstarts = 1, smooth = 0, em.tol = 1e-6, em.maxiter = 25, seed = 1, center = T, n.shuffles = 0) {
   if(smooth<4) { smooth <- 0 }
   if(is.null(matw)) {
-    matw <- matrix(1, nrow(mat), ncol(mat)) nstarts <- 1
+    matw <- matrix(1, nrow(mat), ncol(mat))
+    nstarts <- 1
   }
   if(center) { mat <- t(t(mat)-colSums(mat*matw)/colSums(matw)) }
 
-  res <- .Call("baileyWPCA",  mat, matw, npcs, nstarts, smooth, em.tol, em.maxiter, seed, n.shuffles,  PACKAGE = "scde")
+  res <- .Call("baileyWPCA", mat, matw, npcs, nstarts, smooth, em.tol, em.maxiter, seed, n.shuffles, PACKAGE = "scde")
   #res <- bailey.wpca(mat, matw, npcs, nstarts, smooth, em.tol, em.maxiter, seed)
   rownames(res$rotation) <- colnames(mat)
   rownames(res$scores) <- rownames(mat)
@@ -853,54 +877,56 @@ bwpca <- function(mat, matw = NULL, npcs = 2, nstarts = 1, smooth = 0, em.tol = 
   res
 }
 
+
 ##' Winsorize matrix
 ##'
 ##' Sets the ncol(mat)*trim top outliers in each row to the next lowest value same for the lowest outliers
 ##' @param mat matrix
-##' @param trim fraction of outliers (on each side) that should be Winsorized,  or (if the value is  >  = 1) the number of outliers to be trimmed on each side
+##' @param trim fraction of outliers (on each side) that should be Winsorized, or (if the value is  >= 1) the number of outliers to be trimmed on each side
 ##' @return Winsorized matrix
 ##' @export
 winsorize.matrix <- function(mat, trim) {
   if(trim  >  0.5) { trim <- trim/ncol(mat)  }
-  wm <- .Call("winsorizeMatrix",  mat,  trim,  PACKAGE = "scde")
-  rownames(wm) <- rownames(mat) colnames(wm) <- colnames(mat)
+  wm <- .Call("winsorizeMatrix", mat, trim, PACKAGE = "scde")
+  rownames(wm) <- rownames(mat)
+  colnames(wm) <- colnames(mat)
   return(wm)
 }
 
-##' Build error models for heterogeneous cell populations,  based on K-nearest neighbor cells.
+
+##' Build error models for heterogeneous cell populations, based on K-nearest neighbor cells.
 ##'
 ##' Builds cell-specific error models assumming that there are multiple subpopulations present
 ##' among the measured cells. The models for each cell are based on average expression estimates
-##' obtained from K closest cells within a given group (if groups = NULL,  then within the entire
+##' obtained from K closest cells within a given group (if groups = NULL, then within the entire
 ##' set of measured cells). The method implements fitting of both the original log-fit models
-##' (when zero.intercept = F),  or newer linear-fit models (zero.intercept = T,  default) with locally
-##' fit overdispersion coefficient (local.theta.fit = T,  default).
+##' (when zero.intercept = F), or newer linear-fit models (zero.intercept = T, default) with locally
+##' fit overdispersion coefficient (local.theta.fit = T, default).
 ##'
-##' @param counts count matrix (integer matrix,  rows- genes,  columns- cells)
+##' @param counts count matrix (integer matrix, rows- genes, columns- cells)
 ##' @param groups optional groups partitioning known subpopulations
 ##' @param cor.method correlation measure to be used in determining k nearest cells
-##' @param k number of nearest neighbor cells to use during fitting. If k is set sufficiently high,  all of the cells within a given group will be used.
+##' @param k number of nearest neighbor cells to use during fitting. If k is set sufficiently high, all of the cells within a given group will be used.
 ##' @param min.nonfailed minimum number of non-failed measurements (within the k nearest neighbor cells) required for a gene to be taken into account during error fitting procedure
-
 ##' @param min.size.entries minimum number of genes to use for model fitting
 ##' @param min.count.threshold minimum number of reads required for a measurement to be considered non-failed
-##' @param save.model.plots whether model plots should be saved (file names are (group).models.pdf,  or cell.models.pdf if no group was supplied)
+##' @param save.model.plots whether model plots should be saved (file names are (group).models.pdf, or cell.models.pdf if no group was supplied)
 ##' @param max.model.plots maximum number of models to save plots for (saves time when there are too many cells)
 ##' @param n.cores number of cores to use through the calculations
 ##' @param min.fpm optional parameter to restrict model fitting to genes with group-average expression magnitude above a given value
 ##' @param verbose level of verbocity
-##' @param fpm.estimate.trim trim fraction to be used in estimating group-average gene expression magnitude for model fitting (0.5 would be median,  0 would turn off trimming)
-##' @param zero.intercept whether newer linear model fit with zero intercept should be used (T),  or the log-fit model published originally (F)
+##' @param fpm.estimate.trim trim fraction to be used in estimating group-average gene expression magnitude for model fitting (0.5 would be median, 0 would turn off trimming)
+##' @param zero.intercept whether newer linear model fit with zero intercept should be used (T), or the log-fit model published originally (F)
 ##' @param local.theta.fit whether local theta fitting should be used (only available for the linear fit models)
 ##' @param theta.fit.range allowed range of the theta values
 ##' @param alpha.weight.power 1/theta weight power used in fitting theta dependency on the expression magnitude
-##' @return a data frame with parameters of the fit error models (rows- cells,  columns- fitted parameters)
+##' @return a data frame with parameters of the fit error models (rows- cells, columns- fitted parameters)
 ##' @export
-knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), min.nonfailed = 5, min.count.threshold = 1, save.model.plots = T, max.model.plots = 50, n.cores = parallel::detectCores(), min.size.entries = 2e3, min.fpm = 0, cor.method = "pearson", verbose = 0,  fpm.estimate.trim = 0.25,  zero.intercept = T,  local.theta.fit = zero.intercept,  theta.fit.range = c(1e-2, 1e2),  alpha.weight.power = 1/2) {
+knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), min.nonfailed = 5, min.count.threshold = 1, save.model.plots = T, max.model.plots = 50, n.cores = parallel::detectCores(), min.size.entries = 2e3, min.fpm = 0, cor.method = "pearson", verbose = 0, fpm.estimate.trim = 0.25, zero.intercept = T, local.theta.fit = zero.intercept, theta.fit.range = c(1e-2, 1e2), alpha.weight.power = 1/2) {
   threshold.prior = 1-1e-6
 
   # TODO:
-  #  - implement check for k >  = n.cells (to avoid correlation calculations)
+  #  - implement check for k >= n.cells (to avoid correlation calculations)
   #  - implement error reporting/handling for failed cell fits
 
 
@@ -910,12 +936,13 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
   names(groups) <- colnames(counts)
 
   if(k >  ncol(counts)-1) {
-    message("the value of k (", k, ") is too large,  setting to ", (ncol(counts)-1))
+    message("the value of k (", k, ") is too large, setting to ", (ncol(counts)-1))
     k <- ncol(counts)-1
   }
 
-  ls <- estimate.library.sizes(counts, NULL, groups, min.size.entries, verbose = verbose, return.details = T, vil = counts >  = min.count.threshold)
-  ca <- counts ca[ca<min.count.threshold] <- NA # a version of counts with all "drop-out" components set to NA
+  ls <- estimate.library.sizes(counts, NULL, groups, min.size.entries, verbose = verbose, return.details = T, vil = counts >= min.count.threshold)
+  ca <- counts
+  ca[ca<min.count.threshold] <- NA # a version of counts with all "drop-out" components set to NA
   mll <- tapply(colnames(counts), groups, function(ids) {
     # use spearman rank correlation on pairwise complete observations to establish distance relationships between cells
     group <- as.character(groups[ids[1]])
@@ -939,13 +966,13 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
 
     # TODO: correct for batch effect in cell-cell similarity matrix
     if(F) {
-      # number batches 10^(seq(0, n)) compute matrix of id sums,  NA the diagonal,
+      # number batches 10^(seq(0, n)) compute matrix of id sums, NA the diagonal,
       bid <- 10^(as.integer(batch)-1)
       bm <- matrix(bid, byrow = T, nrow = length(bid), ncol = length(bid))+bid
       diag(bm) <- NA
 
-      # use tapply to calculate means shifts per combination reconstruct shift vector,  matrix,  subtract
-      # select the upper triangle,  tapply to it to correct celld vector directly
+      # use tapply to calculate means shifts per combination reconstruct shift vector, matrix, subtract
+      # select the upper triangle, tapply to it to correct celld vector directly
     }
 
     if(verbose)  message(paste("fitting", group, "models:"))
@@ -958,14 +985,14 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
       # determine a subset of genes that show up sufficiently often
       #fpm <- rowMeans(t(t(counts[, oc, drop = F])/(ls$ls[oc])))
       fpm <- apply(t(ca[, oc, drop = F])/(ls$ls[oc]), 2, mean, trim = fpm.estimate.trim, na.rm = T)
-      # rank genes by the number of non-zero occurrences,  take top genes
-      vi <- which(rowSums(counts[, oc] > min.count.threshold)  >  =  min(ncol(oc)-1, min.nonfailed) & fpm > min.fpm)
+      # rank genes by the number of non-zero occurrences, take top genes
+      vi <- which(rowSums(counts[, oc] > min.count.threshold)  >=  min(ncol(oc)-1, min.nonfailed) & fpm > min.fpm)
       if(length(vi)<40)  message("WARNING: only ", length(vi), " valid genes were found to fit ", ids[i], " model")
       df <- data.frame(count = counts[vi, ids[i]], fpm = fpm[vi])
 
       # determine failed-component posteriors for each gene
-      #fp <- ifelse(df$count < =  min.count.threshold, threshold.prior, 1-threshold.prior)
-      fp <- ifelse(df$count < =  min.count.threshold & df$fpm  >  =  median(df$fpm[df$count < =  min.count.threshold]), threshold.prior, 1-threshold.prior)
+      #fp <- ifelse(df$count <=  min.count.threshold, threshold.prior, 1-threshold.prior)
+      fp <- ifelse(df$count <=  min.count.threshold & df$fpm  >=  median(df$fpm[df$count <=  min.count.threshold]), threshold.prior, 1-threshold.prior)
       cp <- cbind(fp, 1-fp)
 
       if(zero.intercept) {
@@ -986,7 +1013,7 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
     names(ml) <- ids
     # check for failed cells
     vci <- unlist(lapply(seq_along(ml), function(i) {
-      if(class(ml[[i]]) =  = "try-error") {
+      if(class(ml[[i]]) == "try-error") {
         message("ERROR encountered in building a model for cell ", ids[i], ":")
         message(ml[[i]])
         return(F)
@@ -1007,19 +1034,19 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
         tryCatch( {
           pdf(file = paste(group, "model.fits.pdf", sep = "."), width = ifelse(local.theta.fit, 13, 15), height = 4)
           l <- layout(matrix(seq(1, 4), nrow = 1, byrow = T), rep(c(1, 1, 1, ifelse(local.theta.fit, 1, 0.5)), 1), rep(1, 4), FALSE)
-          par(mar = c(3.5, 3.5, 3.5, 0.5),  mgp = c(2.0, 0.65, 0),  cex = 0.9)
+          par(mar = c(3.5, 3.5, 3.5, 0.5), mgp = c(2.0, 0.65, 0), cex = 0.9)
           invisible(lapply(mli[1:min(max.model.plots, length(mli))], function(i) {
             oc <- ids[-i][order(celld[ids[i], -i, drop = F], decreasing = T)[1:min(k, length(ids)-1)]]
             #set.seed(i) oc <- sample(ids[-i], k)
             # determine a subset of genes that show up sufficiently often
             #fpm <- rowMeans(t(t(counts[, oc, drop = F])/(ls$ls[oc])))
             fpm <- apply(t(ca[, oc, drop = F])/(ls$ls[oc]), 2, mean, trim = fpm.estimate.trim, na.rm = T)
-            vi <- which(rowSums(counts[, oc] > min.count.threshold)  >  =  min(ncol(oc)-1, min.nonfailed) & fpm > min.fpm)
+            vi <- which(rowSums(counts[, oc] > min.count.threshold)  >=  min(ncol(oc)-1, min.nonfailed) & fpm > min.fpm)
             df <- data.frame(count = counts[vi, ids[i]], fpm = fpm[vi])
             plot.nb2.mixture.fit(ml[[ids[i]]], df, en = ids[i], do.par = F, compressed.models = T)
           }))
           dev.off()
-      },  error = function(e) {
+      }, error = function(e) {
           message("ERROR encountered during model fit plot outputs:")
           message(e)
           dev.off()
@@ -1039,6 +1066,7 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
   return(jmm)
 }
 
+
 ##' Normalize gene expression variance relative to transcriptome-wide expectations
 ##'
 ##' Normalizes gene expression magnitudes to ensure that the variance follows chi-squared statistics
@@ -1047,16 +1075,16 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
 ##' @param models model matrix (select a subset of rows to normalize variance within a subset of cells)
 ##' @param counts read count matrix
 ##' @param batch measurement batch (optional)
-##' @param trim trim value for Winsorization (optional,  can be set to 1-3 to reduce the impact of outliers,  can be as large as 5 or 10 for datasets with several thousand cells)
+##' @param trim trim value for Winsorization (optional, can be set to 1-3 to reduce the impact of outliers, can be as large as 5 or 10 for datasets with several thousand cells)
 ##' @param prior expression magnitude prior
 ##' @param plot wether to plot the results
-##' @param minimize.underdispersion whether underdispersion should be minimized (can increase sensitivity in datasets with high complexity of population,  however cannot be effectively used in datasets where multiple batches are present)
+##' @param minimize.underdispersion whether underdispersion should be minimized (can increase sensitivity in datasets with high complexity of population, however cannot be effectively used in datasets where multiple batches are present)
 ##' @param n.cores number of cores to use
 ##' @param n.randomizations number of bootstrap sampling rounds to use in estimating average expression magnitude for each gene within the given set of cells
 ##' @param weight.k k value to use in the final weight matrix
 ##' @param verbose verbosity level
 ##' @param weight.df.power power factor to use in determining effective number of degrees of freedom (can be increased for datasets exhibiting particularly high levels of noise at low expression magnitudes)
-##' @param smooth.df degrees of freedom to be used in calculating smoothed local regression between coefficient of variation and expression magnitude (and gene length,  if provided). Leave at -1 for automated guess.
+##' @param smooth.df degrees of freedom to be used in calculating smoothed local regression between coefficient of variation and expression magnitude (and gene length, if provided). Leave at -1 for automated guess.
 ##' @param max.adj.var maximum value allowed for the estimated adjusted variance (capping of adjusted variance is recommended when scoring pathway overdispersion relative to randomly sampled gene sets)
 ##' @param theta.range valid theta range (should be the same as was set in knn.error.models() call
 ##' @param gene.length optional vector of gene lengths (corresponding to the rows of counts matrix)
@@ -1074,24 +1102,24 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
 ##' @export
 pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL, plot = T, minimize.underdispersion = F, n.cores = detectCores(), n.randomizations = 100, weight.k = 0.9, verbose = 0, weight.df.power = 1, smooth.df = -1, max.adj.var = 10, theta.range = c(1e-2, 1e2), gene.length = NULL) {
 
-
   cd <- counts
 
   min.edf <- 1
   weight.k.internal <- 1
-  use.mean.fpm <- F use.expected.value <- T
+  use.mean.fpm <- F
+  use.expected.value <- T
   cv.fit <- T
   edf.damping <- 1
 
   # load NB extensions
-  data(scde.edff,  envir = environment())
+  data(scde.edff, envir = environment())
 
   # subset cd to the cells occurring in the models
   if(verbose) { cat("checking counts ... ") }
   if(!all(rownames(models) %in% colnames(cd))) {
-    stop(paste("supplied count matrix (cd) is missing data for the following cells:[", paste(rownames(models)[!rownames(models) %in% colnames(cd)], collapse = ",  "), "]", sep = ""))
+    stop(paste("supplied count matrix (cd) is missing data for the following cells:[", paste(rownames(models)[!rownames(models) %in% colnames(cd)], collapse = ", "), "]", sep = ""))
   }
-  if(!length(rownames(models)) =  = length(colnames(cd)) || !all(rownames(models) =  = colnames(cd))) {
+  if(!length(rownames(models)) == length(colnames(cd)) || !all(rownames(models) == colnames(cd))) {
     cd <- cd[, match(rownames(models), colnames(cd))]
   }
   if(verbose) { cat("done\n") }
@@ -1102,9 +1130,12 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
     fpm <- t((t(log(cd))-models$corr.b)/models$corr.a)
     #tfpm <- log(winsorize.matrix(exp(fpm), trim = trim))
     tfpm <- winsorize.matrix(fpm, trim)
-    rn <- rownames(cd) cn <- colnames(cd)
-    cd <- round(exp(t(t(tfpm)*models$corr.a+models$corr.b))) cd[cd<0] <- 0
-    rownames(cd) <- rn colnames(cd) <- cn
+    rn <- rownames(cd)
+    cn <- colnames(cd)
+    cd <- round(exp(t(t(tfpm)*models$corr.a+models$corr.b)))
+    cd[cd<0] <- 0
+    rownames(cd) <- rn
+    colnames(cd) <- cn
     rm(fpm, tfpm)
     cd <- cd[rowSums(cd) > 0, ] # omit genes without any data after winsorization
     if(verbose) { cat("done\n") }
@@ -1113,15 +1144,17 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
   # check/fix batch vector
   if(verbose) { cat("checking batch ... ") }
   if(!is.null(batch)) {
-    if(!is.factor(batch)) { batch <- as.factor(batch) }
+    if(!is.factor(batch)) {
+        batch <- as.factor(batch)
+        }
     if(is.null(names(batch))) {
-      if(length(batch)! = nrow(models)) {
+      if(length(batch) != nrow(models)) {
         stop("invalid batch vector supplied: length differs from nrow(models)!")
       }
       names(batch) <- rownames(models)
     } else {
       if(!all(rownames(models) %in% names(batch))) {
-        stop(paste("invalid batch vector supplied: the following cell(s) are not present: [", paste(rownames(models)[!rownames(models) %in% names(batch)], collapse = ",  "), "]", sep = ""))
+        stop(paste("invalid batch vector supplied: the following cell(s) are not present: [", paste(rownames(models)[!rownames(models) %in% names(batch)], collapse = ", "), "]", sep = ""))
       }
       batch <- batch[rownames(models)]
     }
@@ -1132,7 +1165,6 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
         if(verbose) { cat("omitting small batch levels [", paste(names(bt)[bt<min.batch.level], collapse = " "), "] ... ") }
         batch[batch %in% names(bt)[bt<min.batch.level]] <- names(bt)[which.max(bt)]
     }
-
   }
   if(verbose) { cat("ok\n") }
 
@@ -1155,7 +1187,7 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
   }
   if(verbose) { cat(". ") }
 
-  # batch-specific modes,  if necessary
+  # batch-specific modes, if necessary
   if(!is.null(batch) && length(levels(batch)) > 1) {
     # calculate mode for each batch
     if(verbose) { cat("batch: [ ") }
@@ -1235,7 +1267,8 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
   # calculate effective degrees of freedom
   # total effective degrees of freedom per gene
   if(verbose) { cat("calculating effective degrees of freedom ..") }
-  ids <- 1:ncol(cd) names(ids) <- colnames(cd)
+  ids <- 1:ncol(cd)
+  names(ids) <- colnames(cd)
   # dataset-wide version
   edf.mat <- do.call(cbind, bplapply(ids, function(i) {
     v <- models[i, ]
@@ -1244,10 +1277,13 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
     # adjust very low mu levels except for those that have 0 counts (to avoid inf values)
 
     thetas <- scde:::get.corr.theta(v, lfpm, theta.range)
-    edf <- exp(predict(scde.edff, data.frame(lt = log(thetas)))) edf[thetas > 1e3] <- 1
+    edf <- exp(predict(scde.edff, data.frame(lt = log(thetas))))
+    edf[thetas > 1e3] <- 1
     edf
   }, BPPARAM = MulticoreParam(workers = n.cores)))
-  if(edf.damping! = 1) { edf.mat <- ((edf.mat/ncol(edf.mat))^edf.damping) * ncol(edf.mat) }
+  if(edf.damping != 1) {
+      edf.mat <- ((edf.mat/ncol(edf.mat))^edf.damping) * ncol(edf.mat)
+      }
 
   # incorporate weight into edf
   #edf.mat <- ((matw^weight.df.power)*edf.mat)
@@ -1265,10 +1301,11 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
       # adjust very low mu levels except for those that have 0 counts (to avoid inf values)
 
       thetas <- scde:::get.corr.theta(v, lfpm, theta.range)
-      edf <- exp(predict(scde.edff, data.frame(lt = log(thetas)))) edf[thetas > 1e3] <- 1
-      edf
+      edf <- exp(predict(scde.edff, data.frame(lt = log(thetas))))
+      edf[thetas > 1e3] <- 1
+      return(edf)
     }, BPPARAM = MulticoreParam(workers = n.cores)))
-    if(edf.damping! = 1) { bedf.mat <-  ((bedf.mat/ncol(bedf.mat))^edf.damping) * ncol(edf.mat) }
+    if(edf.damping != 1) { bedf.mat <-  ((bedf.mat/ncol(bedf.mat))^edf.damping) * ncol(edf.mat) }
 
     # incorporate weight into edf
     #bedf.mat <- ((bmatw^weight.df.power)*bedf.mat)
@@ -1281,7 +1318,8 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
 
   if(verbose) { cat("calculating normalized expression values ... ") }
   # evaluate negative binomial deviations and effective degrees of freedom
-  ids <- 1:ncol(cd) names(ids) <- colnames(cd)
+  ids <- 1:ncol(cd)
+  names(ids) <- colnames(cd)
   mat <- do.call(cbind, bplapply(ids, function(i) {
     v <- models[i, ]
     lfpm <- log(avmodes)
@@ -1320,7 +1358,6 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
     }, BPPARAM = MulticoreParam(workers = n.cores)))
     rownames(bmat) <- rownames(cd)
 
-
     if(verbose) { cat(".") }
   }
   if(verbose) { cat(" done\n") }
@@ -1334,7 +1371,7 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
     bwvar.ratio <- bwvar/wvar
     wvar <- bwvar # replace wvar now that we have the ratio of
     matw <- bmatw # replace matw with the batch-specific one that will be used from here on
-    # ALTERNATIVE: could adjust wvar for the bwvar.ratio here,  before fitting expression dependency
+    # ALTERNATIVE: could adjust wvar for the bwvar.ratio here, before fitting expression dependency
   }
   vi <- rowSums(matw) > 0 & is.finite(wvar) & wvar > 0
   s = mgcv:::s
@@ -1352,7 +1389,7 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
     zval.m <- 10^(df$cv2[vi]-predict(x, newdata = df[vi, ]))
 
     if(plot) {
-      par(mfrow = c(1, 2),  mar = c(3.5, 3.5, 1.0, 1.0),  mgp = c(2, 0.65, 0))
+      par(mfrow = c(1, 2), mar = c(3.5, 3.5, 1.0, 1.0), mgp = c(2, 0.65, 0))
       #smoothScatter(df$lev[vi], log(wvar[vi]), nbin = 256, xlab = "expression magnitude (log10)", ylab = "wvar (log)") abline(h = 0, lty = 2, col = 2)
       #points(df[paste("g", diff.exp.gene.ids, sep = ""), "lev"], log(wvar[paste("g", diff.exp.gene.ids, sep = "")]), col = 2)
 
@@ -1365,7 +1402,7 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
     # optional : re-weight to minimize the underdispersed points
     if(minimize.underdispersion) {
       pv <- pchisq(zval.m*(edf[vi]-1), edf[vi], log.p = F, lower.tail = T)
-      pv[edf[vi]< = min.edf] <- 0
+      pv[edf[vi]<= min.edf] <- 0
       pv <- p.adjust(pv)
       #x <- gam(as.formula("cv2 ~ s(lev)"), data = df[vi, ], weights = (pmin(10, -log(pv))+1)*rowSums(matw[vi, ]))
       x <- mgcv::gam(cv2 ~ s(lev, k = smooth.df), data = df[vi, ], weights = (pmin(10, -log(pv))+1)*rowSums(matw[vi, ]))
@@ -1381,7 +1418,7 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
     zval.m <- (as.numeric((df$sd[vi])/pmax(min.sd, x$fitted.values)))^2
 
     if(plot) {
-      par(mfrow = c(1, 2),  mar = c(3.5, 3.5, 1.0, 1.0),  mgp = c(2, 0.65, 0))
+      par(mfrow = c(1, 2), mar = c(3.5, 3.5, 1.0, 1.0), mgp = c(2, 0.65, 0))
       smoothScatter(df$lev[vi], df$sd[vi], nbin = 256, xlab = "expression magnitude", ylab = "weighted sdiv")
       points(df$lev[vi], x$fitted.values, col = 2, pch = ".", cex = 1)
     }
@@ -1389,7 +1426,7 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
     # optional : re-weight to minimize the underdispersed points
     if(minimize.underdispersion) {
       pv <- pchisq(zval.m*(edf[vi]-1), edf[vi], log.p = F, lower.tail = T)
-      pv[edf[vi]< = min.edf] <- 0
+      pv[edf[vi]<= min.edf] <- 0
       pv <- p.adjust(pv)
       #x <- gam(as.formula("sd ~ s(lev)"), data = df[vi, ], weights = (pmin(20, -log(pv))+1)*rowSums(matw[vi, ]))
       x <- mgcv::gam(sd ~ s(lev, k = smooth.df), data = df[vi, ], weights = (pmin(20, -log(pv))+1)*rowSums(matw[vi, ]))
@@ -1408,9 +1445,10 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
 
   # calculate adjusted variance
   qv <- pchisq(zval.m*(edf[vi]-1), edf[vi], log.p = T, lower.tail = F)
-  qv[edf[vi]< = min.edf] <- 0
+  qv[edf[vi]<= min.edf] <- 0
   qv[abs(qv)<1e-10] <- 0
-  arv <- rep(NA, length(vi)) arv[vi] <- qchisq(qv, ncol(matw)-1, lower.tail = F, log.p = T)/ncol(matw)
+  arv <- rep(NA, length(vi))
+  arv[vi] <- qchisq(qv, ncol(matw)-1, lower.tail = F, log.p = T)/ncol(matw)
   arv <- pmin(max.adj.var, arv)
   names(arv) <- rownames(cd)
   if(plot) {
@@ -1435,7 +1473,9 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
 
   # estimate observed variance (for scaling) before batch adjustments
   #varm <- sqrt(arv/pmax(weightedMatVar(mat, matw, batch = batch), 1e-5)) varm[varm<1e-5] <- 1e-5 mat <- mat*varm
-  ov <- weightedMatVar(mat, matw)  vr <- arv/ov vr[ov < =  0] <- 0
+  ov <- weightedMatVar(mat, matw)
+  vr <- arv/ov
+  vr[ov <=  0] <- 0
 
   if(!is.null(batch) && is.list(modes)) { # batch-specific mode
     # adjust proportion of zeros
@@ -1452,9 +1492,8 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
     nbo <- nbo[, colnames(matw)]
     matw <- nbo
 
-
     ## # center 0 and non-0 observations between batches separately
-    ## amat <- mat amat[amat =  = 0] <- NA
+    ## amat <- mat amat[amat == 0] <- NA
     ## amat.av <- rowMeans(amat, na.rm = T) # dataset means
     ## # adjust each batch by the mean of its non-0 measurements
     ## amat <- do.call(cbind, tapply(1:ncol(amat), batch, function(ii) {
@@ -1466,15 +1505,14 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
     ## amat[is.na(amat)] <- 0
     ## mat <- amat
 
-
     amat <- mat
     nr <- ncol(matw)/rowSums(matw)
     amat.av <- rowMeans(amat*matw)*nr # dataset means
     amat <- do.call(cbind, tapply(seq_len(ncol(amat)), batch, function(ii) {
       amat[, ii]-(rowMeans(amat[, ii]*matw[, ii]*nr, na.rm = T))
-    })) amat <- amat[, colnames(matw)]
+    }))
+    amat <- amat[, colnames(matw)]
     mat <- amat+amat.av
-
 
     # alternative: actually zero-out entries in mat
     ## nbub <- rowMin(do.call(cbind, tapply(1:ncol(amat), batch, function(ii) {
@@ -1508,7 +1546,6 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
   mat <- weightedMatCenter(mat, matw)
   mat <- mat*sqrt(vr)
 
-
   if(!is.null(batch) && is.list(modes)) { # batch-specific mode
     return(list(mat = mat, matw = matw, arv = arv, modes = modes, avmodes = avmodes, prior = prior, edf = edf, batch = batch, trim = trim, bwvar.ratio = bwvar.ratio))
   } else {
@@ -1516,11 +1553,12 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
   }
 }
 
+
 ##' Control for a particular aspect of expression heterogeneity in a given population
 ##'
-##' Similar to subtracting n-th principal component,  the current procedure determines
+##' Similar to subtracting n-th principal component, the current procedure determines
 ##' (weighted) projection of the expression matrix onto a specified aspect (some pattern
-##' across cells,  for instance sequencing depth,  or PC corresponding to an undesired process
+##' across cells, for instance sequencing depth, or PC corresponding to an undesired process
 ##' such as ribosomal pathway variation) and subtracts it from the data so that it is controlled
 ##' for in the subsequent weighted PCA analysis.
 ##' @param varinfo normalized varinace info (from pagoda.varnorm())
@@ -1529,8 +1567,10 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
 ##' @return a modified varinfo object with adjusted expression matirx (varinfo$mat)
 ##' @export
 pagoda.subtract.aspect <- function(varinfo, aspect, center = T) {
-  if(length(aspect)! = ncol(varinfo$mat)) { stop("aspect should be a numeric vector of the same length as the number of cells (i.e. ncol(varinfo$mat))") }
-  v <- aspect v <- v-mean(v) v <- v/sqrt(sum(v^2))
+  if(length(aspect) != ncol(varinfo$mat)) { stop("aspect should be a numeric vector of the same length as the number of cells (i.e. ncol(varinfo$mat))") }
+  v <- aspect
+  v <- v-mean(v)
+  v <- v/sqrt(sum(v^2))
   nr <- ((varinfo$mat * varinfo$matw) %*% v)/(varinfo$matw %*% v^2)
   mat.c <- varinfo$mat - t(v %*% t(nr))
   if(center) {
@@ -1544,15 +1584,15 @@ pagoda.subtract.aspect <- function(varinfo, aspect, center = T) {
 ##' Run weighted PCA analysis on pre-annotated gene sets
 ##'
 ##' For each valid gene set (having appropriate number of genes) in the provided environment (setenv),
-##' the method will run weighted PCA analysis,  along with analogous analyses of random gene sets of the
-##' same size,  or shuffled expression magnitudes for the same gnee set.
+##' the method will run weighted PCA analysis, along with analogous analyses of random gene sets of the
+##' same size, or shuffled expression magnitudes for the same gnee set.
 ##' @param varinfo adjusted variance info from pagoda.varinfo() (or pagoda.subtract.aspect())
-##' @param setenv environment listing gene sets (contains variables with names corresponding to gene set name,  and values being vectors of gene names within each gene set)
+##' @param setenv environment listing gene sets (contains variables with names corresponding to gene set name, and values being vectors of gene names within each gene set)
 ##' @param n.components number of principal components to determine for each gene set
 ##' @param n.cores number of cores to use
 ##' @param min.pathway.size minimum number of observed genes that should be contained in a valid gene set
 ##' @param max.pathway.size maximum number of observed gnees in a valid gene set
-##' @param n.randomizations number of random gene sets (of the same size) to be evaluated in parallel with each gene set (can be kept at 5 or 10,  but should be increased to 50-100 if the significance of pathway overdispersion will be determined relative to random gene set models)
+##' @param n.randomizations number of random gene sets (of the same size) to be evaluated in parallel with each gene set (can be kept at 5 or 10, but should be increased to 50-100 if the significance of pathway overdispersion will be determined relative to random gene set models)
 ##' @param n.internal.shuffles number of internal (independent row shuffles) randomizations of expression data that should be evaluated for each gene set (needed only if one is interested in gene set coherence P values)
 ##' @param n.starts number of random starts for the EM method in each evaluation
 ##' @param center whether the expression matirx should be recentered
@@ -1561,7 +1601,8 @@ pagoda.subtract.aspect <- function(varinfo, aspect, center = T) {
 ##' @param verbose verbosity lelel
 ##' @return a list of weighted PCA info for each valid gene set
 pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = detectCores(), min.pathway.size = 10, max.pathway.size = 1e3, n.randomizations = 10, n.internal.shuffles = 10, n.starts = 10, center = T, batch.center = T, proper.gene.names = NULL, verbose = 0) {
-  mat <- varinfo$mat matw <- varinfo$matw
+  mat <- varinfo$mat
+  matw <- varinfo$matw
   gsl <- NULL
   return.gsl <- F
   smooth <- 0
@@ -1574,7 +1615,8 @@ pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = det
     mat <- weightedMatCenter(mat, matw, batch = batch)
   }
 
-  vi <- apply(mat, 1, function(x) sum(abs(diff(x))) > 0) vi[is.na(vi)] <- F
+  vi <- apply(mat, 1, function(x) sum(abs(diff(x))) > 0)
+  vi[is.na(vi)] <- F
   mat <- mat[vi, , drop = F] # remove constant rows
   matw <- matw[vi, , drop = F]
   proper.gene.names <- proper.gene.names[vi]
@@ -1582,7 +1624,7 @@ pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = det
   if(is.null(gsl)) {
     gsl <- ls(env = setenv)
     gsl.ng <- unlist(lapply(sn(gsl), function(go) sum(unique(get(go, env = setenv)) %in% proper.gene.names)))
-    gsl <- gsl[gsl.ng >  = min.pathway.size & gsl.ng< = max.pathway.size]
+    gsl <- gsl[gsl.ng >= min.pathway.size & gsl.ng<= max.pathway.size]
     names(gsl) <- gsl
   }
   if(verbose) {
@@ -1592,10 +1634,12 @@ pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = det
 
 
   # transpose mat to save a bit of calculations
-  mat <- t(mat) matw <- t(matw)
+  mat <- t(mat)
+  matw <- t(matw)
 
   mcm.pc <- bplapply(gsl, function(x) {
-    lab <- proper.gene.names %in% get(x, env = setenv) if(sum(lab)<1) { return(NULL) }
+    lab <- proper.gene.names %in% get(x, env = setenv)
+    if(sum(lab)<1) { return(NULL) }
 
     #smooth <- round(sum(lab)*smooth.fraction)
     #smooth <- max(sum(lab), smooth)
@@ -1633,7 +1677,7 @@ pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = det
 ##' of a gene set and the number of genes in a gene set to determine the effective number of cells
 ##' for the Tracy-Widom distribution
 ##' @param pwpca result of the pagoda.pathway.wPCA() call with n.randomizations > 1
-##' @param start optional starting value for the optimization (if the nls breaks,  trying high starting values usually fixed the local gradient problem)
+##' @param start optional starting value for the optimization (if the nls breaks, trying high starting values usually fixed the local gradient problem)
 ##' @return effective number of cells
 ##' @export
 pagoda.effective.cells <- function(pwpca, start = NULL) {
@@ -1652,17 +1696,17 @@ pagoda.effective.cells <- function(pwpca, start = NULL) {
   return((x$par)^2+1/2)
 }
 
+
 ##' Determine de-novo gene clusters and associated overdispersion info
 ##'
-##' Determine de-novo gene clusters,  their weighted PCA lambda1 values,  and random matrix expectation.
+##' Determine de-novo gene clusters, their weighted PCA lambda1 values, and random matrix expectation.
 ##' @param varinfo varinfo adjusted variance info from pagoda.varinfo() (or pagoda.subtract.aspect())
 ##' @param trim additional Winsorization trim value to be used in determining clusters (to remove clusters that group outliers ocurring in a given cell). Use higher values (5-15) if the reulting clusters group outlier patterns
 ##' @param n.clusters number of clusters to be determined (recommended range is 100-200)
-
-##' @param cor.method correlation method ("pearson",  "spearman") to be used as a distance measure for clustering
+##' @param cor.method correlation method ("pearson", "spearman") to be used as a distance measure for clustering
 ##' @param n.samples number of randomly generated matrix samples to test the background distribution of lambda1 on
 ##' @param n.starts number of wPCA EM algorithm starts at each iteration
-##' @param n.internal.shuffles number of internal shuffles to perform (only if interested in set coherence,  which is quite high for clusters by definition)
+##' @param n.internal.shuffles number of internal shuffles to perform (only if interested in set coherence, which is quite high for clusters by definition)
 ##' @param n.cores number of cores to use
 ##' @param verbose verbosity level
 ##' @param plot whether a plot showing distribution of random lambda1 values should be shown (along with the extreme value distribution fit)
@@ -1671,7 +1715,7 @@ pagoda.effective.cells <- function(pwpca, start = NULL) {
 ##' @param method clustering method to be used in determining gene clusters
 ##' @param secondary.correlation whether clustering shuold be performed on the correlation of the correlation matrix instead
 ##' @param n.cells number of cells to use for the randomly generated cluster lambda1 model
-##' @param old.results optionally,  pass old results just to plot the model without recalculating the stats
+##' @param old.results optionally, pass old results just to plot the model without recalculating the stats
 ##' @return a list containing the following fields:
 ##' \itemize{
 ##' \item{clusters} {a list of genes in each cluster values}
@@ -1686,7 +1730,9 @@ pagoda.effective.cells <- function(pwpca, start = NULL) {
 pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.clusters = 150, n.samples = 60, cor.method = "p", n.internal.shuffles = 0, n.starts = 10, n.cores = detectCores(), verbose = 0, plot = F, show.random = F, n.components = 1, method = "ward", secondary.correlation = F, n.cells = ncol(varinfo$mat), old.results = NULL) {
 
   smooth <- 0
-  mat <- varinfo$mat matw <- varinfo$matw batch = varinfo$batch
+  mat <- varinfo$mat
+  matw <- varinfo$matw
+  batch = varinfo$batch
 
   if(trim > 0) {
     mat <- winsorize.matrix(mat, trim = trim)
@@ -1699,7 +1745,8 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
 
   if(!is.null(old.results)) {
     if(verbose) { cat ("reusing old reults for the observed clusters\n")}
-    gcls <- old.results$clusters cl.goc <- old.results$cl.goc
+    gcls <- old.results$clusters
+    cl.goc <- old.results$cl.goc
   } else {
     if(verbose) { cat ("determining gene clusters ...")}
     # actual clusters
@@ -1723,12 +1770,13 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
     gcls <- tapply(rownames(mat)[vi], as.factor(gcll), I)
     names(gcls) <- paste("geneCluster", names(gcls), sep = ".")
 
-    rm(gd, gcl) gc()
+    rm(gd, gcl)
+    gc()
 
     # determine PC1 for the actual clusters
     if(verbose) { cat (" cluster PCA ...")}
     il <- tapply(vi, factor(gcll, levels = c(1:length(gcls))), I)
-    cl.goc <- bplapply(il,  function(ii) {
+    cl.goc <- bplapply(il, function(ii) {
       xp <- bwpca(t(mat[ii, , drop = F]), t(matw[ii, , drop = F]), npcs = n.components, center = F, nstarts = n.starts, smooth = smooth, n.shuffles = n.internal.shuffles)
 
       cs <- unlist(lapply(seq_len(ncol(xp$scores)), function(i) sign(cor(xp$scores[, i], colMeans(mat[ii, , drop = F]*abs(xp$rotation[, i]))))))
@@ -1778,8 +1826,9 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
     }
 
     gcl <- flashClust::hclust(gd, method = method)
-    gcll<-cutree(gcl, n.clusters)
-    rm(gd, gcl) gc()
+    gcll <- cutree(gcl, n.clusters)
+    rm(gd, gcl)
+    gc()
 
     # transpose to save time
     m <- t(m) # matw <- t(matw)
@@ -1789,7 +1838,8 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
       pcaMethods::sDev(pcaMethods::pca(m[, ii], nPcs = 1, center = F))^2
     })
 
-    pathsizes <- unlist(tapply(vi, gcll, length)) names(pathsizes) <- pathsizes
+    pathsizes <- unlist(tapply(vi, gcll, length))
+    names(pathsizes) <- pathsizes
 
     if(show.random) {
       rsdv <- unlist(lapply(names(pathsizes), function(s) {
@@ -1826,7 +1876,7 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
 
   if(plot) {
     require(extRemes)
-    par(mfrow = c(1, 2),  mar = c(3.5, 3.5, 3.5, 1.0),  mgp = c(2, 0.65, 0), cex = 0.9)
+    par(mfrow = c(1, 2), mar = c(3.5, 3.5, 3.5, 1.0), mgp = c(2, 0.65, 0), cex = 0.9)
     smoothScatter(varm$n, varm$var, main = "simulations", xlab = "cluster size", ylab = "PC1 variance")
     if(show.random) {
       points(varm$n, varm$rvar, pch = ".", col = "red")
@@ -1840,7 +1890,8 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
     legend(x = "bottomright", pch = c(1, 19, 19), col = c(1, 4, 2), legend = c("top clusters", "clusters", "random"), bty = "n")
 
     points(varm$n[tci], varm$var[tci], col = 1)
-    extRemes::plot.fevd(xf, type = "density", main = "Gumbel fit") abline(v = 0, lty = 3, col = 4)
+    extRemes::plot.fevd(xf, type = "density", main = "Gumbel fit")
+    abline(v = 0, lty = 3, col = 4)
   }
 
   #pevd(9, loc = xf$results$par[1], scale = xf$results$par[2], lower.tail = F)
@@ -1849,14 +1900,15 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
   return(list(clusters = gcls, xf = xf, tci = tci, cl.goc = cl.goc, varm = varm, clvlm = clvlm, trim = trim))
 }
 
+
 ##' Score statistical significance of gene set and cluster overdispersion
 ##'
-##' Evaluates statistical significance of the gene set and cluster lambda1 values,  returning
-##' either a text table of Z scores,  etc,  a structure containing normalized values of significant
-##' aspects,  or a set of genes underlying the significant aspects.
+##' Evaluates statistical significance of the gene set and cluster lambda1 values, returning
+##' either a text table of Z scores, etc, a structure containing normalized values of significant
+##' aspects, or a set of genes underlying the significant aspects.
 ##' @param pwpca output of pagoda.pathway.wPCA()
 ##' @param clpca output of pagoda.gene.clusters() (optional)
-##' @param n.cells effective number of cells (if not provided,  will be determined using pagoda.effective.cells())
+##' @param n.cells effective number of cells (if not provided, will be determined using pagoda.effective.cells())
 ##' @param z.score Z score to be used as a cutoff for statistically significant pattenrs (defaults to 0.05 P-value
 ##' @param return.table whether a text table showing
 ##' @param return.genes whether a set of genes driving significant aspects should be returned
@@ -1867,7 +1919,7 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
 ##' @param effective.cells.start starting value for the pagoda.effective.cells() call
 ##' @return if return.table = F and return.genes = F (default) returns a list structure containing the following items:
 ##' \itemize{
-##' \item{xv} {a matrix of normalized aspect patterns (rows- significant aspects,  columns- cells}
+##' \item{xv} {a matrix of normalized aspect patterns (rows- significant aspects, columns- cells}
 ##' \item{xvw} { corresponding weight matrix }
 ##' \item{gw} { set of genes driving the significant aspects }
 ##' \item{df} { text table with the significance testing results }
@@ -1890,17 +1942,17 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
   })))
 
   # fix p-to-q mistake in qWishartSpike
-  qWishartSpikeFixed <- function (q,  spike,  ndf = NA,  pdim = NA,  var = 1,  beta = 1,  lower.tail = TRUE,  log.p = FALSE)  {
-    params <- RMTstat::WishartSpikePar(spike,  ndf,  pdim,  var,  beta)
-    qnorm(q,  mean = params$centering,  sd = params$scaling,  lower.tail,  log.p)
+  qWishartSpikeFixed <- function (q, spike, ndf = NA, pdim = NA, var = 1, beta = 1, lower.tail = TRUE, log.p = FALSE)  {
+    params <- RMTstat::WishartSpikePar(spike, ndf, pdim, var, beta)
+    qnorm(q, mean = params$centering, sd = params$scaling, lower.tail, log.p)
   }
 
-  # add right tail approximation to ptw,  which gives up quite early
-  pWishartMaxFixed <- function (q,  ndf,  pdim,  var = 1,  beta = 1,  lower.tail = TRUE) {
-    params <- RMTstat::WishartMaxPar(ndf,  pdim,  var,  beta)
+  # add right tail approximation to ptw, which gives up quite early
+  pWishartMaxFixed <- function (q, ndf, pdim, var = 1, beta = 1, lower.tail = TRUE) {
+    params <- RMTstat::WishartMaxPar(ndf, pdim, var, beta)
     q.tw <- (q - params$centering)/(params$scaling)
-    p <- RMTstat::ptw(q.tw,  beta,  lower.tail,  log.p = TRUE)
-    p[p =  = -Inf] <- pgamma((2/3)*q.tw[p =  = -Inf]^(3/2), 2/3, lower = F, log.p = T) + lgamma(2/3) + log((2/3)^(1/3))
+    p <- RMTstat::ptw(q.tw, beta, lower.tail, log.p = TRUE)
+    p[p == -Inf] <- pgamma((2/3)*q.tw[p == -Inf]^(3/2), 2/3, lower = F, log.p = T) + lgamma(2/3) + log((2/3)^(1/3))
     p
   }
 
@@ -1909,11 +1961,12 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
   #vshift <- mean(pwpca[[bi]]$z[, 1]^2)/pwpca[[bi]]$n
   #ev <- ifelse(spike > 0, qWishartSpikeFixed(0.5, spike, n.cells, pwpca[[bi]]$n, var = basevar, lower.tail = F), RMTstat::qWishartMax(0.5, n.cells, pwpca[[bi]]$n, var = basevar, lower.tail = F))/pwpca[[bi]]$n
   #cat("vshift = ", vshift)
-  vshift <- 0 ev <- 0
+  vshift <- 0
+  ev <- 0
 
   vdf$var <- vdf$var-(vshift-ev)*vdf$n
 
-  #vdf$var[vdf$npc =  = 1] <- vdf$var[vdf$npc =  = 1]-(vshift-ev)*vdf$n[vdf$npc =  = 1]
+  #vdf$var[vdf$npc == 1] <- vdf$var[vdf$npc == 1]-(vshift-ev)*vdf$n[vdf$npc == 1]
   vdf$exp <- RMTstat::qWishartMax(0.5, n.cells, vdf$n, var = basevar, lower.tail = F)
   #vdf$z <- qnorm(pWishartMax(vdf$var, n.cells, vdf$n, log.p = T, lower.tail = F, var = basevar), lower.tail = F, log.p = T)
   vdf$z <- qnorm(pWishartMaxFixed(vdf$var, n.cells, vdf$n, lower.tail = F, var = basevar), lower.tail = F, log.p = T)
@@ -1929,7 +1982,10 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
 
     clvdf <- data.frame(do.call(rbind, lapply(seq_along(clpca$cl.goc), function(i)  {
       vars <- as.numeric((clpca$cl.goc[[i]]$sd)^2)
-      shz <- NA if(!is.null(clpca$cl.goc[[i]]$xp$randvar)) {  shz <- (vars - mean(clpca$cl.goc[[i]]$xp$randvar))/sd(clpca$cl.goc[[i]]$xp$randvar) }
+      shz <- NA
+      if(!is.null(clpca$cl.goc[[i]]$xp$randvar)) {
+          shz <- (vars - mean(clpca$cl.goc[[i]]$xp$randvar))/sd(clpca$cl.goc[[i]]$xp$randvar)
+      }
       cbind(i = i, var = vars, n = clpca$cl.goc[[i]]$n, npc = seq(1:ncol(clpca$cl.goc[[i]]$xp$scores)), shz = shz)
     })))
 
@@ -1955,7 +2011,7 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
   }
 
   if(plot) {
-    par(mfrow = c(1, 1),  mar = c(3.5, 3.5, 1.0, 1.0),  mgp = c(2, 0.65, 0))
+    par(mfrow = c(1, 1), mar = c(3.5, 3.5, 1.0, 1.0), mgp = c(2, 0.65, 0))
     un <- sort(unique(vdf$n))
     on <- order(vdf$n, decreasing = F)
     pccol <- colorRampPalette(c("black", "grey70"), space = "Lab")(max(vdf$npc))
@@ -1981,7 +2037,7 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
 
   if(!is.null(clpca)) { # merge in cluster stats based on their own model
 
-    # merge pwpca,  psd and pm
+    # merge pwpca, psd and pm
     # all processing from here is common
     clvdf$i <- clvdf$i+length(pwpca) # shift cluster ids
     pwpca <- c(pwpca, clpca$cl.goc)
@@ -1991,7 +2047,7 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
   vdf$adj.shz <- qnorm(bh.adjust(pnorm(as.numeric(vdf$shz), lower.tail = F, log = T), log = T), lower.tail = F, log = T)
   #vdf$oe <- vdf$var/vdf$exp
   rs <- (vshift-ev)*vdf$n
-  #rs <- ifelse(vdf$npc =  = 1, (vshift-ev)*vdf$n, 0)
+  #rs <- ifelse(vdf$npc == 1, (vshift-ev)*vdf$n, 0)
   vdf$oe <- (vdf$var+rs)/(vdf$exp+rs)
   #vdf$oe[vdf$oe<0] <- 0
   #vdf$oec <- (vdf$var-vdf$ub.stringent+vdf$exp)/vdf$exp
@@ -2005,9 +2061,9 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
 
   df <- data.frame(name = names(pwpca)[vdf$i], npc = vdf$npc, n = vdf$n, score = vdf$oe, z = vdf$z, adj.z = vdf$cz, sh.z = vdf$shz, adj.sh.z = vdf$adj.shz, stringsAsFactors = F)
   if(adjust.scores) {
-    vdf$valid <- vdf$cz  >  =  z.score
+    vdf$valid <- vdf$cz  >=  z.score
   } else {
-    vdf$valid <- vdf$z  >  =  z.score
+    vdf$valid <- vdf$z  >=  z.score
   }
 
   if(return.table) {
@@ -2018,7 +2074,8 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
 
   # determine genes driving significant pathways
   # return genes within top 2/3rds of PC loading
-  gl <- lapply(which(vdf$valid), function(i) { s <- abs(pwpca[[vdf[i, "i"]]]$xp$rotation[, vdf[i, "npc"]] ) s[s >  = max(s)/3] })
+  gl <- lapply(which(vdf$valid), function(i) { s <- abs(pwpca[[vdf[i, "i"]]]$xp$rotation[, vdf[i, "npc"]] )
+  s[s >= max(s)/3] })
   gw <- tapply(abs(unlist(gl)), as.factor(unlist(lapply(gl, names))), max)
   if(return.genes) {
     return(gw)
@@ -2067,24 +2124,30 @@ pagoda.cluster.cells <- function(tam, varinfo, method = "ward", include.aspects 
 
   gw <- gw/gw
   mi <- match(names(gw), rownames(varinfo$mat))
-  wgm <- varinfo$mat[mi, ] wgm <- wgm*as.numeric(gw) wgwm <- varinfo$matw[mi, ]
+  wgm <- varinfo$mat[mi, ]
+  wgm <- wgm*as.numeric(gw)
+  wgwm <- varinfo$matw[mi, ]
 
   if(include.aspects) {
     if(verbose) { message("clustering cells based on ", nrow(wgm), " genes and ", nrow(tam$xv), " aspect patterns")}
-    wgm <- rbind(wgm, tam$xv) wgwm <- rbind(wgwm, tam$xvw)
+    wgm <- rbind(wgm, tam$xv)
+    wgwm <- rbind(wgwm, tam$xvw)
   } else {
     if(verbose) { message("clustering cells based on ", nrow(wgm), " genes")}
   }
 
   snam <- sample(colnames(wgm))
 
-  dm <- .Call("matWCorr",  wgm, wgwm,  PACKAGE = "scde") dm <- 1-dm rownames(dm) <- colnames(dm) <- colnames(wgm)
+  dm <- .Call("matWCorr", wgm, wgwm, PACKAGE = "scde")
+  dm <- 1-dm
+  rownames(dm) <- colnames(dm) <- colnames(wgm)
   wcord <- stats::as.dist(dm, upper = T)
   hc <- hclust(wcord, method = method)
 
   if(is.element("cba", installed.packages()[, 1])) {
     co <- cba::order.optimal(wcord, hc$merge)
-    hc$merge <- co$merge hc$order <- co$order
+    hc$merge <- co$merge
+    hc$order <- co$order
   }
   if(return.details) {
     return(list(clustering = hc, distance = wcord, genes = gw))
@@ -2107,9 +2170,9 @@ pagoda.cluster.cells <- function(tam, varinfo, method = "ward", include.aspects 
 ##' @param corr.power power to which the product of loading and score correlation is raised
 ##' @param n.cores number of cores to use during processing
 ##' @param ... additional arguments are passed to the pagoda.view.aspects() method during plotting
-##' @return a list structure analogous to that returned by pagoda.top.aspects(),  but with addition of a $cnam element containing a list of aspects summarized by each row of the new (reduced) $xv and $xvw
+##' @return a list structure analogous to that returned by pagoda.top.aspects(), but with addition of a $cnam element containing a list of aspects summarized by each row of the new (reduced) $xv and $xvw
 ##' @export
-pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = F, cluster.method = "complete", distance.threshold = 0.01, corr.power = 4, n.cores = detectCores(),  abs = T,  ...) {
+pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = F, cluster.method = "complete", distance.threshold = 0.01, corr.power = 4, n.cores = detectCores(), abs = T, ...) {
   pclc <- pathway.pc.correlation.distance(c(pwpca, clpca$cl.goc), tam$xv, target.ndf = 100, n.cores = n.cores)
   cda <- cor(t(tam$xv))
   if(abs) {
@@ -2131,7 +2194,7 @@ pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = F,
 
   if(plot) {
     sc <- sample(colors(), length(levels(ctf)), replace = T)
-    view.aspects(tam$xv, row.clustering = y,  row.cols = sc[as.integer(ctf)],  ...)
+    view.aspects(tam$xv, row.clustering = y, row.cols = sc[as.integer(ctf)], ...)
   }
 
   # collapsed names
@@ -2141,14 +2204,17 @@ pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = F,
     cnam <- tapply(rownames(tam$xv), ctf, I)
   }
   names(cnam) <- rownames(xvl$d)
-  tam$xv <- xvl$d tam$xvw <- xvl$w tam$cnam <- cnam
+  tam$xv <- xvl$d
+  tam$xvw <- xvl$w
+  tam$cnam <- cnam
   return(tam)
 }
 
-pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.method = "complete", distance = NULL, weighted.correlation = T, plot = F,  top = Inf,  trim = 0,  abs = F,  ...) {
+pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.method = "complete", distance = NULL, weighted.correlation = T, plot = F, top = Inf, trim = 0, abs = F, ...) {
   if(is.null(distance)) {
     if(weighted.correlation) {
-      distance <- .Call("matWCorr",  t(tamr$xv), t(tamr$xvw),  PACKAGE = "scde")  rownames(distance) <- colnames(distance) <- rownames(tamr$xv)
+      distance <- .Call("matWCorr", t(tamr$xv), t(tamr$xvw), PACKAGE = "scde")
+      rownames(distance) <- colnames(distance) <- rownames(tamr$xv)
       if(abs) {
         distance <- stats::as.dist(1-abs(distance), upper = T)
       } else {
@@ -2174,7 +2240,7 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
 
   if(plot) {
     sc <- sample(colors(), length(levels(ctf)), replace = T)
-    scde:::view.aspects(tamr$xv, row.clustering = y,  row.cols = sc[as.integer(ctf)],  ...)
+    scde:::view.aspects(tamr$xv, row.clustering = y, row.cols = sc[as.integer(ctf)], ...)
   }
 
   # collapsed names
@@ -2191,33 +2257,38 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
   vi <- order(rcmvar, decreasing = T)[1:min(length(rcmvar), top)]
 
   tamr2 <- tamr
-  tamr2$xv <- xvl$d[vi, ] tamr2$xvw <- xvl$w[vi, ] tamr2$cnam <- cnam[vi]
+  tamr2$xv <- xvl$d[vi, ]
+  tamr2$xvw <- xvl$w[vi, ]
+  tamr2$cnam <- cnam[vi]
   return(tamr2)
 }
 
-pagoda.view.aspects <- function(tamr,  row.clustering = hclust(dist(tamr$xv)),  top = Inf,  ...) {
+pagoda.view.aspects <- function(tamr, row.clustering = hclust(dist(tamr$xv)), top = Inf, ...) {
   if(is.finite(top)) {
     rcmvar <- apply(tamr$xv, 1, var)
     vi <- order(rcmvar, decreasing = T)[1:min(length(rcmvar), top)]
-    tamr$xv <- tamr$xv[vi, ] tamr$xvw <- tamr$xvw[vi, ] tamr$cnam <- tamr$cnam[vi]
+    tamr$xv <- tamr$xv[vi, ]
+    tamr$xvw <- tamr$xvw[vi, ]
+    tamr$cnam <- tamr$cnam[vi]
   }
 
-  view.aspects(tamr$xv,  row.clustering = row.clustering,  ... )
+  view.aspects(tamr$xv, row.clustering = row.clustering, ... )
 }
 
-view.aspects <- function(mat, row.clustering = NA, cell.clustering = NA, zlim = c(-1, 1)*quantile(mat, p = 0.95), row.cols = NULL, col.cols = NULL, cols = colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(1024),  show.row.var.colors = T,  top = Inf,  ...) {
-  #row.cols,  col.cols are matrices for now
+view.aspects <- function(mat, row.clustering = NA, cell.clustering = NA, zlim = c(-1, 1)*quantile(mat, p = 0.95), row.cols = NULL, col.cols = NULL, cols = colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(1024), show.row.var.colors = T, top = Inf, ...) {
+  #row.cols, col.cols are matrices for now
   rcmvar <- apply(mat, 1, var)
-  mat[mat<zlim[1]] <- zlim[1] mat[mat > zlim[2]] <- zlim[2]
-  if(class(row.clustering) =  = "hclust") { row.clustering <- as.dendrogram(row.clustering) }
-  if(class(cell.clustering) =  = "hclust") { cell.clustering <- as.dendrogram(cell.clustering) }
+  mat[mat<zlim[1]] <- zlim[1]
+  mat[mat > zlim[2]] <- zlim[2]
+  if(class(row.clustering) == "hclust") { row.clustering <- as.dendrogram(row.clustering) }
+  if(class(cell.clustering) == "hclust") { cell.clustering <- as.dendrogram(cell.clustering) }
   if(show.row.var.colors) {
     if(is.null(row.cols)) {
       icols <- colorRampPalette(c("white", "black"), space = "Lab")(1024)[1023*(rcmvar/max(rcmvar))+1]
       row.cols <- cbind(var = icols)
     }
   }
-  my.heatmap2(mat, Rowv = row.clustering, Colv = cell.clustering, zlim = zlim, RowSideColors = row.cols, ColSideColors = col.cols,  col = cols,  ...)
+  my.heatmap2(mat, Rowv = row.clustering, Colv = cell.clustering, zlim = zlim, RowSideColors = row.cols, ColSideColors = col.cols, col = cols, ...)
 }
 
 
@@ -2228,13 +2299,18 @@ make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.co
   if(is.null(cell.clustering)) {
     cell.clustering <- pagoda.cluster.cells(tam, varinfo)
   }
-  if(is.null(row.clustering)) { row.clustering <- hclust(dist(tamr$xv)) row.clustering$order <- rev(row.clustering$order) }
-
+  if(is.null(row.clustering)) {
+    row.clustering <- hclust(dist(tamr$xv))
+    row.clustering$order <- rev(row.clustering$order)
+  }
 
   #fct - which tam row in which tamr$xv cluster.. remap tamr$cnams
   cn <- tamr$cnam
-  fct <- rep(1:length(cn), lapply(cn, length)) names(fct) <- unlist(cn) fct <- fct[rownames(tam$xv)]
-  rcm <- tamr$xv rownames(rcm) <- as.character(1:nrow(rcm))
+  fct <- rep(1:length(cn), lapply(cn, length))
+  names(fct) <- unlist(cn)
+  fct <- fct[rownames(tam$xv)]
+  rcm <- tamr$xv
+  rownames(rcm) <- as.character(1:nrow(rcm))
   fres <- list(hvc = cell.clustering, tvc = row.clustering, rcm = rcm, zlim2 = zlim, matvar = apply(tam$xv, 1, sd), ct = fct, matrcmcor = rep(1, nrow(tam$xv)), cols = colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(1024), colcol = col.cols)
 
   # gene df
@@ -2250,8 +2326,10 @@ make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.co
     df$desc <- ""
   }
   min.z <- -9
-  df$z[df$z<min.z] <- min.z df$adj.z[df$adj.z<min.z] <- min.z
-  df$sh.z[df$sh.z<min.z] <- min.z df$adj.sh.z[df$adj.sh.z<min.z] <- min.z
+  df$z[df$z<min.z] <- min.z
+  df$adj.z[df$adj.z<min.z] <- min.z
+  df$sh.z[df$sh.z<min.z] <- min.z
+  df$adj.sh.z[df$adj.sh.z<min.z] <- min.z
   df <- data.frame(id = paste("#PC", df$npc, "# ", df$name, sep = ""), npc = df$npc, n = df$n, score = df$score, Z = df$z, aZ = df$adj.z, sh.Z = df$sh.z, sh.aZ = df$adj.sh.z, name = paste(df$name, df$desc))
 
   df <- df[order(df$score, decreasing = T), ]
@@ -2265,24 +2343,29 @@ make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.co
 
 
 one.sided.test.id <- function(id, nam1, nam2, ifm, dm, prior, difference.prior = 0.5, bootstrap = T, n.samples = 1e3, show.plots = T, return.posterior = F, return.both = F) {
-  gr <- 10^prior$x - 1 gr[gr<0] <- 0
+  gr <- 10^prior$x - 1
+  gr[gr<0] <- 0
   lpp <- get.rep.set.general.model.logposteriors(ifm[[nam1]], dm[rep(id, length(gr)), names(ifm[[nam1]])], data.frame(fpm = gr), grid.weight = prior$grid.weight)
   ldp <- get.rep.set.general.model.logposteriors(ifm[[nam2]], dm[rep(id, length(gr)), names(ifm[[nam2]])], data.frame(fpm = gr), grid.weight = prior$grid.weight)
 
   if(bootstrap) {
     pjp <- do.call(cbind, lapply(seq_along(n.samples), function(i) {
       pjp <- rowSums(lpp[, sample(1:ncol(lpp), replace = T)])
-      pjp <- exp(pjp-max(pjp)) pjp <- pjp/sum(pjp)
-      pjp
+      pjp <- exp(pjp-max(pjp))
+      pjp <- pjp/sum(pjp)
+      return(pjp)
     }))
-    pjp <- rowSums(pjp) pjp <- log(pjp/sum(pjp))
+    pjp <- rowSums(pjp)
+    pjp <- log(pjp/sum(pjp))
 
     djp <- do.call(cbind, lapply(seq_along(n.samples), function(i) {
       djp <- rowSums(ldp[, sample(1:ncol(ldp), replace = T)])
-      djp <- exp(djp-max(djp)) djp <- djp/sum(djp)
-      djp
+      djp <- exp(djp-max(djp))
+      djp <- djp/sum(djp)
+      return(djp)
     }))
-    djp <- rowSums(djp) djp <- log(djp/sum(djp))
+    djp <- rowSums(djp)
+    djp <- log(djp/sum(djp))
   } else {
     pjp <- rowSums(lpp)
     djp <- rowSums(ldp)
@@ -2298,7 +2381,6 @@ one.sided.test.id <- function(id, nam1, nam2, ifm, dm, prior, difference.prior =
   djpc <- exp(prior$lp+djp)
   djpc <- djpc/sum(djpc)
 
-
   if(show.plots || return.posterior || return.both) {
     # calculate log-fold-change posterior
     n <- length(pjpc)
@@ -2310,7 +2392,7 @@ one.sided.test.id <- function(id, nam1, nam2, ifm, dm, prior, difference.prior =
   if(show.plots) {
     # show each posterior
     layout(matrix(c(1:3), 3, 1, byrow = T), heights = c(2, 1, 2), widths = c(1), F)
-    par(mar = c(2.5, 3.5, 2.5, 3.5),  mgp = c(1.5, 0.65, 0),  cex = 0.9)
+    par(mar = c(2.5, 3.5, 2.5, 3.5), mgp = c(1.5, 0.65, 0), cex = 0.9)
     jpr <- range(c(0, pjpc), na.rm = T)
     pp <- exp(lpp)
     cols <- rainbow(dim(pp)[2], s = 0.8)
@@ -2323,7 +2405,7 @@ one.sided.test.id <- function(id, nam1, nam2, ifm, dm, prior, difference.prior =
     mtext("joint posterior", side = 4, outer = F, line = 2)
 
     # ratio plot
-    par(mar = c(2.5, 3.5, 0.5, 3.5),  mgp = c(1.5, 0.65, 0),  cex = 0.9)
+    par(mar = c(2.5, 3.5, 0.5, 3.5), mgp = c(1.5, 0.65, 0), cex = 0.9)
     plot(fcp$v, fcp$p, xlab = "log10 expression ratio", ylab = "ratio posterior", type = 'l', lwd = 2, main = "")
     r.mle <- fcp$v[which.max(fcp$p)]
     r.lb <- max(which(cumsum(fcp$p)<0.025))
@@ -2336,7 +2418,7 @@ one.sided.test.id <- function(id, nam1, nam2, ifm, dm, prior, difference.prior =
 
     # distal plot
     dp <- exp(ldp)
-    par(mar = c(2.5, 3.5, 2.5, 3.5),  mgp = c(1.5, 0.65, 0),  cex = 0.9)
+    par(mar = c(2.5, 3.5, 2.5, 3.5), mgp = c(1.5, 0.65, 0), cex = 0.9)
     jpr <- range(c(0, djpc), na.rm = T)
     cols <- rainbow(dim(dp)[2], s = 0.8)
     plot(c(), c(), xlim = range(prior$x), ylim = range(c(0, dp)), xlab = "expression level", ylab = "individual posterior", main = nam2)
@@ -2382,7 +2464,7 @@ calculate.crossfit.models <- function(counts, groups, min.count.threshold = 4, n
 
       # make sure there's at least min.pairs.per.cell pairs for each cell
       cl <- cl[, unique(c(sample(1:ncol(cl), max.pairs),
-                         unlist(lapply(ids, function(id) sample(which(colSums(cl =  = id) > 0), min.pairs.per.cell)))))]
+                         unlist(lapply(ids, function(id) sample(which(colSums(cl == id) > 0), min.pairs.per.cell)))))]
     }
     cl
   }))
@@ -2414,10 +2496,13 @@ calculate.crossfit.models <- function(counts, groups, min.count.threshold = 4, n
         mo2 <- FLXMRnb2glmC(c1~1+I(log(c2+1)), components = c(2))
         mo3 <- FLXMRnb2glmC(c2~1+I(log(c1+1)), components = c(2))
         mo4 <- FLXMRglmCf(c2~1, family = "poisson", components = c(3), mu = log(zero.lambda))
-        m1 <- mc.stepFlexmix(c1~1, data = df[vi, ], k = 3, model = list(mo1, mo2, mo3, mo4), control = list(verbose = verbose, minprior = min.prior), concomitant = FLXPmultinom(~I((log(c1+1)+log(c2+1))/2)+1), cluster = cbind(df$c1[vi]< = min.count.threshold, df$c1[vi] > min.count.threshold & df$c2[vi] > min.count.threshold, df$c2[vi]< = min.count.threshold), nrep = nrep)
+        m1 <- mc.stepFlexmix(c1~1, data = df[vi, ], k = 3, model = list(mo1, mo2, mo3, mo4), control = list(verbose = verbose, minprior = min.prior), concomitant = FLXPmultinom(~I((log(c1+1)+log(c2+1))/2)+1), cluster = cbind(df$c1[vi]<= min.count.threshold, df$c1[vi] > min.count.threshold & df$c2[vi] > min.count.threshold, df$c2[vi]<= min.count.threshold), nrep = nrep)
 
         # reduce return size
-        m1@posterior <- lapply(m1@posterior, function(m) { rownames(m) <- NULL return(m)})
+        m1@posterior <- lapply(m1@posterior, function(m) {
+            rownames(m) <- NULL
+            return(m)
+        })
         #rownames(m1@concomitant@x) <- NULL
         m1@concomitant@x <- matrix()
         m1@model <- lapply(m1@model, function(mod) {
@@ -2433,11 +2518,11 @@ calculate.crossfit.models <- function(counts, groups, min.count.threshold = 4, n
         #parent.env(environment(m1@components[[2]][[1]]@logLik)) <- globalenv()
         #parent.env(environment(m1@components[[2]][[2]]@logLik)) <- globalenv()
 
-
-
         names(vi) <- NULL
-        pm <- posterior(m1)[, c(1, 3)] rownames(pm) <- NULL
-        cl <- clusters(m1) names(cl) <- NULL
+        pm <- posterior(m1)[, c(1, 3)]
+        rownames(pm) <- NULL
+        cl <- clusters(m1)
+        names(cl) <- NULL
         gc()
       } else {
         # use min.count.threshold to quickly segment the points
@@ -2446,7 +2531,7 @@ calculate.crossfit.models <- function(counts, groups, min.count.threshold = 4, n
         cl[df[vi, 2]<min.count.threshold] <- 3
         cl[df[vi, 1]<min.count.threshold & df[vi, 2]<min.count.threshold] <- 0
         names(cl) <- NULL
-        pm <- cbind(ifelse(cl =  = 1, threshold.prior, 1-threshold.prior), ifelse(cl =  = 3, threshold.prior, 1-threshold.prior))
+        pm <- cbind(ifelse(cl == 1, threshold.prior, 1-threshold.prior), ifelse(cl == 3, threshold.prior, 1-threshold.prior))
         rownames(pm) <- NULL
       }
       rli <- list(ii = ii, clusters = cl, posterior = pm, vi = vi)
@@ -2468,40 +2553,44 @@ calculate.crossfit.models <- function(counts, groups, min.count.threshold = 4, n
   if(save.plots) {
     #require(Cairo) require(RColorBrewer)
     tapply(colnames(counts), groups, function(ids) {
-      cl <- combn(ids, 2) group <- as.character(groups[ids[1]])
+      cl <- combn(ids, 2)
+      group <- as.character(groups[ids[1]])
       # log-scale hist
-      t.pairs.panel.hist <- function(x,  i = NULL,  ...) {
-        usr <- par("usr") on.exit(par(usr))
-        par(usr = c(usr[1:2],  0,  1.5) )
+      t.pairs.panel.hist <- function(x, i = NULL, ...) {
+        usr <- par("usr")
+        on.exit(par(usr))
+        par(usr = c(usr[1:2], 0, 1.5) )
         vi <- x > 0
-        h <- hist(x,  plot = FALSE)
-        breaks <- h$breaks nB <- length(breaks)
-        y <- log10(h$counts) y <- y/max(y)
-        rect(breaks[-nB],  0,  breaks[-1],  y,  col = "gray60",  ...)
+        h <- hist(x, plot = FALSE)
+        breaks <- h$breaks
+        nB <- length(breaks)
+        y <- log10(h$counts)
+        y <- y/max(y)
+        rect(breaks[-nB], 0, breaks[-1], y, col = "gray60", ...)
       }
-      t.pairs.smoothScatter.spearman <- function(x, y, i = NULL,  j = NULL,  cex = 0.8,  ...) {
+      t.pairs.smoothScatter.spearman <- function(x, y, i = NULL, j = NULL, cex = 0.8, ...) {
         vi <- x > 0 | y > 0
-        smoothScatter(x[vi], y[vi],  add = T,  useRaster = T,  ...)
+        smoothScatter(x[vi], y[vi], add = T, useRaster = T, ...)
         legend(x = "bottomright", legend = paste("sr = ", round(cor(x[vi], y[vi], method = "spearman"), 2), sep = ""), bty = "n", cex = cex)
       }
       # component assignment scatter
-      t.panel.component.scatter <- function(x, y, i, j,  cex = 0.8,  ...) {
+      t.panel.component.scatter <- function(x, y, i, j, cex = 0.8, ...) {
         if(!is.null(rl[[paste(ids[i], "vs", ids[j], sep = ".")]])) {
           m1 <- rl[[paste(ids[i], "vs", ids[j], sep = ".")]]
           # forward plot
           vi <- which(x > 0 | y > 0)
-          ci <- vi[m1$clusters =  = 1]
+          ci <- vi[m1$clusters == 1]
           if(length(ci) > 3) {
-            points(x[ci], y[ci], pch = ".", col = densCols(x[ci], y[ci], colramp = colorRampPalette(brewer.pal(9,  "Reds")[-(1:3)])), cex = 2)
+            points(x[ci], y[ci], pch = ".", col = densCols(x[ci], y[ci], colramp = colorRampPalette(brewer.pal(9, "Reds")[-(1:3)])), cex = 2)
           }
 
-          ci <- vi[m1$clusters =  = 3]
+          ci <- vi[m1$clusters == 3]
           if(length(ci) > 3) {
-            points(x[ci], y[ci], pch = ".", col = densCols(x[ci], y[ci], colramp = colorRampPalette(brewer.pal(9,  "Greens")[-(1:3)])), cex = 2)
+            points(x[ci], y[ci], pch = ".", col = densCols(x[ci], y[ci], colramp = colorRampPalette(brewer.pal(9, "Greens")[-(1:3)])), cex = 2)
           }
-          ci <- vi[m1$clusters =  = 2]
+          ci <- vi[m1$clusters == 2]
           if(length(ci) > 3) {
-            points(x[ci], y[ci], pch = ".", col = densCols(x[ci], y[ci], colramp = colorRampPalette(brewer.pal(9,  "Blues")[-(1:3)])), cex = 2)
+            points(x[ci], y[ci], pch = ".", col = densCols(x[ci], y[ci], colramp = colorRampPalette(brewer.pal(9, "Blues")[-(1:3)])), cex = 2)
           }
           legend(x = "topleft", pch = c(19), col = "blue", legend = paste("sr = ", round(cor(x[ci], y[ci], method = "spearman"), 2), sep = ""), bty = "n", cex = cex)
           legend(x = "bottomright", pch = c(rep(19, 3)), col = c("red", "blue", "green"), legend = paste(round(unlist(tapply(m1$clusters, factor(m1$clusters, levels = c(1, 2, 3)), length))*100/length(vi), 1), "%", sep = ""), bty = "n", cex = cex)
@@ -2510,18 +2599,18 @@ calculate.crossfit.models <- function(counts, groups, min.count.threshold = 4, n
           m1 <- rl[[paste(ids[j], "vs", ids[i], sep = ".")]]
           # reverse plot
           vi <- which(x > 0 | y > 0)
-          ci <- vi[m1$clusters =  = 3]
+          ci <- vi[m1$clusters == 3]
           if(length(ci) > 3) {
-            points(x[ci], y[ci], pch = ".", col = densCols(x[ci], y[ci], colramp = colorRampPalette(brewer.pal(9,  "Reds")[-(1:3)])), cex = 2)
+            points(x[ci], y[ci], pch = ".", col = densCols(x[ci], y[ci], colramp = colorRampPalette(brewer.pal(9, "Reds")[-(1:3)])), cex = 2)
           }
 
-          ci <- vi[m1$clusters =  = 1]
+          ci <- vi[m1$clusters == 1]
           if(length(ci) > 3) {
-            points(x[ci], y[ci], pch = ".", col = densCols(x[ci], y[ci], colramp = colorRampPalette(brewer.pal(9,  "Greens")[-(1:3)])), cex = 2)
+            points(x[ci], y[ci], pch = ".", col = densCols(x[ci], y[ci], colramp = colorRampPalette(brewer.pal(9, "Greens")[-(1:3)])), cex = 2)
           }
-          ci <- vi[m1$clusters =  = 2]
+          ci <- vi[m1$clusters == 2]
           if(length(ci) > 3) {
-            points(x[ci], y[ci], pch = ".", col = densCols(x[ci], y[ci], colramp = colorRampPalette(brewer.pal(9,  "Blues")[-(1:3)])), cex = 2)
+            points(x[ci], y[ci], pch = ".", col = densCols(x[ci], y[ci], colramp = colorRampPalette(brewer.pal(9, "Blues")[-(1:3)])), cex = 2)
           }
           legend(x = "topleft", pch = c(19), col = "blue", legend = paste("sr = ", round(cor(x[ci], y[ci], method = "spearman"), 2), sep = ""), bty = "n", cex = cex)
           legend(x = "bottomright", pch = c(rep(19, 3)), col = c("red", "blue", "green"), legend = paste(round(unlist(tapply(m1$clusters, factor(m1$clusters, levels = c(3, 2, 1)), length))*100/length(vi), 1), "%", sep = ""), bty = "n", cex = cex)
@@ -2547,14 +2636,21 @@ calculate.crossfit.models <- function(counts, groups, min.count.threshold = 4, n
 # cfm - cross-fit models (return of calculate.crossfit.models())
 # vil - optional binary matrix (corresponding to counts) with 0s marking likely drop-out observations
 # return value - library size vector in millions of reads
-estimate.library.sizes <- function(counts, cfm, groups, min.size.entries = min(nrow(counts), 2e3), verbose = 0, return.details = F,  vil = NULL,  ...) {
+estimate.library.sizes <- function(counts, cfm, groups, min.size.entries = min(nrow(counts), 2e3), verbose = 0, return.details = F, vil = NULL, ...) {
   #require(edgeR)
   names(groups) <- colnames(counts)
   # determine the set fragments that were not attributed to failure in any cross-comparison
   if(is.null(vil)) {
-    #x <- lapply(cfm, function(d) { ll <- list(!(1:nrow(counts)) %in% d$vi[which(d$clusters! = 1)], !(1:nrow(counts)) %in% d$vi[which(d$clusters! = 3)]) names(ll) <- d$ii return(ll) })
-    x <- lapply(cfm, function(d) { ll <- list(!(1:nrow(counts)) %in% d$vi[which(d$clusters > 1)], !(1:nrow(counts)) %in% d$vi[which(d$clusters %% 3 ! = 0)]) names(ll) <- d$ii return(ll) })
-    vil <- do.call(cbind, tapply(unlist(x, recursive = F), factor(unlist(lapply(x, names)), levels = colnames(counts)[!is.na(groups)]), function(l) { x <- rowSums(do.call(cbind, l), na.rm = F) =  = 0 x[is.na(x)] <- F return(x) }))
+    #x <- lapply(cfm, function(d) { ll <- list(!(1:nrow(counts)) %in% d$vi[which(d$clusters != 1)], !(1:nrow(counts)) %in% d$vi[which(d$clusters != 3)]) names(ll) <- d$ii return(ll) })
+    x <- lapply(cfm, function(d) { ll <- list(!(1:nrow(counts)) %in% d$vi[which(d$clusters > 1)], !(1:nrow(counts)) %in% d$vi[which(d$clusters %% 3  != 0)])
+      names(ll) <- d$ii
+      return(ll)
+    })
+    vil <- do.call(cbind, tapply(unlist(x, recursive = F), factor(unlist(lapply(x, names)), levels = colnames(counts)[!is.na(groups)]), function(l) {
+      x <- rowSums(do.call(cbind, l), na.rm = F) == 0
+      x[is.na(x)] <- F
+      return(x)
+    }))
   }
 
   # order entries by the number of non-failed experiments,
@@ -2565,11 +2661,11 @@ estimate.library.sizes <- function(counts, cfm, groups, min.size.entries = min(n
     stop("The number of valid genes (", nrow(ni), ") is lower then the specified min.size.entries (", min.size.entries, "). Please either increase min.size.entries or lower min.nonfailed parameter to increase the number of valid genes")
   }
   if(ni[min.size.entries, 2]<ncol(vil)) {
-    # if the min.size.entries -th gene has failures,  take only min.size.entries genes
+    # if the min.size.entries -th gene has failures, take only min.size.entries genes
     gis <- ni[1:min.size.entries, 1]
   } else {
     # otherwise take all genes that have not failed in any experiment
-    gis <- ni[ni[, 2] =  = ncol(vil), 1]
+    gis <- ni[ni[, 2] == ncol(vil), 1]
   }
 
   if(verbose)  message(paste("adjusting library size based on", length(gis), "entries"))
@@ -2597,7 +2693,7 @@ estimate.signal.prior <- function(fpkm, fail, length.out = 400, show.plot = F, p
   gep$y <- gep$y+pseudo.count/nrow(fpkm) # pseudo-count
   gep$y <- gep$y/sum(gep$y)
   if(show.plot) {
-    par(mfrow = c(1, 1), mar = c(3.5, 3.5, 3.5, 0.5),  mgp = c(2.0, 0.65, 0),  cex = 0.9)
+    par(mfrow = c(1, 1), mar = c(3.5, 3.5, 3.5, 0.5), mgp = c(2.0, 0.65, 0), cex = 0.9)
     plot(gep$x, gep$y, col = 4, panel.first = abline(h = 0, lty = 2), type = 'l', xlab = "log10( signal+1 )", ylab = "probability density", main = "signal prior")
   }
   gep$lp <- log(gep$y)
@@ -2614,14 +2710,15 @@ estimate.signal.prior <- function(fpkm, fail, length.out = 400, show.plot = F, p
 # cfm - cross-fit models (return of calculate.crossfit.models())
 # min.nonfailed - minimal number of non-failed observations required for a gene to be used in the final model fitting
 #  A minimum of either the specified value or number of experiments -1 will be used.
-calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose = 0, n.cores = 12, min.nonfailed = 2, min.size.entries = 2e3, zero.count.threshold = 10, save.plots = T,  linear.fit = F,  return.compressed.models = F,   local.theta.fit = F,  theta.fit.range = c(1e-2, 1e2),  ...) {
+calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose = 0, n.cores = 12, min.nonfailed = 2, min.size.entries = 2e3, zero.count.threshold = 10, save.plots = T, linear.fit = F, return.compressed.models = F,  local.theta.fit = F, theta.fit.range = c(1e-2, 1e2), ...) {
   names(groups) <- colnames(counts)
   # determine library size discarding non-zero entries
   ls <- estimate.library.sizes(counts, cfm, groups, min.size.entries, verbose = verbose, return.details = T)
 
   # fit three-component models to unique pairs within each group
   mll <- tapply(colnames(counts), groups, function(ids) {
-    cl <- combn(ids, 2) group <- as.character(groups[ids[1]])
+    cl <- combn(ids, 2)
+    group <- as.character(groups[ids[1]])
 
     # incorporate cross-fit paris from cfm
     pn1 <- unlist(apply(cl, 2, function(ii) paste(ii, collapse = ".vs.")))
@@ -2638,28 +2735,39 @@ calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose =
       }
       # use a subset
       if(sum(vi) > 3) {
-        pn1 <- pn1[vi] pn2 <- pn2[vi] vi <- vi[vi]
+        pn1 <- pn1[vi]
+        pn2 <- pn2[vi]
+        vi <- vi[vi]
       } else {
         stop("less than 3 valid cross-fit pairs are availabile! giving up.")
       }
     }
 
     #rl <- cfm[vi]
-    vi.names<-names(cfm)[names(cfm) %in% c(pn1,  pn2)] ### a similar selection was done like this in calculate.crossfit.models() function
+    vi.names<-names(cfm)[names(cfm) %in% c(pn1, pn2)] ### a similar selection was done like this in calculate.crossfit.models() function
     rl <- cfm[vi.names]  ### with this subselection we select only sample pairs within the current group (e.g. pairs of ES)
 
     # determine the set genes that were not attributed to failure in any cross-comparison
-    x <- lapply(rl, function(d) { ll <- list(!(1:nrow(counts)) %in% d$vi[which(d$clusters > 1)], !(1:nrow(counts)) %in% d$vi[which(d$clusters %% 3 ! = 0)]) names(ll) <- d$ii return(ll) })
-    vil <- do.call(cbind, tapply(unlist(x, recursive = F), factor(unlist(lapply(x, names)), levels = ids), function(l) { x <- rowSums(do.call(cbind, l), na.rm = F) =  = 0 x[is.na(x)] <- F return(x) }))
+    x <- lapply(rl, function(d) {
+        ll <- list(!(1:nrow(counts)) %in% d$vi[which(d$clusters > 1)], !(1:nrow(counts)) %in% d$vi[which(d$clusters %% 3  != 0)])
+        names(ll) <- d$ii
+        return(ll)
+    })
+    vil <- do.call(cbind, tapply(unlist(x, recursive = F), factor(unlist(lapply(x, names)), levels = ids), function(l) {
+        x <- rowSums(do.call(cbind, l), na.rm = F) == 0
+        x[is.na(x)] <- F
+        return(x)
+    }))
 
-    #x <- lapply(rl, function(d) { ll <- list((d$failures =  = 1), (d$failures =  = 2)) names(ll) <- d$ii return(ll) })
-    #vil <- do.call(cbind, tapply(unlist(x, recursive = F), factor(unlist(lapply(x, names)), levels = ids), function(l) { x <- rowSums(do.call(cbind, l), na.rm = F) =  = 0 x[is.na(x)] <- F return(x) }))
+    #x <- lapply(rl, function(d) { ll <- list((d$failures == 1), (d$failures == 2)) names(ll) <- d$ii return(ll) })
+    #vil <- do.call(cbind, tapply(unlist(x, recursive = F), factor(unlist(lapply(x, names)), levels = ids), function(l) { x <- rowSums(do.call(cbind, l), na.rm = F) == 0 x[is.na(x)] <- F return(x) }))
 
     t.ls <- ls$ls[ids]
-    adjust <- NULL if(!is.null(ls$adjustments)) { ls$adjustments[[groups[ids[1]]]] }
+    adjust <- NULL
+    if(!is.null(ls$adjustments)) { ls$adjustments[[groups[ids[1]]]] }
     # fit two-NB2 mixture for each experiment
-    if(verbose)  message(paste("fitting", group, "models:"))
-    gc() gc()
+    if(verbose) { message(paste("fitting", group, "models:")) }
+    gc()
 
     # pair cell name matrix
     nm <- do.call(rbind, lapply(rl, function(x) x$ii))
@@ -2667,7 +2775,7 @@ calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose =
     ml <- bplapply(seq_along(ids), function(i) {
       if(verbose)  message(paste(i, ":", ids[i]))
       # determine genes with sufficient number of non-failed observations in other experiments
-      vi <- which(rowSums(vil[, -i, drop = F]) >  = min(length(ids)-1, min.nonfailed))
+      vi <- which(rowSums(vil[, -i, drop = F]) >= min(length(ids)-1, min.nonfailed))
       fpm <- rowMeans(t(t(counts[vi, ids[-i], drop = F])/(t.ls[-i])))
       if(!is.null(adjust)) { fpm <- adjust(fpm)  } # adjust for between-group systematic differences
       df <- data.frame(count = counts[vi, ids[i]], fpm = fpm)
@@ -2675,27 +2783,33 @@ calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose =
       # reconstruct failure prior for the cell by averaging across
       # cross-cell comparisons where the cell did participate
       cp <- exp(rowMeans(log(cbind(
-        do.call(cbind, lapply(rl[which(nm[, 1] =  = ids[i])], function(d) {
-          ivi <- rep(NA, nrow(counts)) ivi[d$vi] <- 1:length(d$vi)
-        d$posterior[ivi[vi], 1]
-      })),
-            do.call(cbind, lapply(rl[which(nm[, 2] =  = ids[i])], function(d) {
-        ivi <- rep(NA, nrow(counts)) ivi[d$vi] <- 1:length(d$vi)
-        d$posterior[ivi[vi], 2]
-      })))), na.rm = T))
+        do.call(cbind, lapply(rl[which(nm[, 1] == ids[i])], function(d) {
+          ivi <- rep(NA, nrow(counts))
+          ivi[d$vi] <- 1:length(d$vi)
+          d$posterior[ivi[vi], 1]
+        })),
+        do.call(cbind, lapply(rl[which(nm[, 2] == ids[i])], function(d) {
+          ivi <- rep(NA, nrow(counts))
+          ivi[d$vi] <- 1:length(d$vi)
+          d$posterior[ivi[vi], 2]
+        }))
+      )), na.rm = T))
       cp <- cbind(cp, 1-cp)
 
-      nai <- which(is.na(cp[, 1])) cp[nai, 1] <- 1-(1e-10) cp[nai, 2] <- (1e-10)
+      nai <- which(is.na(cp[, 1]))
+      cp[nai, 1] <- 1-(1e-10)
+      cp[nai, 2] <- (1e-10)
       if(linear.fit) {
-        m1 <- fit.nb2gth.mixture.model(df, prior = cp, nrep = 1, verbose = verbose, zero.count.threshold = zero.count.threshold,  full.theta.range = theta.fit.range, theta.fit.range = theta.fit.range, use.constant.theta.fit = !local.theta.fit,  ...)
+        m1 <- fit.nb2gth.mixture.model(df, prior = cp, nrep = 1, verbose = verbose, zero.count.threshold = zero.count.threshold, full.theta.range = theta.fit.range, theta.fit.range = theta.fit.range, use.constant.theta.fit = !local.theta.fit, ...)
       } else {
-        m1 <- fit.nb2.mixture.model(df, prior = cp, nrep = nrep, verbose = verbose, zero.count.threshold = zero.count.threshold,  ...)
+        m1 <- fit.nb2.mixture.model(df, prior = cp, nrep = nrep, verbose = verbose, zero.count.threshold = zero.count.threshold, ...)
       }
 
       if(return.compressed.models) {
         v <- get.compressed.v1.model(m1)
         cl <- clusters(m1)
-        rm(m1) gc()
+        rm(m1)
+        gc()
         return(list(model = v, clusters = cl))
       }
 
@@ -2715,21 +2829,27 @@ calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose =
 
       # make a clean copy of the internal environment
       t.cleanenv <- function(comp) {
-        el <- list2env(as.list(environment(comp@logLik),  all.names = TRUE), parent = globalenv())
-        ep <- list2env(as.list(environment(comp@predict),  all.names = TRUE), parent = globalenv())
-        pf <- get("predict", envir = el) environment(pf) <- ep  assign("predict", pf, envir = el)
-        pf <- get("predict", envir = ep) environment(pf) <- ep  assign("predict", pf, envir = ep)
+        el <- list2env(as.list(environment(comp@logLik), all.names = TRUE), parent = globalenv())
+        ep <- list2env(as.list(environment(comp@predict), all.names = TRUE), parent = globalenv())
+        pf <- get("predict", envir = el)
+        environment(pf) <- ep
+        assign("predict", pf, envir = el)
+        pf <- get("predict", envir = ep)
+        environment(pf) <- ep
+        assign("predict", pf, envir = ep)
 
-        pf <- get("logLik", envir = el) environment(pf) <- el  assign("logLik", pf, envir = el)
-        pf <- get("logLik", envir = ep) environment(pf) <- el  assign("logLik", pf, envir = ep)
+        pf <- get("logLik", envir = el)
+        environment(pf) <- el
+        assign("logLik", pf, envir = el)
+        pf <- get("logLik", envir = ep)
+        environment(pf) <- el
+        assign("logLik", pf, envir = ep)
 
         environment(comp@logLik) <- el
         environment(comp@predict) <- ep
         comp
       }
       m1@components <- lapply(m1@components, function(cl) lapply(cl, t.cleanenv))
-
-
 
       # clean up the formula environment (was causing multithreading problems)
       rm(list = ls(env = attr(m1@concomitant@formula, ".Environment")), envir = attr(m1@concomitant@formula, ".Environment"))
@@ -2740,7 +2860,7 @@ calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose =
 
     # check if there were errors in the multithreaded portion
     lapply(seq_along(ml), function(i) {
-      if(class(ml[[i]]) =  = "try-error") {
+      if(class(ml[[i]]) == "try-error") {
         message("ERROR encountered in building a model for cell ", ids[i], ":")
         message(ml[[i]])
         tryCatch(stop(paste("ERROR encountered in building a model for cell ", ids[i])), error = function(e) stop(e))
@@ -2753,9 +2873,9 @@ calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose =
       pdf(file = paste(group, "model.fits.pdf", sep = "."), width = ifelse(linear.fit, 15, 13), height = 4)
       #l <- layout(matrix(seq(1, 4*length(ids)), nrow = length(ids), byrow = T), rep(c(1, 1, 1, 0.5), length(ids)), rep(1, 4*length(ids)), FALSE)
       l <- layout(matrix(seq(1, 4), nrow = 1, byrow = T), rep(c(1, 1, 1, ifelse(linear.fit, 1, 0.5)), 1), rep(1, 4), FALSE)
-      par(mar = c(3.5, 3.5, 3.5, 0.5),  mgp = c(2.0, 0.65, 0),  cex = 0.9)
+      par(mar = c(3.5, 3.5, 3.5, 0.5), mgp = c(2.0, 0.65, 0), cex = 0.9)
       invisible(lapply(seq_along(ids), function(i) {
-        vi <- which(rowSums(vil[, -i, drop = F]) >  = min(length(ids)-1, min.nonfailed))
+        vi <- which(rowSums(vil[, -i, drop = F]) >= min(length(ids)-1, min.nonfailed))
         df <- data.frame(count = counts[vi, ids[i]], fpm = rowMeans(t(t(counts[vi, ids[-i], drop = F])/(t.ls[-i]))))
         plot.nb2.mixture.fit(ml[[i]], df, en = ids[i], do.par = F, compressed.models = return.compressed.models)
       }))
@@ -2787,14 +2907,14 @@ get.compressed.v1.models <- function(ifml) {
 }
 # get a vector representation of a given model
 get.compressed.v1.model <- function(m1) {
-    if(class(m1@model[[2]]) =  = "FLXMRnb2gthC") { # linear fit model
-        v <- c(m1@concomitant@coef[c(1:2), 2],  get("coef", environment(m1@components[[1]][[1]]@predict)))
+    if(class(m1@model[[2]]) == "FLXMRnb2gthC") { # linear fit model
+        v <- c(m1@concomitant@coef[c(1:2), 2], get("coef", environment(m1@components[[1]][[1]]@predict)))
         names(v) <- c("conc.b", "conc.a", "fail.r")
         vth <- m1@components[[2]][[2]]@parameters$coef
         # translate mu regression from linear to log model
         v <- c(v, c("corr.b" = log(as.numeric(vth["corr.a"])), "corr.a" = 1), vth[-match("corr.a", names(vth))], "conc.a2" = m1@concomitant@coef[3, 2])
     } else { # original publication model
-        v <- c(m1@concomitant@coef[, 2],  get("coef", environment(m1@components[[1]][[1]]@predict)), m1@components[[2]][[2]]@parameters$coef, get("theta", environment(m1@components[[2]][[2]]@predict)))
+        v <- c(m1@concomitant@coef[, 2], get("coef", environment(m1@components[[1]][[1]]@predict)), m1@components[[2]][[2]]@parameters$coef, get("theta", environment(m1@components[[2]][[2]]@predict)))
         names(v) <- c("conc.b", "conc.a", "fail.r", "corr.b", "corr.a", "corr.theta")
     }
     v
@@ -2802,17 +2922,19 @@ get.compressed.v1.model <- function(m1) {
 
 # calculates posterior matrices (log scale) for a set of ifm models
 calculate.posterior.matrices <- function(dat, ifm, prior, n.cores = 32, inner.cores = 4, outer.cores = round(n.cores/inner.cores)) {
-  marginals <- data.frame(fpm = 10^prior$x - 1) marginals$fpm[marginals$fpm<0] <- 0
+  marginals <- data.frame(fpm = 10^prior$x - 1)
+  marginals$fpm[marginals$fpm<0] <- 0
   lapply(ifm, function(group.ifm) {
     bplapply(sn(names(group.ifm)), function(nam) {
       df <- get.exp.logposterior.matrix(group.ifm[[nam]], dat[, nam], marginals, n.cores = inner.cores, grid.weight = prior$grid.weight)
-      rownames(df) <- rownames(dat) colnames(df) <- as.character(prior$x)
-      df
+      rownames(df) <- rownames(dat)
+      colnames(df) <- as.character(prior$x)
+      return(df)
     }, BPPARAM = MulticoreParam(workers = n.cores))
   })
 }
 
-sample.posterior <- function(dat,  ifm,  prior,  n.samples = 1, n.cores = 32) {
+sample.posterior <- function(dat, ifm, prior, n.samples = 1, n.cores = 32) {
   marginals <- data.frame(fpm = 10^prior$x - 1)
   lapply(ifm, function(group.ifm) {
     bplapply(sn(names(group.ifm)), function(nam) {
@@ -2839,7 +2961,7 @@ calculate.joint.posterior.matrix <- function(lmatl, n.samples = 100, bootstrap =
 
 # calculate joint posterior of a group defined by a composition vector
 # lmatll - list of posterior matrix lists (as obtained from calculate.posterior.matrices)
-# composition - a named vector,  indicating the number of samples that should be drawn from each element of lmatll to compose a group
+# composition - a named vector, indicating the number of samples that should be drawn from each element of lmatll to compose a group
 calculate.batch.joint.posterior.matrix <- function(lmatll, composition, n.samples = 100, n.cores = 15) {
   # reorder composition vector to match lmatll names
   jpl <- bplapply(seq_len(n.cores), function(i) jpmatLogBatchBoot(lmatll, composition[names(lmatll)], ceiling(n.samples/n.cores), i), BPPARAM = MulticoreParam(workers = n.cores))
@@ -2856,10 +2978,11 @@ calculate.batch.joint.posterior.matrix <- function(lmatll, composition, n.sample
 calculate.ratio.posterior <- function(pmat1, pmat2, prior, n.cores = 15, skip.prior.adjustment = F) {
   n <- length(prior$x)
   if(!skip.prior.adjustment) {
-    pmat1 <- t(t(pmat1)*prior$y) pmat2 <- t(t(pmat2)*prior$y)
+    pmat1 <- t(t(pmat1)*prior$y)
+    pmat2 <- t(t(pmat2)*prior$y)
   }
 
-  chunk <- function(x,  n) split(x,  sort(rank(x) %% n))
+  chunk <- function(x, n) split(x, sort(rank(x) %% n))
   if(n.cores > 1) {
     x <- do.call(rbind, bplapply(chunk(1:nrow(pmat1), n.cores*5), function(ii) matSlideMult(pmat1[ii, , drop = F], pmat2[ii, , drop = F]), BPPARAM = MulticoreParam(workers = n.cores)))
   } else {
@@ -2869,13 +2992,15 @@ calculate.ratio.posterior <- function(pmat1, pmat2, prior, n.cores = 15, skip.pr
 
   #x <- cbind(do.call(cbind, mclapply(n:2, function(i) rowSums(pmat1[, 1:(n-i+1), drop = F]*pmat2[, i:n, drop = F]), mc.cores = n.cores)), do.call(cbind, mclapply(1:n, function(i) rowSums(pmat1[, i:n, drop = F]*pmat2[, 1:(n-i+1), drop = F]), mc.cores = n.cores)))
   rv <- seq(prior$x[1]-prior$x[length(prior$x)], prior$x[length(prior$x)]-prior$x[1], length = length(prior$x)*2-1)
-  colnames(x) <- as.character(rv) rownames(x) <- rownames(pmat1)
-  x
+  colnames(x) <- as.character(rv)
+  rownames(x) <- rownames(pmat1)
+  return(x)
 }
 
 # quick utility function to get the difference Z score from the ratio posterior
 get.ratio.posterior.Z.score <- function(rpost, min.p = 1e-15) {
-  rpost <- rpost+min.p rpost <- rpost/rowSums(rpost)
+  rpost <- rpost+min.p
+  rpost <- rpost/rowSums(rpost)
   zi <- which.min(abs(as.numeric(colnames(rpost))))
   gs <- rowSums(rpost[, 1:(zi-1), drop = F])
   zl <- pmin(0, qnorm(gs, lower.tail = F))
@@ -2885,18 +3010,18 @@ get.ratio.posterior.Z.score <- function(rpost, min.p = 1e-15) {
 
 
 # calculate a joint posterior matrix with bootstrap
-jpmatLogBoot <- function(Matl,  Nboot,  Seed) {
-  .Call("jpmatLogBoot",  Matl,  Nboot,  Seed,  PACKAGE = "scde")
+jpmatLogBoot <- function(Matl, Nboot, Seed) {
+  .Call("jpmatLogBoot", Matl, Nboot, Seed, PACKAGE = "scde")
 }
 
-# similar to the above,  but compiles joint by sampling a pre-set
+# similar to the above, but compiles joint by sampling a pre-set
 # number of different types (defined by Comp factor)
-jpmatLogBatchBoot <- function(Matll,  Comp,  Nboot,  Seed) {
-  .Call("jpmatLogBatchBoot",  Matll,  Comp,  Nboot,  Seed,  PACKAGE = "scde")
+jpmatLogBatchBoot <- function(Matll, Comp, Nboot, Seed) {
+  .Call("jpmatLogBatchBoot", Matll, Comp, Nboot, Seed, PACKAGE = "scde")
 }
 
-matSlideMult <- function(Mat1,  Mat2) {
-  .Call("matSlideMult",  Mat1,  Mat2,  PACKAGE = "scde")
+matSlideMult <- function(Mat1, Mat2) {
+  .Call("matSlideMult", Mat1, Mat2, PACKAGE = "scde")
 }
 
 
@@ -2922,7 +3047,7 @@ calculate.failure.lfpm.p <- function(lfpm, ifm, n.cores = 32) {
 
 # get expected fpm from counts
 get.fpm.estimates <- function(m1, counts) {
-  if(class(m1@components[[2]][[2]]) =  = "FLXcomponentE") {
+  if(class(m1@components[[2]][[2]]) == "FLXcomponentE") {
     # gam do inverse interpolation
     b1 <- get("b1", envir = environment(m1@components[[2]][[2]]@predict))
     z <- approx(x = b1$fitted.values, y = b1$model$x, xout = counts, rule = 1:2)$y
@@ -2982,33 +3107,33 @@ get.fpm.estimates <- function(m1, counts) {
 }
 
 # rdf : count/fpm data frame
-fit.nb2.mixture.model <- function(rdf, zero.count.threshold = 10, prior = cbind(rdf$count< = zero.count.threshold, rdf$count > zero.count.threshold), nrep = 3, iter = 50, verbose = 0,  background.rate = 0.1,  ...) {
+fit.nb2.mixture.model <- function(rdf, zero.count.threshold = 10, prior = cbind(rdf$count<= zero.count.threshold, rdf$count > zero.count.threshold), nrep = 3, iter = 50, verbose = 0, background.rate = 0.1, ...) {
   #mo1 <- FLXMRnb2glmC(count~1, components = c(1), theta.range = c(0.5, Inf))
   #mo1 <- FLXMRglmCf(count~1, components = c(1), family = "poisson", mu = 0.01)
   #mo1 <- FLXMRglmC(count~1, components = c(1), family = "poisson")
   mo1 <- FLXMRglmCf(count~1, family = "poisson", components = c(1), mu = log(background.rate))
   mo2 <- FLXMRnb2glmC(count~1+I(log(fpm)), components = c(2), theta.range = c(0.5, Inf))
 
-  m1 <- mc.stepFlexmix(count~1, data = rdf, k = 2, model = list(mo1, mo2), control = list(verbose = verbose, minprior = 0, iter = iter), concomitant = FLXPmultinom(~I(log(fpm))+1), cluster = prior, nrep = nrep,  ...)
+  m1 <- mc.stepFlexmix(count~1, data = rdf, k = 2, model = list(mo1, mo2), control = list(verbose = verbose, minprior = 0, iter = iter), concomitant = FLXPmultinom(~I(log(fpm))+1), cluster = prior, nrep = nrep, ...)
 
   # check if the theta was underfit
-  if(get("theta", envir = environment(m1@components[[2]][[2]]@logLik)) =  = 0.5) {
+  if(get("theta", envir = environment(m1@components[[2]][[2]]@logLik)) == 0.5) {
     # refit theta
-    sci <- clusters(m1) =  = 2
-    fit <- glm.nb.fit(m1@model[[2]]@x[sci, , drop = F], m1@model[[2]]@y[sci],  weights = rep(1, sum(sci)),  offset = c(), init.theta = 0.5)
+    sci <- clusters(m1) == 2
+    fit <- glm.nb.fit(m1@model[[2]]@x[sci, , drop = F], m1@model[[2]]@y[sci], weights = rep(1, sum(sci)), offset = c(), init.theta = 0.5)
     assign("theta", value = fit$theta, envir = environment(m1@components[[2]][[2]]@logLik))
     m1@components[[2]][[2]]@parameters$coef <- fit$coefficients
     assign("coef", value = fit$coefficients, envir = environment(m1@components[[2]][[2]]@logLik))
-    message("WARNING: theta was underfit,  new theta = ", fit$theta)
+    message("WARNING: theta was underfit, new theta = ", fit$theta)
   }
 
   return(m1)
 }
 
 
-fit.nb2gth.mixture.model <- function(rdf, zero.count.threshold = 10, prior = as.integer(rdf$count >  = zero.count.threshold | rdf$fpm<median(rdf$fpm[rdf$count<zero.count.threshold]))+1, nrep = 0, verbose = 0 , full.theta.range = c(1e-2, 1e2),  theta.fit.range = full.theta.range, theta.sp = 1e-2, use.constant.theta.fit = F, alpha.weight.power = 1/2, iter = 50) {
+fit.nb2gth.mixture.model <- function(rdf, zero.count.threshold = 10, prior = as.integer(rdf$count >= zero.count.threshold | rdf$fpm<median(rdf$fpm[rdf$count<zero.count.threshold]))+1, nrep = 0, verbose = 0 , full.theta.range = c(1e-2, 1e2), theta.fit.range = full.theta.range, theta.sp = 1e-2, use.constant.theta.fit = F, alpha.weight.power = 1/2, iter = 50) {
   #mo1 <- FLXMRglmC(count~1, components = c(1), family = "poisson")
-    #matrix(cbind(ifelse(rdf$count< = zero.count.threshold, 0.95, 0.05), ifelse(rdf$count > zero.count.threshold, 0.95, 0.05)))
+    #matrix(cbind(ifelse(rdf$count<= zero.count.threshold, 0.95, 0.05), ifelse(rdf$count > zero.count.threshold, 0.95, 0.05)))
   mo1 <- FLXMRglmCf(count~1, family = "poisson", components = c(1), mu = log(0.1))
   mo2 <- FLXMRnb2gthC(count~0+fpm, components = c(2), full.theta.range = full.theta.range, theta.fit.range = theta.fit.range, theta.fit.sp = theta.sp, constant.theta = use.constant.theta.fit, alpha.weight.power = alpha.weight.power)
   m1 <- mc.stepFlexmix(count~1, data = rdf, k = 2, model = list(mo1, mo2), control = list(verbose = verbose, minprior = 0, iter = iter), concomitant = FLXPmultinom(~I(log(fpm))+I(log(fpm)^2)+1), cluster = prior, nrep = nrep)
@@ -3025,21 +3150,21 @@ plot.nb2.mixture.fit <- function(m1, rdf, en, do.par = T, n.zero.windows = 50, c
   if(do.par) {
     CairoPNG(filename = paste(en, "model.fit.png", sep = "."), width = 800, height = 300)
     l <- layout(matrix(c(1:4), 1, 4, byrow = T), c(1, 1, 1, 0.5), rep(1, 4), FALSE)
-    par(mar = c(3.5, 3.5, 3.5, 0.5),  mgp = c(2.0, 0.65, 0),  cex = 0.9)
+    par(mar = c(3.5, 3.5, 3.5, 0.5), mgp = c(2.0, 0.65, 0), cex = 0.9)
   }
   smoothScatter(log10(rdf$fpm+1), log10(rdf$count+1), xlab = "expected FPM", ylab = "observed counts", main = paste(en, "scatter", sep = " : "), bandwidth = bandwidth)
 
   plot(c(), c(), xlim = range(log10(rdf$fpm+1)), ylim = range(log10(rdf$count+1)), xlab = "expected FPM", ylab = "observed counts", main = paste(en, "components", sep = " : "))
   if(compressed.models) {
-    vpi <- m1$clusters =  = 1
+    vpi <- m1$clusters == 1
   } else {
-    vpi <- clusters(m1) =  = 1
+    vpi <- clusters(m1) == 1
   }
   if(sum(vpi) > 2){
-    points(log10(rdf$fpm[vpi]+1), log10(rdf$count[vpi]+1), pch = ".", col = densCols(log10(rdf$fpm[vpi]+1), log10(rdf$count[vpi]+1), colramp = colorRampPalette(brewer.pal(9,  "Reds")[-(1:3)])), cex = 2)
+    points(log10(rdf$fpm[vpi]+1), log10(rdf$count[vpi]+1), pch = ".", col = densCols(log10(rdf$fpm[vpi]+1), log10(rdf$count[vpi]+1), colramp = colorRampPalette(brewer.pal(9, "Reds")[-(1:3)])), cex = 2)
   }
   if(sum(!vpi) > 2){
-    points(log10(rdf$fpm[!vpi]+1), log10(rdf$count[!vpi]+1), pch = ".", col = densCols(log10(rdf$fpm[!vpi]+1), log10(rdf$count[!vpi]+1), colramp = colorRampPalette(brewer.pal(9,  "Blues")[-(1:3)])), cex = 2)
+    points(log10(rdf$fpm[!vpi]+1), log10(rdf$count[!vpi]+1), pch = ".", col = densCols(log10(rdf$fpm[!vpi]+1), log10(rdf$count[!vpi]+1), colramp = colorRampPalette(brewer.pal(9, "Blues")[-(1:3)])), cex = 2)
     # show fit
     fpmo <- order(rdf$fpm[!vpi], decreasing = F)
     if(compressed.models) {
@@ -3047,7 +3172,8 @@ plot.nb2.mixture.fit <- function(m1, rdf, en, do.par = T, n.zero.windows = 50, c
       lines(log10(rdf$fpm[!vpi]+1)[fpmo], log10(exp(m1$model[["corr.a"]]*log(rdf$fpm[!vpi])[fpmo]+m1$model[["corr.b"]])+1))
       if("corr.ltheta.b" %in% names(m1$model)) {
         # show 95% CI for the non-constant theta fit
-        xval <- range(log(rdf$fpm[!vpi])) xval <- seq(xval[1], xval[2], length.out = 100)
+        xval <- range(log(rdf$fpm[!vpi]))
+        xval <- seq(xval[1], xval[2], length.out = 100)
         thetas <- get.corr.theta(m1$model, xval)
         #thetas <- exp(m1$model[["corr.ltheta.i"]]+m1$model[["corr.ltheta.lfpm"]]*xval)
         #thetas <- (1+exp((m1$model["corr.ltheta.lfpm.m"] - xval)/m1$model["corr.ltheta.lfpm.s"]))/m1$model["corr.ltheta.a"]
@@ -3073,7 +3199,7 @@ plot.nb2.mixture.fit <- function(m1, rdf, en, do.par = T, n.zero.windows = 50, c
     rdf$cluster <- clusters(m1)
   }
   rdf <- rdf[order(rdf$fpm, decreasing = F), ]
-  fdf <- data.frame(y = rowMeans(matrix(log10(rdf$fpm[1:(n.zero.windows*bw)]+1), ncol = bw, byrow = T)), zf = rowMeans(matrix(as.integer(rdf$cluster[1:(n.zero.windows*bw)] =  = 1), ncol = bw, byrow = T)))
+  fdf <- data.frame(y = rowMeans(matrix(log10(rdf$fpm[1:(n.zero.windows*bw)]+1), ncol = bw, byrow = T)), zf = rowMeans(matrix(as.integer(rdf$cluster[1:(n.zero.windows*bw)] == 1), ncol = bw, byrow = T)))
   plot(zf~y, fdf, ylim = c(0, 1), xlim = range(na.omit(log10(rdf$fpm+1))), xlab = "expected FPM", ylab = "fraction of failures", main = "failure model", pch = 16, cex = 0.5)
   ol <- order(rdf$fpm, decreasing = T)
   if(compressed.models) {
@@ -3096,10 +3222,12 @@ plot.nb2.mixture.fit <- function(m1, rdf, en, do.par = T, n.zero.windows = 50, c
       alpha <- ((rdf$count[!vpi]/p-1)^2 - 1/p)
       trng <- log(range(c(m1$model[["corr.theta"]], thetas))) + 0.5*c(-1, 1)
       # restrict the alpha to the confines of the esimated theta values
-      alpha[alpha > exp(-trng[1])] <- exp(-trng[1]) alpha[alpha<exp(-trng[2])] <- exp(-trng[2])
+      alpha[alpha > exp(-trng[1])] <- exp(-trng[1])
+      alpha[alpha<exp(-trng[2])] <- exp(-trng[2])
 
       smoothScatter(log10(rdf$fpm[!vpi]+1), -log10(alpha), ylim = trng*log10(exp(1)), xlab = "FPM", ylab = "log10(theta)", main = "overdispersion", bandwidth = bandwidth)
-      xval <- range(log(rdf$fpm[!vpi])) xval <- seq(xval[1], xval[2], length.out = 100)
+      xval <- range(log(rdf$fpm[!vpi]))
+      xval <- seq(xval[1], xval[2], length.out = 100)
       #thetas <- exp(m1$model[["corr.ltheta.i"]]+m1$model[["corr.ltheta.lfpm"]]*xval)
       thetas <- get.corr.theta(m1$model, xval)
       #plot(log10(exp(xval)+1), log(thetas), ylim = trng, type = 'l', xlab = "FPM", ylab = "log(theta)", main = "overdispersion")
@@ -3121,8 +3249,8 @@ plot.nb2.mixture.fit <- function(m1, rdf, en, do.par = T, n.zero.windows = 50, c
 
 
 ## from nb2.crossmodels.r
-mc.stepFlexmix <- function(...,  nrep = 5, n.cores = nrep, return.all = F) {
-  if(nrep =  = 1) {
+mc.stepFlexmix <- function(..., nrep = 5, n.cores = nrep, return.all = F) {
+  if(nrep == 1) {
     return(flexmix(...))
   } else {
     ml <- bplapply(seq_len(nrep), function(m) {
@@ -3161,7 +3289,7 @@ get.rep.set.posteriors <- function(xr, df, ml, rescale = T) {
 # corresponding counts
 # ml - model list
 # counts - observed count matrix corresponding to the models
-# marginals - marginal info,  to which model-specific count will be appended
+# marginals - marginal info, to which model-specific count will be appended
 get.rep.set.general.model.posteriors <- function(ml, counts, marginals, grid.weight = rep(1, nrow(marginals)), rescale = T, min.p = 0) {
   pl <- do.call(cbind, lapply(seq_along(ml), function(i) {
     marginals$count <- counts[, i]
@@ -3206,7 +3334,7 @@ get.component.model.lik <- function(m1, newdata) {
   return(cp*cm0)
 }
 
-# same as above,  but keeping log resolution
+# same as above, but keeping log resolution
 get.component.model.loglik <- function(m1, newdata) {
   # core models
   cp <- do.call("+", lapply(seq_along(m1@model), function(i) {
@@ -3226,7 +3354,7 @@ get.component.model.loglik <- function(m1, newdata) {
 }
 
 
-# returns a matrix of posterior values,  with rows corresponding to genes,  and
+# returns a matrix of posterior values, with rows corresponding to genes, and
 # columns to marginal values (prior fpkm grid)
 # m1 - model
 # counts - vector of per-gene counts for a given experiment
@@ -3262,19 +3390,22 @@ get.exp.logposterior.matrix <- function(m1, counts, marginals, grid.weight = rep
   df
 }
 
-# similar to get.exp.posterior.matrix(),  but returns inverse ecdf list
+# similar to get.exp.posterior.matrix(), but returns inverse ecdf list
 # note that x must be supplied
 get.exp.posterior.samples <- function(pmatl, prior, n.samples = 1, n.cores = 32) {
   sl <- bplapply(seq_along(pmatl), function(i) t(apply(pmatl[[i]], 1, function(d) approxfun(cumsum(d), prior$x, rule = 2)(runif(n.samples)))), BPPARAM = MulticoreParam(workers = n.cores))
   names(sl) <- names(pmatl)
   sl
 }
-# similar to get.exp.posterior.matrix(),  but returns inverse ecdf list
+# similar to get.exp.posterior.matrix(), but returns inverse ecdf list
 # note that x must be supplied
 get.exp.sample <- function(m1, counts, marginals, prior.x, n, rescale = T) {
   do.call(rbind, bplapply(counts, function(x) {
     tpr <- log.row.sums(get.component.model.loglik(m1, cbind(marginals, count = rep(x, nrow(marginals)))))
-    if(rescale)  { tpr <- exp(tpr-max(tpr)) tpr <- tpr/sum(tpr) }
+    if(rescale)  {
+        tpr <- exp(tpr-max(tpr))
+        tpr <- tpr/sum(tpr)
+    }
     return(approxfun(cumsum(tpr), prior.x, rule = 2)(runif(n)))
   }, BPPARAM = MulticoreParam(workers = 10)))
 }
@@ -3300,7 +3431,7 @@ get.concomitant.prob <- function(m1, counts = NULL, lfpm = NULL) {
 
 # copied from flexmix
 log.row.sums <- function(m) {
-  M <- m[cbind(seq_len(nrow(m)),  max.col(m, ties.method = "first"))] # "random" doesnt' work!
+  M <- m[cbind(seq_len(nrow(m)), max.col(m, ties.method = "first"))] # "random" doesnt' work!
   M + log(rowSums(exp(m - M)))
 }
 
@@ -3308,15 +3439,15 @@ log.row.sums <- function(m) {
 ### from nb1gml.R
 
 # nb2 glm implementation
-setClass("FLXMRnb2glm",  contains = "FLXMRglm", package = "flexmix")
+setClass("FLXMRnb2glm", contains = "FLXMRglm", package = "flexmix")
 
-FLXMRnb2glm <- function(formula = . ~ .,   offset = NULL,  init.theta = NULL,  theta.range = c(0, 1e3),  ...) {
+FLXMRnb2glm <- function(formula = . ~ .,  offset = NULL, init.theta = NULL, theta.range = c(0, 1e3), ...) {
   #require(MASS)
     family <- "negative.binomial"
-    glmrefit <- function(x,  y,  w) {
+    glmrefit <- function(x, y, w) {
       #message("FLXRnb2glm:refit:nb2")
-      fit <- c(glm.nb.fit(x,  y,  weights = w,  offset = offset, init.theta = init.theta, theta.range = theta.range),
-               list(call = sys.call(),  offset = offset, control = eval(formals(glm.fit)$control), method = "glm.fit")
+      fit <- c(glm.nb.fit(x, y, weights = w, offset = offset, init.theta = init.theta, theta.range = theta.range),
+               list(call = sys.call(), offset = offset, control = eval(formals(glm.fit)$control), method = "glm.fit")
                )
       fit$df.null <- sum(w) + fit$df.null - fit$df.residual - fit$rank
       fit$df.residual <- sum(w) - fit$rank
@@ -3324,18 +3455,18 @@ FLXMRnb2glm <- function(formula = . ~ .,   offset = NULL,  init.theta = NULL,  t
       fit
     }
 
-    z <- new("FLXMRnb2glm",  weighted = TRUE,  formula = formula,
-             name = "FLXMRnb2glm",  offset = offset,
-             family = family,  refit = glmrefit)
+    z <- new("FLXMRnb2glm", weighted = TRUE, formula = formula,
+             name = "FLXMRnb2glm", offset = offset,
+             family = family, refit = glmrefit)
     z@preproc.y <- function(x) {
       if (ncol(x)  >  1)
-        stop(paste("for the",  family,  "family y must be univariate"))
+        stop(paste("for the", family, "family y must be univariate"))
       x
     }
 
 
     z@defineComponent <- expression({
-      predict <- function(x,  ...) {
+      predict <- function(x, ...) {
         dotarg = list(...)
         #message("FLXRnb2glm:predict:nb2")
         if("offset" %in% names(dotarg)) offset <- dotarg$offset
@@ -3343,48 +3474,47 @@ FLXMRnb2glm <- function(formula = . ~ .,   offset = NULL,  init.theta = NULL,  t
         if (!is.null(offset)) p <- p + offset
         negative.binomial(theta)$linkinv(p)
       }
-      logLik <- function(x,  y,  ...) {
-        r <- dnbinom(y,  size = theta, mu = predict(x,  ...),  log = TRUE)
+      logLik <- function(x, y, ...) {
+        r <- dnbinom(y, size = theta, mu = predict(x, ...), log = TRUE)
         #message(paste("FLXRnb2glm:loglik:nb2", theta))
         return(r)
       }
 
       new("FLXcomponent",
           parameters = list(coef = coef),
-          logLik = logLik,  predict = predict,
+          logLik = logLik, predict = predict,
           df = df)
     })
 
-    z@fit <- function(x,  y,  w){
+    z@fit <- function(x, y, w){
       #message("FLXRnb2glm:fit:nb2")
-      w[y< = 1] <- w[y< = 1]/1e6 # focus the fit on non-failed genes
-      fit <- glm.nb.fit(x,  y,  weights = w,  offset = offset, init.theta = init.theta, theta.range = theta.range)
+      w[y<= 1] <- w[y<= 1]/1e6 # focus the fit on non-failed genes
+      fit <- glm.nb.fit(x, y, weights = w, offset = offset, init.theta = init.theta, theta.range = theta.range)
       # an ugly hack to restrict to non-negative slopes
-      cf <- coef(fit) if(cf[2]<0) { cf <- c(mean(y*w)/sum(w), 0) }
-      with(list(coef = cf,  df = ncol(x),  theta = fit$theta,  offset = offset),
-           eval(z@defineComponent))
+      cf <- coef(fit)
+      if(cf[2]<0) { cf <- c(mean(y*w)/sum(w), 0) }
+      with(list(coef = cf, df = ncol(x), theta = fit$theta, offset = offset), eval(z@defineComponent))
     }
 
-    z
-
+    return(z)
 }
 
 # component-specific version of the nb2glm
 # nb2 glm implementation
-setClass("FLXMRnb2glmC",  representation(vci = "ANY"),  contains = "FLXMRnb2glm", package = "flexmix")
+setClass("FLXMRnb2glmC", representation(vci = "ANY"), contains = "FLXMRnb2glm", package = "flexmix")
 
 # components is used to specify the indecies of the components on which likelihood will be
 # evlauated. Others will return as loglik of 0
-FLXMRnb2glmC <- function(... ,  components = NULL) {
+FLXMRnb2glmC <- function(... , components = NULL) {
     #require(MASS)
-    z <- new("FLXMRnb2glmC",  FLXMRnb2glm(...), vci = components)
+    z <- new("FLXMRnb2glmC", FLXMRnb2glm(...), vci = components)
     z
 }
 
 
 
 # nb2 glm implementation
-setClass("FLXMRnb2gam",  contains = "FLXMRglm", package = "flexmix")
+setClass("FLXMRnb2gam", contains = "FLXMRglm", package = "flexmix")
 
 setClass("FLXcomponentE",
          representation(refitTheta = "function",
@@ -3393,8 +3523,8 @@ setClass("FLXcomponentE",
 
 
 
-# nb2 implementation with a simple trimmed-mean/median slope,  and a gam theta fit
-setClass("FLXMRnb2gth",  contains = "FLXMRglm", package = "flexmix")
+# nb2 implementation with a simple trimmed-mean/median slope, and a gam theta fit
+setClass("FLXMRnb2gth", contains = "FLXMRglm", package = "flexmix")
 
 # get values of theta for a given set of models and expression (log-scale) magnitudes
 get.corr.theta <- function(model, lfpm, theta.range = NULL) {
@@ -3417,31 +3547,32 @@ get.corr.theta <- function(model, lfpm, theta.range = NULL) {
 }
 
 
-FLXMRnb2gth <- function(formula = . ~ .,   offset = NULL,  full.theta.range = c(1e-3, 1e3),  theta.fit.range = full.theta.range*c(1e-1, 1e1), theta.fit.sp = c(-1),  constant.theta = F,  slope.mean.trim = 0.4,  alpha.weight.power = 1/2,  ...) {
-    if(slope.mean.trim<0) slope.mean.trim <- 0 if(slope.mean.trim > 0.5) slope.mean.trim <- 0.5
+FLXMRnb2gth <- function(formula = . ~ .,  offset = NULL, full.theta.range = c(1e-3, 1e3), theta.fit.range = full.theta.range*c(1e-1, 1e1), theta.fit.sp = c(-1), constant.theta = F, slope.mean.trim = 0.4, alpha.weight.power = 1/2, ...) {
+    if(slope.mean.trim<0) { slope.mean.trim <- 0 }
+    if(slope.mean.trim > 0.5) { slope.mean.trim <- 0.5 }
 
     family <- "negative.binomial"
-    glmrefit <- function(x,  y,  w) {
+    glmrefit <- function(x, y, w) {
       message("ERROR: FLXRnb2gth:glmrefit: NOT IMPLEMENTED")
       return(NULL)
     }
 
-    z <- new("FLXMRnb2gth",  weighted = TRUE,  formula = formula,
-             name = "FLXMRnb2gth",  offset = offset,
-             family = family,  refit = glmrefit)
+    z <- new("FLXMRnb2gth", weighted = TRUE, formula = formula,
+             name = "FLXMRnb2gth", offset = offset,
+             family = family, refit = glmrefit)
     z@preproc.y <- function(x) {
       if (ncol(x)  >  1)
-        stop(paste("for the",  family,  "family y must be univariate"))
+        stop(paste("for the", family, "family y must be univariate"))
       x
     }
 
     z@defineComponent <- expression({
-      predict <- function(x,  ...) {
+      predict <- function(x, ...) {
         dotarg = list(...)
         #message("FLXRnb2gth:predict:nb2")
         coef["corr.a"]*x
       }
-      logLik <- function(x,  y,  ...) {
+      logLik <- function(x, y, ...) {
         dotarg = list(...)
         #message("FLXRnb2gth:logLik")
         if(constant.theta) {
@@ -3456,19 +3587,19 @@ FLXMRnb2gth <- function(formula = . ~ .,   offset = NULL,  full.theta.range = c(
         th[th  >  full.theta.range[2]] <- full.theta.range[2]
         th[th < full.theta.range[1]] <- full.theta.range[1]
         # evaluate NB
-        r <- dnbinom(y,  size = th, mu = coef["corr.a"]*x,  log = TRUE)
+        r <- dnbinom(y, size = th, mu = coef["corr.a"]*x, log = TRUE)
       }
 
       new("FLXcomponent",
           parameters = list(coef = coef, linear = T),
-          logLik = logLik,  predict = predict,  df = df)
+          logLik = logLik, predict = predict, df = df)
     })
 
-    z@fit <- function(x,  y,  w){
+    z@fit <- function(x, y, w){
       # message("FLXRnb2gth:fit")
 
       # estimate slope using weighted trimmed mean
-      #w[y =  = 0] <- w[y =  = 0]/1e6
+      #w[y == 0] <- w[y == 0]/1e6
       #r <- y/x
       #ro <- order(r)
       ## cumulative weight sum along the ratio order (to figure out where to trim)
@@ -3487,10 +3618,11 @@ FLXMRnb2gth <- function(formula = . ~ .,   offset = NULL,  full.theta.range = c(
       #te <- p^2/((y-p)^2 - p) # theta point estimates
       #te[te<theta.fit.range[1]] <- theta.fit.range[1] te[te > theta.fit.range[2]] <- theta.fit.range[2]
       alpha <- ((y/p-1)^2 - 1/p)
-      alpha[alpha<1/theta.fit.range[2]] <- 1/theta.fit.range[2] alpha[alpha > 1/theta.fit.range[1]] <- 1/theta.fit.range[1]
+      alpha[alpha<1/theta.fit.range[2]] <- 1/theta.fit.range[2]
+      alpha[alpha > 1/theta.fit.range[1]] <- 1/theta.fit.range[1]
 
-      #theta <- MASS::theta.ml(y,  p,  sum(w),  w)
-      theta <- MASS::theta.md(y,  p,  sum(w)-1,  w)
+      #theta <- MASS::theta.ml(y, p, sum(w), w)
+      theta <- MASS::theta.md(y, p, sum(w)-1, w)
       theta <- pmin(pmax(theta.fit.range[1], theta), theta.fit.range[2])
       if(constant.theta) {
         v <- c("corr.a" = a, "corr.theta" = theta)
@@ -3500,14 +3632,15 @@ FLXMRnb2gth <- function(formula = . ~ .,   offset = NULL,  full.theta.range = c(
         #ac <- tryCatch( {
 
         mw <- w*(as.numeric(alpha)^(alpha.weight.power))
-        lx <- log(x) lx.rng <- range(lx)
+        lx <- log(x)
+        lx.rng <- range(lx)
         mid.s <- (sum(lx.rng))/2
         low <- log(x) < mid.s
         lalpha <- log(alpha)
         bottom.s <- quantile(lalpha[low], 0.025, na.rm = T)
         top.s <- quantile(lalpha[!low], 0.975, na.rm = T)
 
-        wsr <- function(p,  x,  y,  w = rep(1, length(y))) {
+        wsr <- function(p, x, y, w = rep(1, length(y))) {
           # borrowing nplr approach here
           bottom <- p[1]
           top <- p[2]
@@ -3530,65 +3663,64 @@ FLXMRnb2gth <- function(formula = . ~ .,   offset = NULL,  full.theta.range = c(
         #smoothScatter(log(x), log(alpha))
         #p <- ac points(log(x), p[1]+(p[2]-p[1])/(1+10^((p[3]-log(x))*p[4]))^p[5], col = 2, pch = ".")
         #browser()
-        #},  error = function(e) {
+        #}, error = function(e) {
         #  message("encountered error trying to fit logistic model with guessed parameters.")
         #  # fit with fewer parameters?
         #})
 
-        v <- c(a, theta, ac) names(v) <- c("corr.a", "corr.theta", "corr.ltheta.b", "corr.ltheta.t", "corr.ltheta.m", "corr.ltheta.s", "corr.ltheta.r")
+        v <- c(a, theta, ac)
+        names(v) <- c("corr.a", "corr.theta", "corr.ltheta.b", "corr.ltheta.t", "corr.ltheta.m", "corr.ltheta.s", "corr.ltheta.r")
       }
 
-      with(list(coef = v, full.theta.range = full.theta.range, df = ncol(x), offset = offset),
-           eval(z@defineComponent))
+      with(list(coef = v, full.theta.range = full.theta.range, df = ncol(x), offset = offset), eval(z@defineComponent))
     }
 
-    z
-
+    return(z)
 }
 
 # component-specific version of the nb2gth
 # nb2 gam implementation
-setClass("FLXMRnb2gthC",  representation(vci = "ANY"),  contains = "FLXMRnb2gth", package = "flexmix")
+setClass("FLXMRnb2gthC", representation(vci = "ANY"), contains = "FLXMRnb2gth", package = "flexmix")
 
 # components is used to specify the indecies of the components on which likelihood will be
 # evlauated. Others will return as loglik of 0
-FLXMRnb2gthC <- function(... ,  components = NULL) {
+FLXMRnb2gthC <- function(... , components = NULL) {
   #require(mgcv)
-  z <- new("FLXMRnb2gthC",  FLXMRnb2gth(...), vci = components)
+  z <- new("FLXMRnb2gthC", FLXMRnb2gth(...), vci = components)
   z
 }
 
 
 
-setMethod("FLXdeterminePostunscaled",  signature(model = "FLXMRnb2glmC"),  function(model,  components,  ...) {
+setMethod("FLXdeterminePostunscaled", signature(model = "FLXMRnb2glmC"), function(model, components, ...) {
   if(is.null(model@vci)) {
     #message("FLXMRnb2glmC:FLXdeterminePostunscaled - applying to all components")
-    m <- matrix(sapply(components,  function(x) x@logLik(model@x,  model@y)),  nrow = nrow(model@y))
+    m <- matrix(sapply(components, function(x) x@logLik(model@x, model@y)), nrow = nrow(model@y))
   } else {
     #message(paste("FLXMRnb2glmC:FLXdeterminePostunscaled - applying to components", paste(model@vci, collapse = " ")))
     m <- matrix(do.call(cbind, lapply(seq_along(components), function(i) {
       if(i %in% model@vci) {
-        components[[i]]@logLik(model@x,  model@y)
+        components[[i]]@logLik(model@x, model@y)
       } else {
         rep(0, nrow(model@y))
       }
-    })),  nrow = nrow(model@y))
+    })), nrow = nrow(model@y))
  }
 })
 
-setMethod("FLXmstep",  signature(model = "FLXMRnb2glmC"),  function(model,  weights,  ...) {
+setMethod("FLXmstep", signature(model = "FLXMRnb2glmC"), function(model, weights, ...) {
   # make up a dummy component return
-  coef <- rep(0,  ncol(model@x))
+  coef <- rep(0, ncol(model@x))
   names(coef) <- colnames(model@x)
   control <- eval(formals(glm.fit)$control)
-  comp.1 <- with(list(coef = coef,  df = 0,  offset = NULL,
-                      family = model@family),  eval(model@defineComponent))
+  comp.1 <- with(list(coef = coef, df = 0, offset = NULL,
+                      family = model@family), eval(model@defineComponent))
 
   # iterate over components
   unlist(lapply(seq_len(ncol(weights)), function(i) {
     if(i %in% model@vci) {
       #message(paste("FLXMRnb2glmC:FLXmstep - running m-step for component", i))
-      FLXmstep(as(model,  "FLXMRnb2glm"),  weights[,  i,  drop = FALSE])
+      FLXmstep(as(model, "FLXMRnb2glm"), weights[, i, drop = FALSE])
     } else {
       #message(paste("FLXMRnb2glmC:FLXmstep - dummy return for component", i))
       list(comp.1)
@@ -3597,35 +3729,35 @@ setMethod("FLXmstep",  signature(model = "FLXMRnb2glmC"),  function(model,  weig
 })
 
 # same for gth
-setMethod("FLXdeterminePostunscaled",  signature(model = "FLXMRnb2gthC"),  function(model,  components,  ...) {
+setMethod("FLXdeterminePostunscaled", signature(model = "FLXMRnb2gthC"), function(model, components, ...) {
   if(is.null(model@vci)) {
     #message("FLXMRnb2gthC:FLXdeterminePostunscaled - applying to all components")
-    m <- matrix(sapply(components,  function(x) x@logLik(model@x,  model@y)),  nrow = nrow(model@y))
+    m <- matrix(sapply(components, function(x) x@logLik(model@x, model@y)), nrow = nrow(model@y))
   } else {
     #message(paste("FLXMRnb2gthC:FLXdeterminePostunscaled - applying to components", paste(model@vci, collapse = " ")))
     m <- matrix(do.call(cbind, lapply(seq_along(components), function(i) {
       if(i %in% model@vci) {
-        components[[i]]@logLik(model@x,  model@y)
+        components[[i]]@logLik(model@x, model@y)
       } else {
         rep(0, nrow(model@y))
       }
-    })),  nrow = nrow(model@y))
+    })), nrow = nrow(model@y))
  }
 })
 
-setMethod("FLXmstep",  signature(model = "FLXMRnb2gthC"),  function(model,  weights,  ...) {
+setMethod("FLXmstep", signature(model = "FLXMRnb2gthC"), function(model, weights, ...) {
   # make up a dummy component return
-  coef <- rep(0,  ncol(model@x))
+  coef <- rep(0, ncol(model@x))
   names(coef) <- colnames(model@x)
   control <- eval(formals(glm.fit)$control)
-  comp.1 <- with(list(q1 = list(coefficients = c(1)),  coef = coef,  df = 0,  offset = NULL,
-                      family = model@family),  eval(model@defineComponent))
+  comp.1 <- with(list(q1 = list(coefficients = c(1)), coef = coef, df = 0, offset = NULL,
+                      family = model@family), eval(model@defineComponent))
 
   # iterate over components
   unlist(lapply(seq_len(ncol(weights)), function(i) {
     if(i %in% model@vci) {
       #message(paste("FLXMRnb2gthC:FLXmstep - running m-step for component", i))
-      FLXmstep(as(model,  "FLXMRnb2gth"),  weights[,  i,  drop = FALSE])
+      FLXmstep(as(model, "FLXMRnb2gth"), weights[, i, drop = FALSE])
     } else {
       #message(paste("FLXMRnb2gthC:FLXmstep - dummy return for component", i))
       list(comp.1)
@@ -3638,29 +3770,29 @@ setMethod("FLXmstep",  signature(model = "FLXMRnb2gthC"),  function(model,  weig
 
 # component-specific version of the nb2glm
 # nb2 glm implementation
-setClass("FLXMRglmC",  representation(vci = "ANY"),  contains = "FLXMRglm", package = "flexmix")
+setClass("FLXMRglmC", representation(vci = "ANY"), contains = "FLXMRglm", package = "flexmix")
 
 # components is used to specify the indecies of the components on which likelihood will be
 # evlauated. Others will return as loglik of 0
-FLXMRglmC <- function(... ,  components = NULL) {
+FLXMRglmC <- function(... , components = NULL) {
   #require(MASS)
-    z <- new("FLXMRglmC",  FLXMRglm(...), vci = components)
+    z <- new("FLXMRglmC", FLXMRglm(...), vci = components)
     z
 }
 
-setMethod("FLXdeterminePostunscaled",  signature(model = "FLXMRglmC"),  function(model,  components,  ...) {
+setMethod("FLXdeterminePostunscaled", signature(model = "FLXMRglmC"), function(model, components, ...) {
   if(is.null(model@vci)) {
     #message("FLXMRnb2glmC:FLXdeterminePostunscaled - applying to all components")
-    m <- matrix(sapply(components,  function(x) x@logLik(model@x,  model@y)),  nrow = nrow(model@y))
+    m <- matrix(sapply(components, function(x) x@logLik(model@x, model@y)), nrow = nrow(model@y))
   } else {
     #message(paste("FLXMRnb2glmC:FLXdeterminePostunscaled - applying to components", paste(model@vci, collapse = " ")))
     m <- matrix(do.call(cbind, lapply(seq_along(components), function(i) {
       if(i %in% model@vci) {
-        components[[i]]@logLik(model@x,  model@y)
+        components[[i]]@logLik(model@x, model@y)
       } else {
         rep(0, nrow(model@y))
       }
-    })),  nrow = nrow(model@y))
+    })), nrow = nrow(model@y))
   }
   #message("FLXMRnb2glmC:FLXdeterminePostunscaled : ")
   #message(m)
@@ -3668,19 +3800,19 @@ setMethod("FLXdeterminePostunscaled",  signature(model = "FLXMRglmC"),  function
   m
 })
 
-setMethod("FLXmstep",  signature(model = "FLXMRglmC"),  function(model,  weights,  ...) {
+setMethod("FLXmstep", signature(model = "FLXMRglmC"), function(model, weights, ...) {
   # make up a dummy component return
-  coef <- rep(0,  ncol(model@x))
+  coef <- rep(0, ncol(model@x))
   names(coef) <- colnames(model@x)
   control <- eval(formals(glm.fit)$control)
-  comp.1 <- with(list(coef = coef,  df = 0,  offset = NULL,
-                      family = model@family),  eval(model@defineComponent))
+  comp.1 <- with(list(coef = coef, df = 0, offset = NULL,
+                      family = model@family), eval(model@defineComponent))
 
   # iterate over components
   unlist(lapply(seq_len(ncol(weights)), function(i) {
     if(i %in% model@vci) {
       #message(paste("FLXMRglmC:FLXmstep - running m-step for component", i))
-      FLXmstep(as(model,  "FLXMRglm"),  weights[,  i,  drop = FALSE])
+      FLXmstep(as(model, "FLXMRglm"), weights[, i, drop = FALSE])
     } else {
       #message(paste("FLXMRglmC:FLXmstep - dummy return for component", i))
       list(comp.1)
@@ -3691,22 +3823,22 @@ setMethod("FLXmstep",  signature(model = "FLXMRglmC"),  function(model,  weights
 
 
 # mu-fixed version
-setClass("FLXMRglmCf",  representation(mu = "numeric"),  contains = "FLXMRglmC", package = "flexmix")
+setClass("FLXMRglmCf", representation(mu = "numeric"), contains = "FLXMRglmC", package = "flexmix")
 
-FLXMRglmCf <- function(... ,  family = c("binomial",  "poisson"), mu = 0) {
+FLXMRglmCf <- function(... , family = c("binomial", "poisson"), mu = 0) {
   #require(MASS)
     family <- match.arg(family)
-    z <- new("FLXMRglmCf",  FLXMRglmC(..., family = family), mu = mu)
+    z <- new("FLXMRglmCf", FLXMRglmC(..., family = family), mu = mu)
     z
 }
 
-setMethod("FLXmstep",  signature(model = "FLXMRglmCf"),  function(model,  weights,  ...) {
+setMethod("FLXmstep", signature(model = "FLXMRglmCf"), function(model, weights, ...) {
   # make up a dummy component return
   coef <- c(model@mu, rep(0, ncol(model@x)-1))
   names(coef) <- colnames(model@x)
   control <- eval(formals(glm.fit)$control)
-  comp.1 <- with(list(coef = coef,  df = 0,  offset = NULL,
-                      family = model@family),  eval(model@defineComponent))
+  comp.1 <- with(list(coef = coef, df = 0, offset = NULL,
+                      family = model@family), eval(model@defineComponent))
 
   # iterate over components
   unlist(lapply(seq_len(ncol(weights)), function(i) {
@@ -3721,26 +3853,26 @@ setMethod("FLXmstep",  signature(model = "FLXMRglmCf"),  function(model,  weight
 setClass("FLXPmultinomW", contains = "FLXPmultinom")
 
 FLXPmultinomW <- function(formula = ~1) {
-  z <- new("FLXPmultinom",  name = "FLXPmultinom",  formula = formula)
-  multinom.fit <- function(x,  y,  w,  ...) {
+  z <- new("FLXPmultinom", name = "FLXPmultinom", formula = formula)
+  multinom.fit <- function(x, y, w, ...) {
     r <- ncol(x)
     p <- ncol(y)
     if (p < 2) stop("Multinom requires at least two components.")
-    mask <- c(rep(0,  r + 1),  rep(c(0,  rep(1,  r)),  p - 1))
+    mask <- c(rep(0, r + 1), rep(c(0, rep(1, r)), p - 1))
     #if(missing(w)) w <- rep(1, nrow(y))
     #w <- round(exp(x[, 2]))
-    nnet::nnet.default(x,  y,  w,  mask = mask,  size = 0,
-                       skip = TRUE,  softmax = TRUE,  censored = FALSE,
-                       rang = 0,  trace = FALSE, ...)
+    nnet::nnet.default(x, y, w, mask = mask, size = 0,
+                       skip = TRUE, softmax = TRUE, censored = FALSE,
+                       rang = 0, trace = FALSE, ...)
   }
-  z@fit <- function(x,  y,  w,  ...) multinom.fit(x,  y,  w,  ...)$fitted.values
-  z@refit <- function(x,  y,  w,  ...) {
-    if (missing(w) || is.null(w)) w <- rep(1,  nrow(y))
+  z@fit <- function(x, y, w, ...) multinom.fit(x, y, w, ...)$fitted.values
+  z@refit <- function(x, y, w, ...) {
+    if (missing(w) || is.null(w)) w <- rep(1, nrow(y))
     #w <- round(exp(x[, 2]))
-    fit <- nnet::multinom(y ~ 0 + x,  weights = w,  data = list(y = y,  x = x),  Hess = TRUE,  trace = FALSE)
+    fit <- nnet::multinom(y ~ 0 + x, weights = w, data = list(y = y, x = x), Hess = TRUE, trace = FALSE)
     fit$coefnames <- colnames(x)
     fit$vcoefnames <- fit$coefnames[seq_along(fit$coefnames)]
-    dimnames(fit$Hessian) <- lapply(dim(fit$Hessian) / ncol(x),  function(i) paste(rep(seq_len(i) + 1,  each = ncol(x)),  colnames(x),  sep = ":"))
+    dimnames(fit$Hessian) <- lapply(dim(fit$Hessian) / ncol(x), function(i) paste(rep(seq_len(i) + 1, each = ncol(x)), colnames(x), sep = ":"))
     fit
   }
   z
@@ -3748,33 +3880,33 @@ FLXPmultinomW <- function(formula = ~1) {
 
 
 # variation of negative.binomial family that keeps theta value accessible
-negbin.th <- function (theta = stop("'theta' must be specified"),  link = "log")
+negbin.th <- function (theta = stop("'theta' must be specified"), link = "log")
 {
     linktemp <- substitute(link)
     if (!is.character(linktemp))
         linktemp <- deparse(linktemp)
-    if (linktemp %in% c("log",  "identity",  "sqrt"))
+    if (linktemp %in% c("log", "identity", "sqrt"))
         stats <- make.link(linktemp)
     else if (is.character(link)) {
         stats <- make.link(link)
         linktemp <- link
     }
     else {
-        if (inherits(link,  "link-glm")) {
+        if (inherits(link, "link-glm")) {
             stats <- link
             if (!is.null(stats$name))
                 linktemp <- stats$name
         }
-        else stop(linktemp,  " link not available for negative binomial family available links are \"identity\",  \"log\" and \"sqrt\"")
+        else stop(linktemp, " link not available for negative binomial family available links are \"identity\", \"log\" and \"sqrt\"")
     }
     .Theta <- theta
     env <- new.env(parent = .GlobalEnv)
-    assign(".Theta",  theta,  envir = env)
+    assign(".Theta", theta, envir = env)
     variance <- function(mu) mu + mu^2/.Theta
     validmu <- function(mu) all(mu  >  0)
-    dev.resids <- function(y,  mu,  wt) 2 * wt * (y * log(pmax(1,
+    dev.resids <- function(y, mu, wt) 2 * wt * (y * log(pmax(1,
         y)/mu) - (y + .Theta) * log((y + .Theta)/(mu + .Theta)))
-    aic <- function(y,  n,  mu,  wt,  dev) {
+    aic <- function(y, n, mu, wt, dev) {
         term <- (y + .Theta) * log(mu + .Theta) - y * log(mu) +
             lgamma(y + 1) - .Theta * log(.Theta) + lgamma(.Theta) -
             lgamma(.Theta + y)
@@ -3782,47 +3914,47 @@ negbin.th <- function (theta = stop("'theta' must be specified"),  link = "log")
     }
     initialize <- expression({
         if (any(y < 0)) stop("negative values not allowed for the negative binomial family")
-        n <- rep(1,  nobs)
-        mustart <- y + (y = =  0)/6
+        n <- rep(1, nobs)
+        mustart <- y + (y ==  0)/6
     })
-    simfun <- function(object,  nsim) {
+    simfun <- function(object, nsim) {
         ftd <- fitted(object)
-        val <- rnegbin(nsim * length(ftd),  ftd,  .Theta)
+        val <- rnegbin(nsim * length(ftd), ftd, .Theta)
     }
     environment(variance) <- environment(validmu) <- environment(dev.resids) <- environment(aic) <- environment(simfun) <- env
-    famname <- paste("Negative Binomial(",  format(round(theta,
-        4)),  ")",  sep = "")
-    structure(list(family = famname,  link = linktemp,  linkfun = stats$linkfun,
-        linkinv = stats$linkinv,  variance = variance,  dev.resids = dev.resids,
-        aic = aic,  mu.eta = stats$mu.eta,  initialize = initialize,
-        validmu = validmu,  valideta = stats$valideta,  simulate = simfun, theta = theta),
+    famname <- paste("Negative Binomial(", format(round(theta,
+        4)), ")", sep = "")
+    structure(list(family = famname, link = linktemp, linkfun = stats$linkfun,
+        linkinv = stats$linkinv, variance = variance, dev.resids = dev.resids,
+        aic = aic, mu.eta = stats$mu.eta, initialize = initialize,
+        validmu = validmu, valideta = stats$valideta, simulate = simfun, theta = theta),
         class = "family")
 }
 
 
 # .fit version of the glm.nb
-glm.nb.fit <- function(x, y, weights = rep(1, nobs), control = list(trace = 0, maxit = 20), offset = rep(0, nobs), etastart = NULL, start = NULL, mustart = NULL, init.theta = NULL, link = "log",  method = "glm.fit",  intercept = T,  theta.range = c(0, 1e5),  ...) {
+glm.nb.fit <- function(x, y, weights = rep(1, nobs), control = list(trace = 0, maxit = 20), offset = rep(0, nobs), etastart = NULL, start = NULL, mustart = NULL, init.theta = NULL, link = "log", method = "glm.fit", intercept = T, theta.range = c(0, 1e5), ...) {
   method <- "custom.glm.fit"
   #require(MASS)
-  loglik <- function(n,  th,  mu,  y,  w) sum(w * (lgamma(th +
+  loglik <- function(n, th, mu, y, w) sum(w * (lgamma(th +
         y) - lgamma(th) - lgamma(y + 1) + th * log(th) + y *
-        log(mu + (y = =  0)) - (th + y) * log(th + mu)))
+        log(mu + (y ==  0)) - (th + y) * log(th + mu)))
   # link <- substitute(link)
 
   Call <- match.call()
-  control <- do.call("glm.control",  control)
+  control <- do.call("glm.control", control)
   n <- length(y)
   # family for the initial guess
   fam0 <- if (missing(init.theta) | is.null(init.theta))
-    do.call("poisson",  list(link = link))
+    do.call("poisson", list(link = link))
   else
-    do.call("negative.binomial",  list(theta = init.theta, link = link))
+    do.call("negative.binomial", list(theta = init.theta, link = link))
 
   # fit function
   if (!missing(method)) {
     #message(paste("glm.nb.fit: method = ", method))
-    if (!exists(method,  mode = "function"))
-      stop("unimplemented method: ",  sQuote(method))
+    if (!exists(method, mode = "function"))
+      stop("unimplemented method: ", sQuote(method))
     glm.fitter <- get(method)
   }
   else {
@@ -3835,11 +3967,11 @@ glm.nb.fit <- function(x, y, weights = rep(1, nobs), control = list(trace = 0, m
   if (control$trace  >  1) {
     message("Initial fit:")
   }
-  fit <- glm.fitter(x = x,  y = y,  weights = weights,  start = start,  etastart = etastart, mustart = mustart,  offset = offset,  family = fam0,  control = control, intercept = intercept)
-  class(fit) <- c("glm",  "lm")
+  fit <- glm.fitter(x = x, y = y, weights = weights, start = start, etastart = etastart, mustart = mustart, offset = offset, family = fam0, control = control, intercept = intercept)
+  class(fit) <- c("glm", "lm")
 
   mu <- fit$fitted.values
-  th <- as.vector(theta.ml(y,  mu,  sum(weights),  weights,  limit = control$maxit, trace = control$trace  >  2))
+  th <- as.vector(theta.ml(y, mu, sum(weights), weights, limit = control$maxit, trace = control$trace  >  2))
   if(!is.null(theta.range)) {
     if(th<theta.range[1]) {
       if (control$trace  >  1)
@@ -3852,19 +3984,19 @@ glm.nb.fit <- function(x, y, weights = rep(1, nobs), control = list(trace = 0, m
     }
   }
   if (control$trace  >  1)
-        message("Initial value for theta:",  signif(th))
-  fam <- do.call("negative.binomial",  list(theta = th,  link = link))
+        message("Initial value for theta:", signif(th))
+  fam <- do.call("negative.binomial", list(theta = th, link = link))
   iter <- 0
-  d1 <- sqrt(2 * max(1,  fit$df.residual))
+  d1 <- sqrt(2 * max(1, fit$df.residual))
   d2 <- del <- 1
   g <- fam$linkfun
-  Lm <- loglik(n,  th,  mu,  y,  weights)
+  Lm <- loglik(n, th, mu, y, weights)
   Lm0 <- Lm + 2 * d1
-  while ((iter <- iter + 1) < =  control$maxit && (abs(Lm0 - Lm)/d1 + abs(del)/d2)  >  control$epsilon) {
+  while ((iter <- iter + 1) <=  control$maxit && (abs(Lm0 - Lm)/d1 + abs(del)/d2)  >  control$epsilon) {
     eta <- g(mu)
-    fit <- glm.fitter(x = x,  y = y,  weights = weights,  etastart = eta, offset = offset,  family = fam,  control = list(maxit = control$maxit*10,  epsilon = control$epsilon,  trace = control$trace  >  1),  intercept = intercept)
+    fit <- glm.fitter(x = x, y = y, weights = weights, etastart = eta, offset = offset, family = fam, control = list(maxit = control$maxit*10, epsilon = control$epsilon, trace = control$trace  >  1), intercept = intercept)
     t0 <- th
-    th <- theta.ml(y,  mu,  sum(weights),  weights,  limit = control$maxit,  trace = control$trace  >  2)
+    th <- theta.ml(y, mu, sum(weights), weights, limit = control$maxit, trace = control$trace  >  2)
     if(!is.null(theta.range)) {
       if(th<theta.range[1]) {
         if (control$trace  >  1)
@@ -3876,38 +4008,38 @@ glm.nb.fit <- function(x, y, weights = rep(1, nobs), control = list(trace = 0, m
         th <- theta.range[2]
       }
     }
-    fam <- do.call("negative.binomial",  list(theta = th,  link = link))
+    fam <- do.call("negative.binomial", list(theta = th, link = link))
     mu <- fit$fitted.values
     del <- t0 - th
     Lm0 <- Lm
-    Lm <- loglik(n,  th,  mu,  y,  weights)
+    Lm <- loglik(n, th, mu, y, weights)
     if (control$trace) {
-      Ls <- loglik(n,  th,  y,  y,  weights)
+      Ls <- loglik(n, th, y, y, weights)
       Dev <- 2 * (Ls - Lm)
-      message("Theta(",  iter,  ")  = ",  signif(th),  ",  2(Ls - Lm)  = ",   signif(Dev))
+      message("Theta(", iter, ")  = ", signif(th), ", 2(Ls - Lm)  = ",  signif(Dev))
     }
   }
-  if (!is.null(attr(th,  "warn")))
-    fit$th.warn <- attr(th,  "warn")
+  if (!is.null(attr(th, "warn")))
+    fit$th.warn <- attr(th, "warn")
   if (iter  >  control$maxit) {
     warning("alternation limit reached")
     fit$th.warn <- gettext("alternation limit reached")
   }
   if (length(offset) && intercept) {
     null.deviance <- if ("(Intercept)" %in% colnames(x))
-      glm.fitter(x[,  "(Intercept)",  drop = FALSE],  y,  weights = weights,  offset = offset,  family = fam,  control = list(maxit = control$maxit*10,  epsilon = control$epsilon,  trace = control$trace  >   1),  intercept = TRUE)$deviance
+      glm.fitter(x[, "(Intercept)", drop = FALSE], y, weights = weights, offset = offset, family = fam, control = list(maxit = control$maxit*10, epsilon = control$epsilon, trace = control$trace  >   1), intercept = TRUE)$deviance
     else
       fit$deviance
     fit$null.deviance <- null.deviance
   }
-  class(fit) <- c("negbin.th",  "glm",  "lm")
-  Call$init.theta <- signif(as.vector(th),  10)
+  class(fit) <- c("negbin.th", "glm", "lm")
+  Call$init.theta <- signif(as.vector(th), 10)
   Call$link <- link
   fit$call <- Call
   fit$x <- x
   fit$y <- y
   fit$theta <- as.vector(th)
-  fit$SE.theta <- attr(th,  "SE")
+  fit$SE.theta <- attr(th, "SE")
   fit$twologlik <- as.vector(2 * Lm)
   fit$aic <- -fit$twologlik + 2 * fit$rank + 2
   fit$method <- method
@@ -3917,11 +4049,11 @@ glm.nb.fit <- function(x, y, weights = rep(1, nobs), control = list(trace = 0, m
 }
 
 
-custom.glm.fit <- function (x,  y,  weights = rep(1,  nobs),  start = NULL,  etastart = NULL,
-    mustart = NULL,  offset = rep(0,  nobs),  family = gaussian(),
-    control = list(),  intercept = TRUE, alpha = 0)
+custom.glm.fit <- function (x, y, weights = rep(1, nobs), start = NULL, etastart = NULL,
+    mustart = NULL, offset = rep(0, nobs), family = gaussian(),
+    control = list(), intercept = TRUE, alpha = 0)
 {
-    control <- do.call("glm.control",  control)
+    control <- do.call("glm.control", control)
     x <- as.matrix(x)
     xnames <- dimnames(x)[[2L]]
     ynames <- if (is.matrix(y))
@@ -3930,11 +4062,11 @@ custom.glm.fit <- function (x,  y,  weights = rep(1,  nobs),  start = NULL,  eta
     conv <- FALSE
     nobs <- NROW(y)
     nvars <- ncol(x)
-    EMPTY <- nvars = =  0
+    EMPTY <- nvars ==  0
     if (is.null(weights))
-        weights <- rep.int(1,  nobs)
+        weights <- rep.int(1, nobs)
     if (is.null(offset))
-        offset <- rep.int(0,  nobs)
+        offset <- rep.int(0, nobs)
     variance <- family$variance
     linkinv <- family$linkinv
     if (!is.function(variance) || !is.function(linkinv))
@@ -3943,11 +4075,11 @@ custom.glm.fit <- function (x,  y,  weights = rep(1,  nobs),  start = NULL,  eta
     dev.resids <- family$dev.resids
     aic <- family$aic
     mu.eta <- family$mu.eta
-    unless.null <- function(x,  if.null) if (is.null(x))
+    unless.null <- function(x, if.null) if (is.null(x))
         if.null
     else x
-    valideta <- unless.null(family$valideta,  function(eta) TRUE)
-    validmu <- unless.null(family$validmu,  function(mu) TRUE)
+    valideta <- unless.null(family$valideta, function(eta) TRUE)
+    validmu <- unless.null(family$validmu, function(mu) TRUE)
     if (is.null(mustart)) {
         eval(family$initialize)
     }
@@ -3957,17 +4089,17 @@ custom.glm.fit <- function (x,  y,  weights = rep(1,  nobs),  start = NULL,  eta
         mustart <- mukeep
     }
     if (EMPTY) {
-        eta <- rep.int(0,  nobs) + offset
+        eta <- rep.int(0, nobs) + offset
         if (!valideta(eta))
             stop("invalid linear predictor values in empty model",
                 call. = FALSE)
         mu <- linkinv(eta)
         if (!validmu(mu))
-            stop("invalid fitted means in empty model",  call. = FALSE)
-        dev <- sum(dev.resids(y,  mu,  weights))
+            stop("invalid fitted means in empty model", call. = FALSE)
+        dev <- sum(dev.resids(y, mu, weights))
         w <- ((weights * mu.eta(eta)^2)/variance(mu))^0.5
         residuals <- (y - mu)/mu.eta(eta)
-        good <- rep(TRUE,  length(residuals))
+        good <- rep(TRUE, length(residuals))
         boundary <- conv <- TRUE
         coef <- numeric(0L)
         iter <- 0L
@@ -3977,13 +4109,13 @@ custom.glm.fit <- function (x,  y,  weights = rep(1,  nobs),  start = NULL,  eta
         eta <- if (!is.null(etastart))
             etastart
         else if (!is.null(start))
-            if (length(start) ! =  nvars)
+            if (length(start)  !=  nvars)
                 stop(gettextf("length of 'start' should equal %d and correspond to initial coefs for %s",
-                  nvars,  paste(deparse(xnames),  collapse = ",  ")),
+                  nvars, paste(deparse(xnames), collapse = ", ")),
                   domain = NA)
             else {
                 coefold <- start
-                offset + as.vector(if (NCOL(x) = =  1)
+                offset + as.vector(if (NCOL(x) ==  1)
                   x * start
                 else x %*% start)
             }
@@ -3992,19 +4124,19 @@ custom.glm.fit <- function (x,  y,  weights = rep(1,  nobs),  start = NULL,  eta
         if (!(validmu(mu) && valideta(eta)))
             stop("cannot find valid starting values: please specify some",
                 call. = FALSE)
-        devold <- sum(dev.resids(y,  mu,  weights))
+        devold <- sum(dev.resids(y, mu, weights))
         boundary <- conv <- FALSE
         for (iter in 1L:control$maxit) {
             good <- weights  >  0
             varmu <- variance(mu)[good]
             if (any(is.na(varmu)))
                 stop("NAs in V(mu)")
-            if (any(varmu = =  0))
+            if (any(varmu ==  0))
                 stop("0s in V(mu)")
             mu.eta.val <- mu.eta(eta)
             if (any(is.na(mu.eta.val[good])))
                 stop("NAs in d(mu)/d(eta)")
-            good <- (weights  >  0) & (mu.eta.val ! =  0)
+            good <- (weights  >  0) & (mu.eta.val  !=  0)
             if (all(!good)) {
                 conv <- FALSE
                 warning("no observations informative at iteration ",
@@ -4014,7 +4146,7 @@ custom.glm.fit <- function (x,  y,  weights = rep(1,  nobs),  start = NULL,  eta
             z <- (eta - offset)[good] + (y - mu)[good]/mu.eta.val[good]
             #z <- (eta - offset)[good] + (family$linkfun(y[good]) - family$linkfun(mu[good]))/family$linkfun(mu.eta.val[good])
 
-            # attempting to be robust here,  trowing out fraction with highest abs(z)
+            # attempting to be robust here, trowing out fraction with highest abs(z)
             if(alpha > 0) {
               qv <- quantile(abs(z), probs = c(alpha/2, 1.0-alpha/2))
               gvi <- which(good)[which(abs(z)<qv[1] | abs(z) > qv[2])]
@@ -4031,28 +4163,28 @@ custom.glm.fit <- function (x,  y,  weights = rep(1,  nobs),  start = NULL,  eta
             w <- mu.eta.val[good]*sqrt(weights[good]/variance(mu)[good])
 
             ngoodobs <- as.integer(nobs - sum(!good))
-            fit <- .Fortran("dqrls",  qr = x[good,  ] * w,  n = ngoodobs,
-                p = nvars,  y = w * z,  ny = 1L,  tol = min(1e-07,
-                  control$epsilon/1000),  coefficients = double(nvars),
-                residuals = double(ngoodobs),  effects = double(ngoodobs),
-                rank = integer(1L),  pivot = 1L:nvars,  qraux = double(nvars),
-                work = double(2 * nvars)) # ,  PACKAGE = "base"
+            fit <- .Fortran("dqrls", qr = x[good, ] * w, n = ngoodobs,
+                p = nvars, y = w * z, ny = 1L, tol = min(1e-07,
+                  control$epsilon/1000), coefficients = double(nvars),
+                residuals = double(ngoodobs), effects = double(ngoodobs),
+                rank = integer(1L), pivot = 1L:nvars, qraux = double(nvars),
+                work = double(2 * nvars)) # , PACKAGE = "base"
             #browser()
             if (any(!is.finite(fit$coefficients))) {
                 conv <- FALSE
                 warning(gettextf("non-finite coefficients at iteration %d",
-                  iter),  domain = NA)
+                  iter), domain = NA)
                 break
             }
             if (nobs < fit$rank)
-                stop(gettextf("X matrix has rank %d,  but only %d observations",
-                  fit$rank,  nobs),  domain = NA)
+                stop(gettextf("X matrix has rank %d, but only %d observations",
+                  fit$rank, nobs), domain = NA)
             start[fit$pivot] <- fit$coefficients
             eta <- drop(x %*% start)
             mu <- linkinv(eta <- eta + offset)
-            dev <- sum(dev.resids(y,  mu,  weights))
+            dev <- sum(dev.resids(y, mu, weights))
             if (control$trace)
-                cat("Deviance  = ",  dev,  "Iterations -",  iter,
+                cat("Deviance  = ", dev, "Iterations -", iter,
                   "\n")
             boundary <- FALSE
             if (!is.finite(dev)) {
@@ -4070,30 +4202,30 @@ custom.glm.fit <- function (x,  y,  weights = rep(1,  nobs),  start = NULL,  eta
                   start <- (start + coefold)/2
                   eta <- drop(x %*% start)
                   mu <- linkinv(eta <- eta + offset)
-                  dev <- sum(dev.resids(y,  mu,  weights))
+                  dev <- sum(dev.resids(y, mu, weights))
                 }
                 boundary <- TRUE
                 if (control$trace)
-                  cat("Step halved: new deviance  = ",  dev,  "\n")
+                  cat("Step halved: new deviance  = ", dev, "\n")
             }
             # require deviance to go down
             if ((!is.null(coefold)) & (dev - devold)/(0.1 + abs(dev))  >  3*control$epsilon) {
-              warning("step size truncated due to increasing divergence",  call. = FALSE)
+              warning("step size truncated due to increasing divergence", call. = FALSE)
               ii <- 1
               while ((dev - devold)/(0.1 + abs(dev))  >  3*control$epsilon) {
                 if (ii  >  control$maxit)   {
-                  warning("inner loop 1 cannot correct step size",  call. = FALSE)
+                  warning("inner loop 1 cannot correct step size", call. = FALSE)
                   break
                 }
                 ii <- ii + 1
                 start <- (start + coefold)/2
                 eta <- drop(x %*% start)
                 mu <- linkinv(eta <- eta + offset)
-                dev <- sum(dev.resids(y,  mu,  weights))
+                dev <- sum(dev.resids(y, mu, weights))
               }
               boundary <- TRUE
               if (control$trace)
-                cat("Step halved: new deviance  = ",  dev,  "\n")
+                cat("Step halved: new deviance  = ", dev, "\n")
             }
             if (!(valideta(eta) && validmu(mu))) {
                 if (is.null(coefold))
@@ -4112,9 +4244,9 @@ custom.glm.fit <- function (x,  y,  weights = rep(1,  nobs),  start = NULL,  eta
                   mu <- linkinv(eta <- eta + offset)
                 }
                 boundary <- TRUE
-                dev <- sum(dev.resids(y,  mu,  weights))
+                dev <- sum(dev.resids(y, mu, weights))
                 if (control$trace)
-                  cat("Step halved: new deviance  = ",  dev,  "\n")
+                  cat("Step halved: new deviance  = ", dev, "\n")
             }
             if (abs(dev - devold)/(0.1 + abs(dev)) < control$epsilon) {
                 conv <- TRUE
@@ -4126,81 +4258,81 @@ custom.glm.fit <- function (x,  y,  weights = rep(1,  nobs),  start = NULL,  eta
             coef <- coefold <- start
         }
         if (!conv)
-            warning("glm.fit: algorithm did not converge",  call. = FALSE)
+            warning("glm.fit: algorithm did not converge", call. = FALSE)
         if (boundary)
             warning("glm.fit: algorithm stopped at boundary value",
                 call. = FALSE)
         eps <- 10 * .Machine$double.eps
-        if (family$family = =  "binomial") {
+        if (family$family ==  "binomial") {
             if (any(mu  >  1 - eps) || any(mu < eps))
                 warning("glm.fit: fitted probabilities numerically 0 or 1 occurred",
                   call. = FALSE)
         }
-        if (family$family = =  "poisson") {
+        if (family$family ==  "poisson") {
             if (any(mu < eps))
                 warning("glm.fit: fitted rates numerically 0 occurred",
                   call. = FALSE)
         }
         if (fit$rank < nvars)
-            coef[fit$pivot][seq.int(fit$rank + 1,  nvars)] <- NA
+            coef[fit$pivot][seq.int(fit$rank + 1, nvars)] <- NA
         xxnames <- xnames[fit$pivot]
         residuals <- (y - mu)/mu.eta(eta)
         fit$qr <- as.matrix(fit$qr)
-        nr <- min(sum(good),  nvars)
+        nr <- min(sum(good), nvars)
         if (nr < nvars) {
             Rmat <- diag(nvars)
-            Rmat[1L:nr,  1L:nvars] <- fit$qr[1L:nr,  1L:nvars]
+            Rmat[1L:nr, 1L:nvars] <- fit$qr[1L:nr, 1L:nvars]
         }
-        else Rmat <- fit$qr[1L:nvars,  1L:nvars]
+        else Rmat <- fit$qr[1L:nvars, 1L:nvars]
         Rmat <- as.matrix(Rmat)
         Rmat[row(Rmat)  >  col(Rmat)] <- 0
         names(coef) <- xnames
         colnames(fit$qr) <- xxnames
-        dimnames(Rmat) <- list(xxnames,  xxnames)
+        dimnames(Rmat) <- list(xxnames, xxnames)
     }
     names(residuals) <- ynames
     names(mu) <- ynames
     names(eta) <- ynames
-    wt <- rep.int(0,  nobs)
+    wt <- rep.int(0, nobs)
     wt[good] <- w^2
     names(wt) <- ynames
     names(weights) <- ynames
     names(y) <- ynames
     if (!EMPTY)
-        names(fit$effects) <- c(xxnames[seq_len(fit$rank)],  rep.int("",
+        names(fit$effects) <- c(xxnames[seq_len(fit$rank)], rep.int("",
             sum(good) - fit$rank))
     wtdmu <- if (intercept)
         sum(weights * y)/sum(weights)
     else linkinv(offset)
-    nulldev <- sum(dev.resids(y,  wtdmu,  weights))
-    n.ok <- nobs - sum(weights = =  0)
+    nulldev <- sum(dev.resids(y, wtdmu, weights))
+    n.ok <- nobs - sum(weights ==  0)
     nulldf <- n.ok - as.integer(intercept)
     rank <- if (EMPTY)
         0
     else fit$rank
     resdf <- n.ok - rank
-    aic.model <- aic(y,  length(y),  mu,  weights,  dev) + 2 * rank
-    list(coefficients = coef,  residuals = residuals,  fitted.values = mu,
-        effects = if (!EMPTY) fit$effects,  R = if (!EMPTY) Rmat,
-        rank = rank,  qr = if (!EMPTY) structure(fit[c("qr",  "rank",
-                       "qraux",  "pivot",  "tol")],  class = "qr"),  family = family,
-        linear.predictors = eta,  deviance = dev,  aic = aic.model,
-        null.deviance = nulldev,  iter = iter,  weights = wt,  prior.weights = weights,
-        df.residual = resdf,  df.null = nulldf,  y = y,  converged = conv,
+    aic.model <- aic(y, length(y), mu, weights, dev) + 2 * rank
+    list(coefficients = coef, residuals = residuals, fitted.values = mu,
+        effects = if (!EMPTY) fit$effects, R = if (!EMPTY) Rmat,
+        rank = rank, qr = if (!EMPTY) structure(fit[c("qr", "rank",
+                       "qraux", "pivot", "tol")], class = "qr"), family = family,
+        linear.predictors = eta, deviance = dev, aic = aic.model,
+        null.deviance = nulldev, iter = iter, weights = wt, prior.weights = weights,
+        df.residual = resdf, df.null = nulldf, y = y, converged = conv,
         boundary = boundary)
 }
 
 
 # copied from limma
-weighted.median.scde <- function (x,  w,  na.rm = FALSE)
+weighted.median.scde <- function (x, w, na.rm = FALSE)
 #       Weighted median
 #       Gordon Smyth
 #       30 June 2005
 {
         if (missing(w))
-                w <- rep.int(1,  length(x))
+                w <- rep.int(1, length(x))
         else {
-                if(length(w) ! =  length(x)) stop("'x' and 'w' must have the same length")
+                if(length(w)  !=  length(x)) stop("'x' and 'w' must have the same length")
                 if(any(is.na(w))) stop("NA weights not allowed")
                 if(any(w<0)) stop("Negative weights not allowed")
         }
@@ -4210,7 +4342,7 @@ weighted.median.scde <- function (x,  w,  na.rm = FALSE)
                 w <- w[i <- !is.na(x)]
                 x <- x[i]
         }
-        if(all(w =  = 0)) {
+        if(all(w == 0)) {
                 warning("All weights are zero")
                 return(NA)
         }
@@ -4226,88 +4358,102 @@ weighted.median.scde <- function (x,  w,  na.rm = FALSE)
 }
 
 # FROM common.r
-
-sn <- function(x) { names(x) <- x return(x) }
-
+sn <- function(x) {
+    names(x) <- x
+    return(x)
+}
 
 # panel routines for pairs()
-
-  pairs.panel.hist <- function(x,  i = NULL,  ...) {
-    usr <- par("usr") on.exit(par(usr))
-    par(usr = c(usr[1:2],  0,  1.5) )
-    h <- hist(x,  plot = FALSE)
-    breaks <- h$breaks nB <- length(breaks)
-    y <- h$counts y <- y/max(y)
-    rect(breaks[-nB],  0,  breaks[-1],  y,  col = "gray70",  ...)
-  }
-  pairs.panel.cor <- function(x,  y,  digits = 2,  prefix = "",  cex.cor,  i = NULL,  j = NULL) {
-    usr <- par("usr") on.exit(par(usr))
-    par(usr = c(0,  1,  0,  1))
-    r <- abs(cor(x,  y, method = "pearson"))
-    #r <- abs(cor(x,  y, method = "spearman"))
-    txt <- format(c(r,  0.123456789),  digits = digits)[1]
-    txt <- paste(prefix,  txt,  sep = "")
-    if(missing(cex.cor)) cex <- 0.6/strwidth(txt)
-    #text(0.5,  0.5,  txt,  cex = cex * r)
-    text(0.5,  0.5,  txt,  cex = cex)
-  }
-  pairs.panel.scatter <- function(x, y, i = NULL,  j = NULL,  ...) {
-    vi <- x > 0 | y > 0 points(x[vi], y[vi], pch = ".", col = densCols(x[vi], y[vi], colramp = colorRampPalette(brewer.pal(9,  "Blues")[-(1:2)])), cex = 2)
-  }
-
-  pairs.panel.smoothScatter <- function(x, y,  i = NULL,  j = NULL,  ...) { vi <- x > 0 | y > 0 smoothScatter(x[vi], y[vi],  add = T,  ...)}
-
+pairs.panel.hist <- function(x, i = NULL, ...) {
+    usr <- par("usr")
+    on.exit(par(usr))
+    par(usr = c(usr[1:2], 0, 1.5) )
+    h <- hist(x, plot = FALSE)
+    breaks <- h$breaks
+    nB <- length(breaks)
+    y <- h$counts
+    y <- y/max(y)
+    rect(breaks[-nB], 0, breaks[-1], y, col = "gray70", ...)
+}
+pairs.panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, i = NULL, j = NULL) {
+    usr <- par("usr")
+    on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y, method = "pearson"))
+    #r <- abs(cor(x, y, method = "spearman"))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste(prefix, txt, sep = "")
+    if(missing(cex.cor)) { cex <- 0.6/strwidth(txt) }
+    #text(0.5, 0.5, txt, cex = cex * r)
+    text(0.5, 0.5, txt, cex = cex)
+}
+pairs.panel.scatter <- function(x, y, i = NULL, j = NULL, ...) {
+    vi <- x > 0 | y > 0
+    points(x[vi], y[vi], pch = ".", col = densCols(x[vi], y[vi], colramp = colorRampPalette(brewer.pal(9, "Blues")[-(1:2)])), cex = 2)
+}
+pairs.panel.smoothScatter <- function(x, y, i = NULL, j = NULL, ...) {
+    vi <- x > 0 | y > 0
+    smoothScatter(x[vi], y[vi], add = T, ...)
+}
 
 # a slight modification of pairs that passes i/j indecies to the panel methods
-pairs.extended <- function (x,  labels,  panel = points,  ...,
-          lower.panel = panel,  upper.panel = panel,
-          diag.panel = NULL,  text.panel = textPanel,
+pairs.extended <- function (x, labels, panel = points, ...,
+          lower.panel = panel, upper.panel = panel,
+          diag.panel = NULL, text.panel = textPanel,
           label.pos = 0.5 + has.diag/3,
-          cex.labels = NULL,  font.labels = 1,
-          row1attop = TRUE,  gap = 1)
+          cex.labels = NULL, font.labels = 1,
+          row1attop = TRUE, gap = 1)
 {
-    textPanel <-
-        function(x = 0.5,  y = 0.5,  txt,  cex,  font)
-            text(x,  y,  txt,  cex = cex,  font = font)
+    textPanel <- function(x = 0.5, y = 0.5, txt, cex, font) {
+        text(x, y, txt, cex = cex, font = font)
+    }
 
-    localAxis <- function(side,  x,  y,  xpd,  bg,  col = NULL,  main,  oma,  ...) {
+    localAxis <- function(side, x, y, xpd, bg, col = NULL, main, oma, ...) {
       ## Explicitly ignore any color argument passed in as
       ## it was most likely meant for the data points and
       ## not for the axis.
-        if(side %%2 = =  1) Axis(x,  side = side,  xpd = NA,  ...)
-        else Axis(y,  side = side,  xpd = NA,  ...)
+        if(side %%2 ==  1) { Axis(x, side = side, xpd = NA, ...) }
+        else { Axis(y, side = side, xpd = NA, ...) }
     }
 
-    localPlot <- function(...,  main,  oma,  font.main,  cex.main) plot(...)
-    localLowerPanel <- function(...,  main,  oma,  font.main,  cex.main)
-        lower.panel(...)
-    localUpperPanel <- function(...,  main,  oma,  font.main,  cex.main)
-        upper.panel(...)
+    localPlot <- function(..., main, oma, font.main, cex.main) { plot(...) }
+    localLowerPanel <- function(..., main, oma, font.main, cex.main) { lower.panel(...) }
+    localUpperPanel <- function(..., main, oma, font.main, cex.main) { upper.panel(...) }
+    localDiagPanel <- function(..., main, oma, font.main, cex.main) { diag.panel(...) }
 
-    localDiagPanel <- function(...,  main,  oma,  font.main,  cex.main)
-        diag.panel(...)
-
-    dots <- list(...) nmdots <- names(dots)
+    dots <- list(...)
+    nmdots <- names(dots)
     if (!is.matrix(x)) {
         x <- as.data.frame(x)
         for(i in seq_along(names(x))) {
-            if(is.factor(x[[i]]) || is.logical(x[[i]]))
+            if(is.factor(x[[i]]) || is.logical(x[[i]])) {
                x[[i]] <- as.numeric(x[[i]])
-            if(!is.numeric(unclass(x[[i]])))
+            }
+            if(!is.numeric(unclass(x[[i]]))) {
                 stop("non-numeric argument to 'pairs'")
+            }
         }
-    } else if (!is.numeric(x)) stop("non-numeric argument to 'pairs'")
+    } else if(!is.numeric(x)) {
+        stop("non-numeric argument to 'pairs'")
+    }
     panel <- match.fun(panel)
-    if((has.lower <- !is.null(lower.panel)) && !missing(lower.panel))
+    if((has.lower <- !is.null(lower.panel)) && !missing(lower.panel)) {
         lower.panel <- match.fun(lower.panel)
-    if((has.upper <- !is.null(upper.panel)) && !missing(upper.panel))
+    }
+    if((has.upper <- !is.null(upper.panel)) && !missing(upper.panel)) {
         upper.panel <- match.fun(upper.panel)
-    if((has.diag  <- !is.null( diag.panel)) && !missing( diag.panel))
+    }
+    if((has.diag  <- !is.null( diag.panel)) && !missing( diag.panel)) {
         diag.panel <- match.fun( diag.panel)
+    }
 
     if(row1attop) {
-        tmp <- lower.panel lower.panel <- upper.panel upper.panel <- tmp
-        tmp <- has.lower has.lower <- has.upper has.upper <- tmp
+        tmp <- lower.panel
+        lower.panel <- upper.panel
+        upper.panel <- tmp
+        tmp <- has.lower
+        has.lower <- has.upper
+        has.upper <- tmp
     }
 
     nc <- ncol(x)
@@ -4315,67 +4461,95 @@ pairs.extended <- function (x,  labels,  panel = points,  ...,
     has.labs <- TRUE
     if (missing(labels)) {
         labels <- colnames(x)
-        if (is.null(labels)) labels <- paste("var",  1L:nc)
+        if (is.null(labels)) {
+            labels <- paste("var", 1L:nc)
+        }
+    } else if(is.null(labels)) {
+        has.labs <- FALSE
     }
-    else if(is.null(labels)) has.labs <- FALSE
-    oma <- if("oma" %in% nmdots) dots$oma else NULL
-    main <- if("main" %in% nmdots) dots$main else NULL
+    oma <- if("oma" %in% nmdots) {
+        dots$oma
+    } else {
+        NULL
+    }
+    main <- if("main" %in% nmdots) {
+        dots$main
+    } else {
+        NULL
+    }
     if (is.null(oma)) {
-        oma <- c(4,  4,  4,  4)
-        if (!is.null(main)) oma[3L] <- 6
+        oma <- c(4, 4, 4, 4)
+        if (!is.null(main)) {
+            oma[3L] <- 6
+        }
     }
-    opar <- par(mfrow = c(nc,  nc),  mar = rep.int(gap/2,  4),  oma = oma)
+    opar <- par(mfrow = c(nc, nc), mar = rep.int(gap/2, 4), oma = oma)
     on.exit(par(opar))
 
     for (i in if(row1attop) 1L:nc else nc:1L)
         for (j in 1L:nc) {
-            localPlot(x[,  j],  x[,  i],  xlab = "",  ylab = "",
-                      axes = FALSE,  type = "n",  ...)
-            if(i = =  j || (i < j && has.lower) || (i  >  j && has.upper) ) {
+            localPlot(x[, j], x[, i], xlab = "", ylab = "", axes = FALSE, type = "n", ...)
+            if(i ==  j || (i < j && has.lower) || (i  >  j && has.upper) ) {
                 box()
-                if(i = =  1  && (!(j %% 2) || !has.upper || !has.lower ))
-                    localAxis(1 + 2*row1attop,  x[,  j],  x[,  i],  ...)
-                if(i = =  nc && (  j %% 2  || !has.upper || !has.lower ))
-                    localAxis(3 - 2*row1attop,  x[,  j],  x[,  i],  ...)
-                if(j = =  1  && (!(i %% 2) || !has.upper || !has.lower ))
-                    localAxis(2,  x[,  j],  x[,  i],  ...)
-                if(j = =  nc && (  i %% 2  || !has.upper || !has.lower ))
-                    localAxis(4,  x[,  j],  x[,  i],  ...)
+                if(i ==  1  && (!(j %% 2) || !has.upper || !has.lower ))
+                    localAxis(1 + 2*row1attop, x[, j], x[, i], ...)
+                if(i ==  nc && (  j %% 2  || !has.upper || !has.lower ))
+                    localAxis(3 - 2*row1attop, x[, j], x[, i], ...)
+                if(j ==  1  && (!(i %% 2) || !has.upper || !has.lower ))
+                    localAxis(2, x[, j], x[, i], ...)
+                if(j ==  nc && (  i %% 2  || !has.upper || !has.lower ))
+                    localAxis(4, x[, j], x[, i], ...)
                 mfg <- par("mfg")
-                if(i = =  j) {
-                    if (has.diag) localDiagPanel(as.vector(x[,  i]),  i = i,  ...)
+                if(i ==  j) {
+                    if (has.diag) localDiagPanel(as.vector(x[, i]), i = i, ...)
                     if (has.labs) {
-                        par(usr = c(0,  1,  0,  1))
+                        par(usr = c(0, 1, 0, 1))
                         if(is.null(cex.labels)) {
-                            l.wid <- strwidth(labels,  "user")
-                            cex.labels <- max(0.8,  min(2,  .9 / max(l.wid)))
+                            l.wid <- strwidth(labels, "user")
+                            cex.labels <- max(0.8, min(2, .9 / max(l.wid)))
                         }
-                        text.panel(0.5,  label.pos,  labels[i],
-                                   cex = cex.labels,  font = font.labels)
+                        text.panel(0.5, label.pos, labels[i],
+                                   cex = cex.labels, font = font.labels)
                     }
                 } else if(i < j)
-                    localLowerPanel(as.vector(x[,  j]),  as.vector(x[,  i]),  i = i, j = j,  ...)
+                    localLowerPanel(as.vector(x[, j]), as.vector(x[, i]), i = i, j = j, ...)
                 else
-                    localUpperPanel(as.vector(x[,  j]),  as.vector(x[,  i]),  i = i, j = j,  ...)
-                if (any(par("mfg") ! =  mfg))
+                    localUpperPanel(as.vector(x[, j]), as.vector(x[, i]), i = i, j = j, ...)
+                if (any(par("mfg")  !=  mfg))
                     stop("the 'panel' function made a new plot")
-            } else par(new = FALSE)
-
+            } else {
+                par(new = FALSE)
+            }
         }
     if (!is.null(main)) {
-        font.main <- if("font.main" %in% nmdots) dots$font.main else par("font.main")
-        cex.main <- if("cex.main" %in% nmdots) dots$cex.main else par("cex.main")
-        mtext(main,  3,  3,  TRUE,  0.5,  cex = cex.main,  font = font.main)
+        font.main <- if("font.main" %in% nmdots) {
+            dots$font.main
+        } else {
+            par("font.main")
+        }
+        cex.main <- if("cex.main" %in% nmdots) {
+            dots$cex.main
+        } else {
+            par("cex.main")
+        }
+        mtext(main, 3, 3, TRUE, 0.5, cex = cex.main, font = font.main)
     }
     invisible(NULL)
 }
 
 
-# given a set of pdfs (columns),  calculate summary statis (mle,  95% CI,  Z-score deviations from 0)
+# given a set of pdfs (columns), calculate summary statis (mle, 95% CI, Z-score deviations from 0)
 quick.distribution.summary <- function(s.bdiffp) {
   diffv <- as.numeric(colnames(s.bdiffp))
-  dq <- t(apply(s.bdiffp, 1, function(p) { mle <- which.max(p) p <- cumsum(p) return(diffv[c(lb = max(c(1, which(p<0.025))), mle, min(c(length(p), which(p > (1-0.025)))))]) }))/log10(2) colnames(dq) <- c("lb", "mle", "ub")
-  cq <- rep(0, nrow(dq)) 0 cq[dq[, 1] > 0] <- dq[dq[, 1] > 0, 1] cq[dq[, 3]<0] <- dq[dq[, 3]<0, 3]
+  dq <- t(apply(s.bdiffp, 1, function(p) {
+      mle <- which.max(p)
+      p <- cumsum(p)
+      return(diffv[c(lb = max(c(1, which(p<0.025))), mle, min(c(length(p), which(p > (1-0.025)))))])
+      }))/log10(2)
+  colnames(dq) <- c("lb", "mle", "ub")
+  cq <- rep(0, nrow(dq))
+  cq[dq[, 1] > 0] <- dq[dq[, 1] > 0, 1]
+  cq[dq[, 3]<0] <- dq[dq[, 3]<0, 3]
   z <- get.ratio.posterior.Z.score(s.bdiffp)
   za <- sign(z)*qnorm(p.adjust(pnorm(abs(z), lower.tail = F), method = "BH"), lower.tail = F)
   data.frame(dq, "ce" = as.numeric(cq), "Z" = as.numeric(z), "cZ" = as.numeric(za))
@@ -4421,9 +4595,9 @@ weightedMatVar <- function(mat, matw, batch = NULL, center = T, min.weight = 0, 
 # GEV t() function
 gev.t <- function(x, loc, scale, shape = rep(0, length(loc)), log = F) {
     if(log) {
-        pmin(0, ifelse(shape =  = 0, -(x-loc)/scale, (-1/shape)*log(pmax(0, 1+shape*(x-loc)/scale))))
+        pmin(0, ifelse(shape == 0, -(x-loc)/scale, (-1/shape)*log(pmax(0, 1+shape*(x-loc)/scale))))
     } else {
-        pmin(1, ifelse(shape =  = 0, exp(-(x-loc)/scale), ((pmax(0, 1+shape*(x-loc)/scale))^(-1/shape))))
+        pmin(1, ifelse(shape == 0, exp(-(x-loc)/scale), ((pmax(0, 1+shape*(x-loc)/scale))^(-1/shape))))
     }
 }
 # returns upper tail of GEV in log scale
@@ -4436,7 +4610,8 @@ pgev.upper.log <- function(x, loc, scale, shape = rep(0, length(loc))) {
 # BH P-value adjustment with a log option
 bh.adjust <- function(x, log = F) {
   nai <- which(!is.na(x))
-  ox <- x x<-x[nai]
+  ox <- x
+  x<-x[nai]
   id <- order(x, decreasing = F)
   if(log) {
     q <- x[id] + log(length(x)/seq_along(x))
@@ -4463,7 +4638,7 @@ pathway.pc.correlation.distance <- function(pcc, xv, n.cores = 10, target.ndf = 
     return(list(i = mi[mo], v = rt[mo]))
   }, BPPARAM = MulticoreParam(workers = n.cores))
 
-  x <- .Call("plSemicompleteCor2",  pl,  PACKAGE = "scde")
+  x <- .Call("plSemicompleteCor2", pl, PACKAGE = "scde")
 
   if(!is.null(target.ndf)) {
     r <- x$r[upper.tri(x$r)]
@@ -4474,7 +4649,8 @@ pathway.pc.correlation.distance <- function(pcc, xv, n.cores = 10, target.ndf = 
     nr <- nr/sqrt(target.ndf-2+nr^2)
     nr[is.nan(nr)] <- r[is.nan(nr)]
 
-    cr <- x$r cr[upper.tri(cr)] <- nr
+    cr <- x$r
+    cr[upper.tri(cr)] <- nr
     cr[lower.tri(cr)] <- t(cr)[lower.tri(cr)]
   } else {
     cr <- x$r
@@ -4490,7 +4666,7 @@ pathway.pc.correlation.distance <- function(pcc, xv, n.cores = 10, target.ndf = 
 
 collapse.aspect.clusters <- function(d, dw, ct, scale = T, pick.top = F) {
   xvm <- do.call(rbind, tapply(seq_len(nrow(d)), factor(ct, levels = sort(unique(ct))), function(ii) {
-    if(length(ii) =  = 1) return(d[ii, ])
+    if(length(ii) == 1) return(d[ii, ])
     if(pick.top) {
       return(d[ii[which.max(apply(d[ii, ], 1, var))], ])
     }
@@ -4502,7 +4678,7 @@ collapse.aspect.clusters <- function(d, dw, ct, scale = T, pick.top = F) {
       if(scale) {
         xv <- xv*sqrt(max(apply(d[ii, ], 1, var)))/sqrt(var(xv))
       }
-      if(sum(abs(xv)) =  = 0) { xv <- abs(rnorm(length(xv), sd = 1e-6)) }
+      if(sum(abs(xv)) == 0) { xv <- abs(rnorm(length(xv), sd = 1e-6)) }
     } else {
       xv <- abs(rnorm(length(xv), sd = 1e-6))
     }
@@ -4510,7 +4686,7 @@ collapse.aspect.clusters <- function(d, dw, ct, scale = T, pick.top = F) {
     xv
   }))
   rownames(xvm) <- unlist(tapply(seq_len(nrow(d)), factor(ct, levels = sort(unique(ct))), function(ii) {
-    if(length(ii) =  = 1) return(rownames(d)[ii])
+    if(length(ii) == 1) return(rownames(d)[ii])
     return(rownames(d)[ii[which.max(apply(d[ii, ], 1, var))]])
   }))
 
@@ -4523,81 +4699,88 @@ collapse.aspect.clusters <- function(d, dw, ct, scale = T, pick.top = F) {
 }
 # convert R color to a web hex representation
 col2hex <- function(col) {
-  unlist(lapply(col, function(c) {  c <- col2rgb(c)  sprintf("#%02X%02X%02X",  c[1], c[2], c[3]) }))
+  unlist(lapply(col, function(c) {
+      c <- col2rgb(c)
+      sprintf("#%02X%02X%02X", c[1], c[2], c[3])
+  }))
 }
 
-my.heatmap2 <- function (x,  Rowv = NULL,  Colv = if(symm)"Rowv" else NULL,
-          distfun = dist,  hclustfun = hclust,
+my.heatmap2 <- function (x, Rowv = NULL, Colv = if(symm)"Rowv" else NULL,
+          distfun = dist, hclustfun = hclust,
           reorderfun = function(d, w) reorder(d, w),
-          add.expr,  symm = FALSE,  revC = identical(Colv,  "Rowv"),
-          scale = c("none", "row",  "column"),  na.rm = TRUE,
-          margins = c(5,  5), internal.margin = 0.5,  ColSideColors,  RowSideColors,
-          cexRow = 0.2 + 1/log10(nr),  cexCol = 0.2 + 1/log10(nc),
-          labRow = NULL,  labCol = NULL,   xlab = NULL,  ylab = NULL,
+          add.expr, symm = FALSE, revC = identical(Colv, "Rowv"),
+          scale = c("none", "row", "column"), na.rm = TRUE,
+          margins = c(5, 5), internal.margin = 0.5, ColSideColors, RowSideColors,
+          cexRow = 0.2 + 1/log10(nr), cexCol = 0.2 + 1/log10(nc),
+          labRow = NULL, labCol = NULL,  xlab = NULL, ylab = NULL,
           keep.dendro = FALSE,
-          grid = FALSE,  grid.col = 1, grid.lwd = 1,
-          verbose = getOption("verbose"),  Colv.vsize = 0.15,  Rowv.hsize = 0.15,  ColSideColors.unit.vsize = "0.08",  RowSideColors.hsize = 0.03, lasCol = 2,  lasRow = 2,  respect = F,  box = F,  zlim = NULL,  ...)
+          grid = FALSE, grid.col = 1, grid.lwd = 1,
+          verbose = getOption("verbose"), Colv.vsize = 0.15, Rowv.hsize = 0.15, ColSideColors.unit.vsize = "0.08", RowSideColors.hsize = 0.03, lasCol = 2, lasRow = 2, respect = F, box = F, zlim = NULL, ...)
 {
     scale <- if(symm && missing(scale)) "none" else match.arg(scale)
-    if(length(di <- dim(x)) ! =  2 || !is.numeric(x))
+    if(length(di <- dim(x))  !=  2 || !is.numeric(x))
         stop("'x' must be a numeric matrix")
     nr <- di[1]
     nc <- di[2]
-    if(nr < 1 || nc < =  1)
+    if(nr < 1 || nc <=  1)
         stop("'x' must have at least one row and 2 columns")
-    if(!is.numeric(margins) || length(margins) ! =  2)
+    if(!is.numeric(margins) || length(margins)  !=  2)
         stop("'margins' must be a numeric vector of length 2")
 
     if(is.null(zlim)) {
       zlim <- range(x[is.finite(x)])
     } else {
-      x[x<zlim[1]] <- zlim[1] x[x > zlim[2]] <- zlim[2]
+      x[x<zlim[1]] <- zlim[1]
+      x[x > zlim[2]] <- zlim[2]
     }
-
 
     doRdend <- !identical(Rowv, NA)
     doCdend <- !identical(Colv, NA)
     ## by default order by row/col means
-    if(is.null(Rowv)) Rowv <- rowMeans(x,  na.rm = na.rm)
-    if(is.null(Colv)) Colv <- colMeans(x,  na.rm = na.rm)
+    if(is.null(Rowv)) {
+        Rowv <- rowMeans(x, na.rm = na.rm)
+    }
+    if(is.null(Colv)) {
+        Colv <- colMeans(x, na.rm = na.rm)
+    }
 
     ## get the dendrograms and reordering indices
 
     if(doRdend) {
-        if(inherits(Rowv,  "dendrogram"))
+        if(inherits(Rowv, "dendrogram"))
             ddr <- Rowv
         else {
             hcr <- hclustfun(distfun(x))
             ddr <- as.dendrogram(hcr)
             if(!is.logical(Rowv) || Rowv)
-                ddr <- reorderfun(ddr,  Rowv)
+                ddr <- reorderfun(ddr, Rowv)
         }
-        if(nr ! =  length(rowInd <- order.dendrogram(ddr)))
+        if(nr  !=  length(rowInd <- order.dendrogram(ddr)))
             stop("row dendrogram ordering gave index of wrong length")
     }
     else rowInd <- 1:nr
 
     if(doCdend) {
-        if(inherits(Colv,  "dendrogram"))
+        if(inherits(Colv, "dendrogram"))
             ddc <- Colv
-        else if(identical(Colv,  "Rowv")) {
-            if(nr ! =  nc)
-                stop('Colv = "Rowv" but nrow(x) ! =  ncol(x)')
+        else if(identical(Colv, "Rowv")) {
+            if(nr  !=  nc)
+                stop('Colv = "Rowv" but nrow(x)  !=  ncol(x)')
             ddc <- ddr
         }
         else {
             hcc <- hclustfun(distfun(if(symm)x else t(x)))
             ddc <- as.dendrogram(hcc)
             if(!is.logical(Colv) || Colv)
-                ddc <- reorderfun(ddc,  Colv)
+                ddc <- reorderfun(ddc, Colv)
         }
-        if(nc ! =  length(colInd <- order.dendrogram(ddc)))
+        if(nc  !=  length(colInd <- order.dendrogram(ddc)))
             stop("column dendrogram ordering gave index of wrong length")
     }
     else colInd <- 1:nc
 
     ## reorder x
-    x <- x[rowInd,  colInd, drop = F]
+    x <- x[rowInd, colInd, drop = F]
 
     labRow <-
         if(is.null(labRow))
@@ -4608,67 +4791,70 @@ my.heatmap2 <- function (x,  Rowv = NULL,  Colv = if(symm)"Rowv" else NULL,
             if(is.null(colnames(x))) (1:nc)[colInd] else colnames(x)
         else labCol[colInd]
 
-    if(scale = =  "row") {
-        x <- sweep(x,  1,  rowMeans(x,  na.rm = na.rm))
-        sx <- apply(x,  1,  sd,  na.rm = na.rm)
-        x <- sweep(x,  1,  sx,  "/")
+    if(scale ==  "row") {
+        x <- sweep(x, 1, rowMeans(x, na.rm = na.rm))
+        sx <- apply(x, 1, sd, na.rm = na.rm)
+        x <- sweep(x, 1, sx, "/")
     }
-    else if(scale = =  "column") {
-        x <- sweep(x,  2,  colMeans(x,  na.rm = na.rm))
-        sx <- apply(x,  2,  sd,  na.rm = na.rm)
-        x <- sweep(x,  2,  sx,  "/")
+    else if(scale ==  "column") {
+        x <- sweep(x, 2, colMeans(x, na.rm = na.rm))
+        sx <- apply(x, 2, sd, na.rm = na.rm)
+        x <- sweep(x, 2, sx, "/")
     }
 
     ## Calculate the plot layout
     ds <- dev.size(units = "cm")
 
 
-    lmat <- rbind(c(NA,  3),  2:1)
+    lmat <- rbind(c(NA, 3), 2:1)
     if(doRdend) {
-      lwid <- c(if(is.character(Rowv.hsize)) Rowv.hsize else lcm(Rowv.hsize*ds[1]),  1)
+      lwid <- c(if(is.character(Rowv.hsize)) Rowv.hsize else lcm(Rowv.hsize*ds[1]), 1)
     } else {
-      lmat[2, 1] <- NA lmat[1, 2] <- 2 lwid <- c(0,  1)
+      lmat[2, 1] <- NA
+      lmat[1, 2] <- 2
+      lwid <- c(0, 1)
     }
     if(doCdend) {
-      lhei <- c(if(is.character(Colv.vsize)) Colv.vsize else lcm(Colv.vsize*ds[2]),  1)
+      lhei <- c(if(is.character(Colv.vsize)) Colv.vsize else lcm(Colv.vsize*ds[2]), 1)
     } else {
-      lmat[1, 2] <- NA lhei <- c(0, 1)
+      lmat[1, 2] <- NA
+      lhei <- c(0, 1)
     }
-    #lwid <- c(if(doRdend) lcm(Rowv.hsize*ds[1]) else "0.5 cm",  1)
-    #lhei <- c((if(doCdend) lcm(Colv.vsize*ds[2]) else "0.5 cm"),  1)
+    #lwid <- c(if(doRdend) lcm(Rowv.hsize*ds[1]) else "0.5 cm", 1)
+    #lhei <- c((if(doCdend) lcm(Colv.vsize*ds[2]) else "0.5 cm"), 1)
     if(!missing(ColSideColors) && !is.null(ColSideColors)) { ## add middle row to layout
 
       if(is.matrix(ColSideColors)) {
-        if(ncol(ColSideColors)! = nc)
+        if(ncol(ColSideColors) != nc)
           stop("'ColSideColors' matrix must have the same number of columns as length ncol(x)")
         if(is.character(ColSideColors.unit.vsize)) {
           ww <- paste(as.numeric(gsub("(\\d+\\.?\\d*)(.*)", "\\1", ColSideColors.unit.vsize, perl = T))*nrow(ColSideColors), gsub("(\\d+\\.?\\d*)(.*)", "\\2", ColSideColors.unit.vsize, perl = T), sep = "")
         } else {
           ww <- lcm(ColSideColors.unit.vsize*ds[2]*nrow(ColSideColors))
         }
-        lmat <- rbind(lmat[1, ]+1,  c(NA, 1),  lmat[2, ]+1)
-        lhei <- c(lhei[1],  ww,  lhei[2])
+        lmat <- rbind(lmat[1, ]+1, c(NA, 1), lmat[2, ]+1)
+        lhei <- c(lhei[1], ww, lhei[2])
       } else {
-        if(!is.character(ColSideColors) || length(ColSideColors) ! =  nc)
+        if(!is.character(ColSideColors) || length(ColSideColors)  !=  nc)
           stop("'ColSideColors' must be a character vector of length ncol(x)")
         if(is.character(ColSideColors.unit.vsize)) {
           ww <- paste(as.numeric(gsub("(\\d+\\.?\\d*)(.*)", "\\1", ColSideColors.unit.vsize, perl = T)), gsub("(\\d+\\.?\\d*)(.*)", "\\2", ColSideColors.unit.vsize, perl = T), sep = "")
         } else {
           ww <- lcm(ColSideColors.unit.vsize*ds[2])
         }
-        lmat <- rbind(lmat[1, ]+1,  c(NA, 1),  lmat[2, ]+1)
-        lhei <- c(lhei[1],  ww,  lhei[2])
+        lmat <- rbind(lmat[1, ]+1, c(NA, 1), lmat[2, ]+1)
+        lhei <- c(lhei[1], ww, lhei[2])
       }
     }
     if(!missing(RowSideColors) && !is.null(RowSideColors)) { ## add middle column to layout
-        if(!is.character(RowSideColors) || length(RowSideColors) ! =  nr)
+        if(!is.character(RowSideColors) || length(RowSideColors)  !=  nr)
             stop("'RowSideColors' must be a character vector of length nrow(x)")
-        lmat <- cbind(lmat[, 1]+1,  c(rep(NA,  nrow(lmat)-1),  1),  lmat[, 2]+1)
-        lwid <- c(lwid[1],  if(is.character(RowSideColors.hsize)) RowSideColors.hsize else lcm(RowSideColors.hsize*ds[1]),  lwid[2])
+        lmat <- cbind(lmat[, 1]+1, c(rep(NA, nrow(lmat)-1), 1), lmat[, 2]+1)
+        lwid <- c(lwid[1], if(is.character(RowSideColors.hsize)) RowSideColors.hsize else lcm(RowSideColors.hsize*ds[1]), lwid[2])
       }
     lmat[is.na(lmat)] <- 0
     if(verbose) {
-        cat("layout: widths = ",  lwid,  ",  heights = ",  lhei, " lmat = \n")
+        cat("layout: widths = ", lwid, ", heights = ", lhei, " lmat = \n")
         print(lmat)
     }
 
@@ -4676,26 +4862,26 @@ my.heatmap2 <- function (x,  Rowv = NULL,  Colv = if(symm)"Rowv" else NULL,
 
     op <- par(no.readonly = TRUE)
     #on.exit(par(op))
-    layout(lmat,  widths = lwid,  heights = lhei,  respect = respect)
+    layout(lmat, widths = lwid, heights = lhei, respect = respect)
     ## draw the side bars
     if(!missing(RowSideColors) && !is.null(RowSideColors)) {
-        par(mar = c(margins[1], 0,  0, internal.margin))
-        image(rbind(1:nr),  col = RowSideColors[rowInd],  axes = FALSE)
+        par(mar = c(margins[1], 0, 0, internal.margin))
+        image(rbind(1:nr), col = RowSideColors[rowInd], axes = FALSE)
         if(box) { box() }
     }
     if(!missing(ColSideColors) && !is.null(ColSideColors)) {
-        par(mar = c(internal.margin, 0,  0, margins[2]))
+        par(mar = c(internal.margin, 0, 0, margins[2]))
         if(is.matrix(ColSideColors)) {
-          image(t(matrix(1:length(ColSideColors), byrow = T, nrow = nrow(ColSideColors), ncol = ncol(ColSideColors))),  col = as.vector(t(ColSideColors[, colInd, drop = F])),  axes = FALSE)
+          image(t(matrix(1:length(ColSideColors), byrow = T, nrow = nrow(ColSideColors), ncol = ncol(ColSideColors))), col = as.vector(t(ColSideColors[, colInd, drop = F])), axes = FALSE)
           if(box) { box() }
         } else {
-          image(cbind(1:nc),  col = ColSideColors[colInd],  axes = FALSE)
+          image(cbind(1:nc), col = ColSideColors[colInd], axes = FALSE)
           if(box) { box() }
         }
     }
     ## draw the main carpet
-    par(mar = c(margins[1],  0,  0,  margins[2]))
-    if(!symm || scale ! =  "none")
+    par(mar = c(margins[1], 0, 0, margins[2]))
+    if(!symm || scale  !=  "none")
         x <- t(x)
     if(revC) { # x columns reversed
         iy <- nr:1
@@ -4703,13 +4889,13 @@ my.heatmap2 <- function (x,  Rowv = NULL,  Colv = if(symm)"Rowv" else NULL,
         x <- x[, iy, drop = F]
     } else iy <- 1:nr
 
-    image(1:nc,  1:nr,  x,  xlim = 0.5+ c(0,  nc),  ylim = 0.5+ c(0,  nr),
-          axes = FALSE,  xlab = "",  ylab = "",  zlim = zlim,  ...)
+    image(1:nc, 1:nr, x, xlim = 0.5+ c(0, nc), ylim = 0.5+ c(0, nr),
+          axes = FALSE, xlab = "", ylab = "", zlim = zlim, ...)
     if(box) { box() }
-    axis(1,  1:nc,  labels =  labCol,  las =  lasCol,  line =  -0.5,  tick =  0,  cex.axis =  cexCol)
-    if(!is.null(xlab)) mtext(xlab,  side = 1,  line = margins[1] - 1.25)
-    axis(4,  iy,  labels =  labRow,  las =  lasRow,  line =  -0.5,  tick =  0,  cex.axis =  cexRow)
-    if(!is.null(ylab)) mtext(ylab,  side = 4,  line = margins[2] - 1.25, las = lasRow)
+    axis(1, 1:nc, labels =  labCol, las =  lasCol, line =  -0.5, tick =  0, cex.axis =  cexCol)
+    if(!is.null(xlab)) mtext(xlab, side = 1, line = margins[1] - 1.25)
+    axis(4, iy, labels =  labRow, las =  lasRow, line =  -0.5, tick =  0, cex.axis =  cexRow)
+    if(!is.null(ylab)) mtext(ylab, side = 4, line = margins[2] - 1.25, las = lasRow)
     if (!missing(add.expr))
         eval(substitute(add.expr))
 
@@ -4722,15 +4908,15 @@ my.heatmap2 <- function (x,  Rowv = NULL,  Colv = if(symm)"Rowv" else NULL,
 
     ## the two dendrograms :
     if(doRdend) {
-      par(mar = c(margins[1],  internal.margin,  0,  0))
-      plot(ddr,  horiz = TRUE,  axes = FALSE,  yaxs = "i",  leaflab = "none", xaxs = "i")
+      par(mar = c(margins[1], internal.margin, 0, 0))
+      plot(ddr, horiz = TRUE, axes = FALSE, yaxs = "i", leaflab = "none", xaxs = "i")
     }
 
     if(doCdend) {
-      par(mar = c(0,  0,  internal.margin,  margins[2]))
-      plot(ddc,  axes = FALSE,  xaxs = "i",  leaflab = "none", yaxs = "i")
+      par(mar = c(0, 0, internal.margin, margins[2]))
+      plot(ddc, axes = FALSE, xaxs = "i", leaflab = "none", yaxs = "i")
     }
-    invisible(list(rowInd = rowInd,  colInd = colInd,
+    invisible(list(rowInd = rowInd, colInd = colInd,
                    Rowv = if(keep.dendro && doRdend) ddr,
                    Colv = if(keep.dendro && doCdend) ddc ))
 }
@@ -4754,11 +4940,13 @@ ViewDiff <- setRefClass(
         colnames(gt) <<- paste(colnames(gt), "raw", sep = "_")
       }
       if(!is.null(results$batch.adjusted)) {
-        df <- results$batch.adjusted colnames(df) <- paste(colnames(df), "cor", sep = "_")
+        df <- results$batch.adjusted
+        colnames(df) <- paste(colnames(df), "cor", sep = "_")
         gt <<- cbind(gt, df)
       }
       if(!is.null(results$batch.effect)) {
-        df <- results$batch.effect colnames(df) <- paste(colnames(df), "bat", sep = "_")
+        df <- results$batch.effect
+        colnames(df) <- paste(colnames(df), "bat", sep = "_")
         gt <<- cbind(gt, df)
       }
       colnames(gt) <<- tolower(colnames(gt))
@@ -4785,7 +4973,7 @@ ViewDiff <- setRefClass(
           # flybase
           geneLookupURL <<- "http://flybase.org/cgi-bin/uniq.html?db = fbgn&GeneSearch = {0}&context = {1}&species = Dmel&cs = yes&caller = genejump"
         } else {
-          # default,  forward to ensemble search
+          # default, forward to ensemble search
           geneLookupURL <<- "http://useast.ensembl.org/Multi/Search/Results?q = {0}site = ensembl"
         }
       } else {
@@ -4794,7 +4982,7 @@ ViewDiff <- setRefClass(
 
 
 
-      gt <<- gt[gt$z_raw! = "NA", ]
+      gt <<- gt[gt$z_raw != "NA", ]
       gt <<- gt[!is.na(gt$z_raw), ]
 
 
@@ -4803,13 +4991,13 @@ ViewDiff <- setRefClass(
       prior <<- prior
       if(is.null(groups)) { # recover groups from models
         groups <<- as.factor(attr(models, "groups"))
-        if(is.null(groups)) stop("ERROR: groups factor is not provided,  and models structure is lacking groups attribute")
+        if(is.null(groups)) stop("ERROR: groups factor is not provided, and models structure is lacking groups attribute")
         names(groups) <<- rownames(models)
       } else {
         groups <<- groups
       }
-      if(length(levels(groups))! = 2) {
-        stop(paste("ERROR: wrong number of levels in the grouping factor (", paste(levels(groups), collapse = " "), "),  but must be two.", sep = ""))
+      if(length(levels(groups)) != 2) {
+        stop(paste("ERROR: wrong number of levels in the grouping factor (", paste(levels(groups), collapse = " "), "), but must be two.", sep = ""))
       }
 
       batch <<- batch
@@ -4872,7 +5060,7 @@ ViewDiff <- setRefClass(
                if(trows > 0) {
                  if(!is.null(req$params()$sort)) {
                    if(req$params()$sort %in% colnames(lgt)) {
-                     lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir =  = "DESC")), ]
+                     lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir == "DESC")), ]
                    }
                  } else { # default sort
                    if(is.null(lgt$z_cor)) { lgt <- lgt[order(abs(lgt$z_raw), decreasing = T), ] } else { lgt <- lgt[order(abs(lgt$z_cor), decreasing = T), ] }
@@ -4893,8 +5081,8 @@ ViewDiff <- setRefClass(
              # POSTERIOR PLOT
              '/posterior.png' = {
                gene <- ifelse(is.null(req$params()$gene), sample(gt$gene), req$params()$gene)
-               bootstrap <- ifelse(is.null(req$params()$bootstrap), TRUE, req$params()$bootstrap =  = "T")
-               show.individual.posteriors <- ifelse(is.null(req$params()$show.individual.posteriors), TRUE, req$params()$show.individual.posteriors =  = "true")
+               bootstrap <- ifelse(is.null(req$params()$bootstrap), TRUE, req$params()$bootstrap == "T")
+               show.individual.posteriors <- ifelse(is.null(req$params()$show.individual.posteriors), TRUE, req$params()$show.individual.posteriors == "true")
 
                t <- tempfile()
                #require(Cairo)
@@ -4902,12 +5090,13 @@ ViewDiff <- setRefClass(
                scde.test.gene.expression.difference(gene = gene, models = models, counts = counts, groups = groups, prior = prior, batch = batch, ratio.range = c(-10, 10), show.individual.posteriors = show.individual.posteriors, verbose = F)
                dev.off()
                res$header('Content-type', 'image/png')
-               res$body <- t names(res$body) <- 'file'
+               res$body <- t
+               names(res$body) <- 'file'
              },
              # GENE EXPRESSION LEVELS
              '/elevels.html' = {
                geneName <- ifelse(is.null(req$params()$geneName), gt$gene[[1]], req$params()$geneName)
-               gc <- counts[rownames(counts) =  = geneName, , drop = F]
+               gc <- counts[rownames(counts) == geneName, , drop = F]
                fpm <- exp(scde.expression.magnitude(models, counts = gc))
                df <- rbind(FPM = gc, level = fpm)
                df <- round(df, 2)
@@ -4936,15 +5125,15 @@ ViewDiff <- setRefClass(
 
 
 
-t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(mat), colcols = NULL, zlim = NULL, labRow = NA, vhc = NULL, cexCol = 1, cexRow = 1,  n.pc = 1, nstarts = 50,  row.order = NULL,  show.Colv = TRUE,  plot = T,  trim = 1.1/ncol(mat),  bwpca = T,  ...) {
+t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(mat), colcols = NULL, zlim = NULL, labRow = NA, vhc = NULL, cexCol = 1, cexRow = 1, n.pc = 1, nstarts = 50, row.order = NULL, show.Colv = TRUE, plot = T, trim = 1.1/ncol(mat), bwpca = T, ...) {
   # retrieve gis
   lab <- which(proper.names %in% na.omit(unlist(mget(pathways, env = env, ifnotfound = NA))))
 
-  if(length(lab) =  = 0) {
+  if(length(lab) == 0) {
     # try genes
     lab <- which(proper.names %in% pathways)
   }
-  if(length(lab) =  = 0)
+  if(length(lab) == 0)
     return(NULL)
   #t.quick.show.mat(mat[lab, ], normalize.rows = T)
   #table(rownames(mat) %in% mget(pathways, env = env))
@@ -4961,7 +5150,8 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
   }
 
   d <- d-rowMeans(d)
-  dd <- as.dist(1-abs(cor(t(as.matrix(d))))) dd[is.na(dd)] <- 1
+  dd <- as.dist(1-abs(cor(t(as.matrix(d)))))
+  dd[is.na(dd)] <- 1
   if(is.null(row.order)) {
     if(length(lab) > 2) {
       hc <- fastcluster::hclust(dd, method = "ward")
@@ -4972,12 +5162,15 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
   }
 
   if(is.null(vhc)) {
-    vd <- as.dist(1-cor(as.matrix(d))) vd[is.na(vd)] <- 1
+    vd <- as.dist(1-cor(as.matrix(d)))
+    vd[is.na(vd)] <- 1
     vhc <- fastcluster::hclust(vd, method = "ward")
   }
 
   if(is.null(zlim)) { zlim <- quantile(d, p = c(0.01, 0.99)) }
-  vmap <- d vmap[vmap<zlim[1]] <- zlim[1] vmap[vmap > zlim[2]] <- zlim[2]
+  vmap <- d
+  vmap[vmap<zlim[1]] <- zlim[1]
+  vmap[vmap > zlim[2]] <- zlim[2]
   rownames(vmap) <- rownames(d)
 
   aval <- colSums(d*dw)/colSums(dw)
@@ -4990,7 +5183,8 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
       }
       xp$oc <- oc
       z <- colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(100)[round(oc/max(abs(oc))*49)+50]
-      ld <- xp$rotation[row.order, , drop = F] ld <- colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(100)[round(ld/max(abs(ld))*49)+50]
+      ld <- xp$rotation[row.order, , drop = F]
+      ld <- colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(100)[round(ld/max(abs(ld))*49)+50]
   } else {
       ld <- z <- NULL
   }
@@ -5012,7 +5206,7 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
   if(plot) {
       if(!is.null(colcols)) { z <- rbind(colcols, z) }
       if(show.Colv) { Colv <- as.dendrogram(vhc) } else { Colv <- NA }
-      my.heatmap2(vmap[row.order, , drop = F], Rowv = NA, Colv = Colv, zlim = zlim, col = col, scale = "none", RowSideColors = ld, ColSideColors = z, labRow = labRow, cexCol = cexCol, cexRow = cexRow,  ...)
+      my.heatmap2(vmap[row.order, , drop = F], Rowv = NA, Colv = Colv, zlim = zlim, col = col, scale = "none", RowSideColors = ld, ColSideColors = z, labRow = labRow, cexCol = cexCol, cexRow = cexRow, ...)
   }
   xp$vhc <- vhc
   xp$lab <- lab
@@ -5025,7 +5219,7 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
 }
 ##' View pathway or gene weighted PCA
 ##'
-##' Takes in a list of pathways (or a list of genes),  runs weighted PCA,  optionally showing the result.
+##' Takes in a list of pathways (or a list of genes), runs weighted PCA, optionally showing the result.
 ##' @param pathways character vector of pathway or gene names
 ##' @param varinfo output of pagoda.varnorm()
 ##' @param goenv environment mapping pathways to genes
@@ -5048,9 +5242,10 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
 ##' @param show.Colv whether the column dendrogram should be shown
 ##' @return cell scores along the first principal component of shown genes (returned as invisible)
 ##' @export
-pagoda.show.pathways <- function(pathways, varinfo, goenv = NULL, n.genes = 20, two.sided = F, n.pc = rep(1, length(pathways)), colcols = NULL, zlim = NULL, showRowLabels = F, cexCol = 1, cexRow = 1,  nstarts = 10, cell.clustering = NULL,  show.cell.dendrogram = TRUE,  plot = T,  box = T,  trim = 0,  return.details = F ,  ...) {
-  labRow <- NA if(showRowLabels) { labRow <- NULL }
-  x <- scde:::c.view.pathways(pathways, varinfo$mat, varinfo$matw, goenv, batch = varinfo$batch, n.genes = n.genes, two.sided = two.sided, n.pc = n.pc, colcols = colcols, zlim = zlim, labRow = labRow, cexCol = cexCol, cexRow = cexRow, trim = trim, show.Colv = show.cell.dendrogram, plot = plot, vhc = cell.clustering, labCol = NA, box = T,  ...)
+pagoda.show.pathways <- function(pathways, varinfo, goenv = NULL, n.genes = 20, two.sided = F, n.pc = rep(1, length(pathways)), colcols = NULL, zlim = NULL, showRowLabels = F, cexCol = 1, cexRow = 1, nstarts = 10, cell.clustering = NULL, show.cell.dendrogram = TRUE, plot = T, box = T, trim = 0, return.details = F , ...) {
+  labRow <- NA
+  if(showRowLabels) { labRow <- NULL }
+  x <- scde:::c.view.pathways(pathways, varinfo$mat, varinfo$matw, goenv, batch = varinfo$batch, n.genes = n.genes, two.sided = two.sided, n.pc = n.pc, colcols = colcols, zlim = zlim, labRow = labRow, cexCol = cexCol, cexRow = cexRow, trim = trim, show.Colv = show.cell.dendrogram, plot = plot, vhc = cell.clustering, labCol = NA, box = T, ...)
   if(return.details) {
     invisible(x)
   } else {
@@ -5059,9 +5254,9 @@ pagoda.show.pathways <- function(pathways, varinfo, goenv = NULL, n.genes = 20, 
 }
 
 # takes in a list of pathways with a list of corresponding PC numbers
-# recalculates PCs for each individual pathway,  weighting gene loading in each pathway and then by total
+# recalculates PCs for each individual pathway, weighting gene loading in each pathway and then by total
 # pathway variance over the number of genes (rough approximation)
-c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.genes = 20, two.sided = T, n.pc = rep(1, length(pathways)), colcols = NULL, zlim = NULL, labRow = NA, vhc = NULL, cexCol = 1, cexRow = 1,  nstarts = 50,  row.order = NULL,  show.Colv = TRUE,  plot = T,  trim = 1.1/ncol(mat),  showPC = T,   ...) {
+c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.genes = 20, two.sided = T, n.pc = rep(1, length(pathways)), colcols = NULL, zlim = NULL, labRow = NA, vhc = NULL, cexCol = 1, cexRow = 1, nstarts = 50, row.order = NULL, show.Colv = TRUE, plot = T, trim = 1.1/ncol(mat), showPC = T,  ...) {
   # are these genes or pathways being passed?
   if(!is.null(goenv)) {
     x <- pathways %in% ls(goenv)
@@ -5094,8 +5289,8 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
   # recalculate wPCA for each pathway
   ppca <- pagoda.pathway.wPCA(varinfo = list(mat = mat[gvi, , drop = F], matw = matw[gvi, , drop = F], batch = batch), setenv = list2env(p.genes), n.cores = 1, n.randomizations = 0, n.starts = 2, n.components = max(n.pc), verbose = F, min.pathway.size = 0, max.pathway.size = Inf, n.internal.shuffles = 0)
 
-  if(length(ppca) > 1) { # if more than one pathway was supplied,  combine genes using appropriate loadings and use consensus PCA (1st PC) as a pattern
-    # score top loading genes for each desired PC,  scaling by the sd/sqrt(n) (so that ^2 is = var/n)
+  if(length(ppca) > 1) { # if more than one pathway was supplied, combine genes using appropriate loadings and use consensus PCA (1st PC) as a pattern
+    # score top loading genes for each desired PC, scaling by the sd/sqrt(n) (so that ^2 is = var/n)
     scaled.gene.loadings <- unlist(lapply(seq_along(pathways), function(i) {
       gl <- ppca[[pathways[i]]]$xp$rotation[, n.pc[i], drop = T]*as.numeric(ppca[[pathways[i]]]$xp$sd)[n.pc[i]]/sqrt(ppca[[pathways[i]]]$n)
       names(gl) <- rownames(ppca[[pathways[i]]]$xp$rotation)
@@ -5122,12 +5317,15 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
     # consensus pattern
     lab <- match(names(selected.genes), rownames(mat))
 
-    if(length(lab) =  = 0)
+    if(length(lab) == 0)
       return(NULL)
     if(sum(lab)<3) { return(NULL) }
     if(trim > 0) {
-      rn <- rownames(mat) cn <- colnames(mat)
-      mat <- winsorize.matrix(mat, trim = trim) rownames(mat) <- rn colnames(mat) <- cn
+      rn <- rownames(mat)
+      cn <- colnames(mat)
+      mat <- winsorize.matrix(mat, trim = trim)
+      rownames(mat) <- rn
+      colnames(mat) <- cn
     }
     d <- mat[lab, , drop = F]
     dw <- matw[lab, , drop = F]
@@ -5150,7 +5348,8 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
   }
 
   d <- d-rowMeans(d)
-  dd <- as.dist(1-abs(cor(t(as.matrix(d))))) dd[is.na(dd)] <- 1
+  dd <- as.dist(1-abs(cor(t(as.matrix(d)))))
+  dd[is.na(dd)] <- 1
   if(is.null(row.order)) {
     if(length(lab) > 2) {
       hc <- fastcluster::hclust(dd, method = "ward")
@@ -5161,12 +5360,15 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
   }
 
   if(is.null(vhc)) {
-    vd <- as.dist(1-cor(as.matrix(d))) vd[is.na(vd)] <- 1
+    vd <- as.dist(1-cor(as.matrix(d)))
+    vd[is.na(vd)] <- 1
     vhc <- fastcluster::hclust(vd, method = "ward")
   }
 
   if(is.null(zlim)) { zlim <- quantile(d, p = c(0.01, 0.99)) }
-  vmap <- d vmap[vmap<zlim[1]] <- zlim[1] vmap[vmap > zlim[2]] <- zlim[2]
+  vmap <- d
+  vmap[vmap<zlim[1]] <- zlim[1]
+  vmap[vmap > zlim[2]] <- zlim[2]
   rownames(vmap) <- rownames(d)
 
   aval <- colSums(d*dw*as.numeric(abs(xp$rotation[, consensus.npc])))/colSums(dw)
@@ -5177,21 +5379,20 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
     xp$rotation[, consensus.npc] <- -1*xp$rotation[, consensus.npc]
   }
 
-
   aval <- colorRampPalette(c("blue", "white", "red"), space = "Lab")(100)[round(aval/max(abs(aval))*49)+50]
   z <- colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(100)[round(oc/max(abs(oc))*49)+50]
 
-  ld <- xp$rotation[row.order, consensus.npc] ld <- colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(100)[round(ld/max(abs(ld))*49)+50]
+  ld <- xp$rotation[row.order, consensus.npc]
+  ld <- colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(100)[round(ld/max(abs(ld))*49)+50]
 
   # oc2 <- xp$scores[, 2]
   # oc2 <- colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(100)[round(oc2/max(abs(oc2))*49)+50]
   # oc3 <- xp$scores[, 3]
   # oc3 <- colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(100)[round(oc3/max(abs(oc3))*49)+50]
 
-
   #z <- do.call(rbind, list(aval, oc))
   #z <- rbind(oc3, oc2, oc)
-  if((!showPC) || length(lab)< = 1) {
+  if((!showPC) || length(lab)<= 1) {
     z <- NULL
   }
   col <- colorRampPalette(c("blue", "white", "red"), space = "Lab")(256)
@@ -5199,9 +5400,9 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
 
   if(plot) {
     if(show.Colv) {
-      my.heatmap2(vmap[row.order, , drop = F], Rowv = NA, Colv = as.dendrogram(vhc), zlim = zlim, col = col, scale = "none", RowSideColors = ld, ColSideColors = z, labRow = labRow, cexCol = cexCol, cexRow = cexRow,  ...)
+      my.heatmap2(vmap[row.order, , drop = F], Rowv = NA, Colv = as.dendrogram(vhc), zlim = zlim, col = col, scale = "none", RowSideColors = ld, ColSideColors = z, labRow = labRow, cexCol = cexCol, cexRow = cexRow, ...)
     } else {
-      my.heatmap2(vmap[row.order, vhc$order, drop = F], Rowv = NA, Colv = NA, zlim = zlim, col = col, scale = "none", RowSideColors = ld, ColSideColors = z[vhc$order], labRow = labRow, cexCol = cexCol, cexRow = cexRow,  ...)
+      my.heatmap2(vmap[row.order, vhc$order, drop = F], Rowv = NA, Colv = NA, zlim = zlim, col = col, scale = "none", RowSideColors = ld, ColSideColors = z[vhc$order], labRow = labRow, cexCol = cexCol, cexRow = cexRow, ...)
     }
 
   }
@@ -5224,8 +5425,8 @@ calculate.go.enrichment <- function(genelist, universe, pvalue.cutoff = 1e-3, mi
   all.genes <- unique(ls(env))
   # determine sizes
   universe <- unique(c(universe, genelist))
-  universe <- universe[universe! = ""]
-  genelist <- genelist[genelist! = ""]
+  universe <- universe[universe != ""]
+  genelist <- genelist[genelist != ""]
   ns <- length(intersect(genelist, all.genes))
   us <- length(intersect(universe, all.genes))
   #pv <- lapply(go.map, function(gl) { nwb <- length(intersect(universe, gl[[1]])) if(nwb<mingenes) { return(0.5)} else { p <- phyper(length(intersect(genelist, gl[[1]])), nwb, us-nwb, ns) return(ifelse(p > 0.5, 1.0-p, p)) }})
@@ -5240,7 +5441,8 @@ calculate.go.enrichment <- function(genelist, universe, pvalue.cutoff = 1e-3, mi
 
   tabmap <- match(rownames(stab), rownames(utab))
 
-  cv <- data.frame(cbind(utab, rep(0, length(utab)))) names(cv) <- c("u", "s")
+  cv <- data.frame(cbind(utab, rep(0, length(utab))))
+  names(cv) <- c("u", "s")
   cv$s[match(rownames(stab), rownames(utab))] <- as.vector(stab)
   cv <- na.omit(cv)
   cv <- cv[cv$u > mingenes, ]
@@ -5259,19 +5461,19 @@ calculate.go.enrichment <- function(genelist, universe, pvalue.cutoff = 1e-3, mi
   mg <- length(which(cv$u > mingenes))
   if(over.only) {
     if(pvalue.cutoff<1) {
-      ovi <- which(lpra< = log(pvalue.cutoff))
+      ovi <- which(lpra<= log(pvalue.cutoff))
       uvi <- c()
     } else {
-      ovi <- which((lpr+mg)< = log(pvalue.cutoff))
+      ovi <- which((lpr+mg)<= log(pvalue.cutoff))
       uvi <- c()
     }
   } else {
     if(pvalue.cutoff<1) {
-      ovi <- which(pv<0.5 & lpra< = log(pvalue.cutoff))
-      uvi <- which(pv > 0.5 & lpra< = log(pvalue.cutoff))
+      ovi <- which(pv<0.5 & lpra<= log(pvalue.cutoff))
+      uvi <- which(pv > 0.5 & lpra<= log(pvalue.cutoff))
     } else {
-      ovi <- which(pv<0.5 & (lpr+mg)< = log(pvalue.cutoff))
-      uvi <- which(pv > 0.5 & (lpr+mg)< = log(pvalue.cutoff))
+      ovi <- which(pv<0.5 & (lpr+mg)<= log(pvalue.cutoff))
+      uvi <- which(pv > 0.5 & (lpr+mg)<= log(pvalue.cutoff))
     }
   }
   ovi <- ovi[order(lpr[ovi])]
@@ -5318,7 +5520,8 @@ ViewPagodaApp <- setRefClass(
       gel <- gel[nchar(names(gel)) > 0]
       x <- lapply(names(gel), function(n) assign(n, gel[[n]], envir = renvt))
       renv <<- renvt
-      rm(xn, xl, x, gel, renvt) gc()
+      rm(xn, xl, x, gel, renvt)
+      gc()
       callSuper()
     },
     getgenecldata = function(genes = NULL, gcl = NULL, ltrim = 0) { # helper function to get the heatmap data for a given set of genes
@@ -5332,7 +5535,7 @@ ViewPagodaApp <- setRefClass(
                      rows = rownames(matrix),
                      cols = colnames(matrix),
                      colors = gcl$col,
-                     domain = seq.int(gcl$zlim[1],  gcl$zlim[2],  length.out = length(gcl$col))
+                     domain = seq.int(gcl$zlim[1], gcl$zlim[2], length.out = length(gcl$col))
                      )
 
       ol <- list(matrix = matrix)
@@ -5387,7 +5590,7 @@ ViewPagodaApp <- setRefClass(
                # column dendrogram
                t <- paste(tempfile(), "svg", sep = ".")
                svg(file = t, width = 1, height = 1) # will be rescaled later
-               par(mar = rep(0, 4),  mgp = c(2, 0.65, 0), cex = 1, oma = rep(0, 4))
+               par(mar = rep(0, 4), mgp = c(2, 0.65, 0), cex = 1, oma = rep(0, 4))
                #plot(results$hvc, main = "", sub = "", xlab = "", ylab = "", axes = F, labels = F, xaxs = "i", yaxs = "i", hang = 0.02)
                plot(as.dendrogram(results$hvc), axes = F, yaxs = "i", xaxs = "i", xlab = "", ylab = "", sub = "", main = "", leaflab = "none")
                dev.off()
@@ -5400,7 +5603,7 @@ ViewPagodaApp <- setRefClass(
                               rows = rownames(matrix),
                               cols = colnames(matrix),
                               colors = results$cols,
-                              domain = seq.int(results$zlim2[1],  results$zlim2[2],  length.out = length(results$cols)),
+                              domain = seq.int(results$zlim2[1], results$zlim2[2], length.out = length(results$cols)),
                               range = range(matrix)
                               )
 
@@ -5470,7 +5673,7 @@ ViewPagodaApp <- setRefClass(
                pat <- fromJSON(req$POST()$pattern)
                # reorder the pattern back according to column clustering
                pat[results$hvc$order] <- pat
-               patc <- .Call("matCorr",  as.matrix(t(mat)), as.matrix(pat, ncol = 1) ,  PACKAGE = "scde")
+               patc <- .Call("matCorr", as.matrix(t(mat)), as.matrix(pat, ncol = 1) , PACKAGE = "scde")
                if(twosided) { patc <- abs(patc) }
                mgenes <- rownames(mat)[order(as.numeric(patc), decreasing = T)[1:ngenes]]
                ol <- getgenecldata(mgenes, ltrim = ltrim)
@@ -5485,7 +5688,7 @@ ViewPagodaApp <- setRefClass(
              },
              '/clinfo.json' = {
                pathcl <- ifelse(is.null(req$params()$pathcl), 1, as.integer(req$params()$pathcl))
-               ii <- which(results$ct =  = pathcl)
+               ii <- which(results$ct == pathcl)
                tpi <- order(results$matvar[ii], decreasing = T)
                #tpi <- tpi[seq(1, min(length(tpi), 15))]
                npc <- gsub("^#PC(\\d+)#.*", "\\1", names(ii[tpi]))
@@ -5496,7 +5699,7 @@ ViewPagodaApp <- setRefClass(
                  tpn <- names(ii[tpi])
                }
 
-               lgt <- data.frame(do.call(rbind, lapply(seq_along(tpn), function(i) c(id = names(ii[tpi[i]]), name = tpn[i], npc = npc[i], od = as.numeric(results$matvar[ii[tpi[i]]])/max(results$matvar), sign = as.numeric(results$matrcmcor[ii[tpi[i]]]), initsel = as.integer(results$matvar[ii[tpi[i]]] >  = results$matvar[ii[tpi[1]]]*0.8)))))
+               lgt <- data.frame(do.call(rbind, lapply(seq_along(tpn), function(i) c(id = names(ii[tpi[i]]), name = tpn[i], npc = npc[i], od = as.numeric(results$matvar[ii[tpi[i]]])/max(results$matvar), sign = as.numeric(results$matrcmcor[ii[tpi[i]]]), initsel = as.integer(results$matvar[ii[tpi[i]]] >= results$matvar[ii[tpi[1]]]*0.8)))))
 
                # process additional filters
                if(!is.null(req$params()$filter)) {
@@ -5512,7 +5715,7 @@ ViewPagodaApp <- setRefClass(
                if(trows > 0) {
                  if(!is.null(req$params()$sort)) {
                    if(req$params()$sort %in% colnames(lgt)) {
-                     lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir =  = "DESC")), ]
+                     lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir == "DESC")), ]
                    }
                  }
                }
@@ -5544,7 +5747,7 @@ ViewPagodaApp <- setRefClass(
                if(trows > 0) {
                  if(!is.null(req$params()$sort)) {
                    if(req$params()$sort %in% colnames(lgt)) {
-                     lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir =  = "DESC")), ]
+                     lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir == "DESC")), ]
                    }
                  } else { # default sort
                    # already done
@@ -5577,7 +5780,7 @@ ViewPagodaApp <- setRefClass(
                if(trows > 0) {
                  if(!is.null(req$params()$sort)) {
                    if(req$params()$sort %in% colnames(lgt)) {
-                     lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir =  = "DESC")), ]
+                     lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir == "DESC")), ]
                    }
                  } else { # default sort
                    # already done
@@ -5618,7 +5821,7 @@ ViewPagodaApp <- setRefClass(
                if(trows > 0) {
                  if(!is.null(req$params()$sort)) {
                    if(req$params()$sort %in% colnames(lgt)) {
-                     lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir =  = "DESC")), ]
+                     lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir == "DESC")), ]
                    }
                  }
                }

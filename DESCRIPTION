@@ -3,19 +3,24 @@ Type: Package
 Title: Single Cell Differential Expression
 Version: 2.0.0
 Date: 2015-05-06
+Description: SCDE implements routines for Bayesian analysis of single-cell
+    RNA-seq data. SCDE fitting of error models identify differentially expressed genes as well as
+    characterize putative subpopulations
 Author: Peter Kharchenko [aut, cre],
     Jean Fan [aut]
-Authors@R: c(person("Peter", "Kharchenko", role = c("aut", "cre"),
+Authors@R: c(
+    person("Peter", "Kharchenko", role = c("aut", "cre"),
 		     email = "Peter_Kharchenko@hms.harvard.edu"),
-	      person("Jean, "Fan", role = "aut",
+    person("Jean", "Fan", role = "aut",
 	         email = "jeanfan@fas.harvard.edu"),
-	      person("Joe", "Herman", role = "ctb",
-		     email = "Herman@hms.harvard.edu"))
+    person("Joe", "Herman", role = "ctb",
+		     email = "Herman@hms.harvard.edu")
+		     )
 Maintainer: Jean Fan <jeanfan@fas.harvard.edu>
-Description: SCDE implements routines for Bayesian analysis of single-cell
-    RNA-seq data to identify differentially expressed genes as well as
-    identify and characterize putative subpopulations
+URL: http://pklab.med.harvard.edu/scde/index.html
+BugReports: https://github.com/JEFworks/scde/issues
 License: GPL-2
+LazyData: true
 Depends:
     R (>= 3.0.0),
     flexmix,

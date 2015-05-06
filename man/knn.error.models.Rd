@@ -53,9 +53,9 @@ a data frame with parameters of the fit error models (rows- cells, columns- fitt
 \description{
 Builds cell-specific error models assumming that there are multiple subpopulations present
 among the measured cells. The models for each cell are based on average expression estimates
-obtained from K closest cells within a given group (if groups=NULL, then within the entire
+obtained from K closest cells within a given group (if groups = NULL, then within the entire
 set of measured cells). The method implements fitting of both the original log-fit models
-(when zero.intercept=F), or newer linear-fit models (zero.intercept=T, default) with locally
-fit overdispersion coefficient (local.theta.fit=T, default).
+(when zero.intercept = F), or newer linear-fit models (zero.intercept = T, default) with locally
+fit overdispersion coefficient (local.theta.fit = T, default).
 }
 

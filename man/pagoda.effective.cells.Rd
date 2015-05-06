@@ -7,7 +7,7 @@
 pagoda.effective.cells(pwpca, start = NULL)
 }
 \arguments{
-\item{pwpca}{result of the pagoda.pathway.wPCA() call with n.randomizations>1}
+\item{pwpca}{result of the pagoda.pathway.wPCA() call with n.randomizations > 1}
 
 \item{start}{optional starting value for the optimization (if the nls breaks, trying high starting values usually fixed the local gradient problem)}
 }

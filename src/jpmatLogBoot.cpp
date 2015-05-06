@@ -24,7 +24,8 @@ SEXP jpmatLogBoot(SEXP Matl, SEXP Nboot, SEXP Seed){
         tjp.zeros();
         for(int j=0;j<nmat;j++) {
           int rj;
-          while(nmat <= (rj= rand()/(RAND_MAX/nmat)));
+          while(nmat <= (rj= rand()/(RAND_MAX/nmat)))
+              ;
           arma::mat am(Rcpp::as<Rcpp::NumericMatrix>(matl[rj]).begin(),nrows,ncols,false,true);
           tjp +=am;
         }
@@ -62,8 +63,9 @@ SEXP jpmatLogBatchBoot(SEXP Matll, SEXP Comp, SEXP Nboot, SEXP Seed){
             int nmat=LENGTH( VECTOR_ELT(Matll, k) );
 	    for(int j=0;j<nsamp;j++) { // over matrices
 	      int rj;
-	      while(nmat <= (rj= rand()/(RAND_MAX/nmat)));
-              arma::mat am(Rcpp::as<Rcpp::NumericMatrix>(VECTOR_ELT( VECTOR_ELT(Matll,k) ,rj)).begin(),nrows,ncols,false,true);
+	      while(nmat <= (rj= rand()/(RAND_MAX/nmat)))
+	          ;
+          arma::mat am(Rcpp::as<Rcpp::NumericMatrix>(VECTOR_ELT( VECTOR_ELT(Matll,k) ,rj)).begin(),nrows,ncols,false,true);
 	      tjp +=am;
 	    }
 	  }
@@ -103,7 +105,7 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
 #define CORRlTS_I 9
 #define CORRlTR_I 10
 #define CONCA2_I 11
-    
+
   Rcpp::IntegerMatrix counti=Rcpp::as<Rcpp::IntegerMatrix>(CountsI);
   Rcpp::List ucl(Ucl);
   int ncells=ucl.size();
@@ -125,53 +127,53 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
     std::vector< arma::uword > maxi;
     arma::vec mu=magnitudes * models(i,CORRA_I);
     mu+=models(i,CORRB_I); mu=exp(mu);
-    arma::vec cfp; 
+    arma::vec cfp;
     if(squarelogitconc) {
       cfp=models(i,CONCA_I) + magnitudes*models(i,CONCA2_I);
       cfp%=magnitudes;
     } else {
       cfp=magnitudes * models(i,CONCA_I);
     }
-    cfp+=models(i,CONCB_I); 
+    cfp+=models(i,CONCB_I);
     cfp=1/(exp(cfp)+1);
     arma::vec cfpr=1-cfp;
     cfp=log(cfp); cfpr=log(cfpr);
     double maxcfp=max(cfp);
     arma::colvec thetas;
     if(localtheta) { // non-constant theta model - prepare theta values
-      thetas=-1*magnitudes + models(i,CORRlTM_I); 
+      thetas=-1*magnitudes + models(i,CORRlTM_I);
       thetas*=models(i,CORRlTS_I);
-      thetas=exp10(thetas)+1; 
+      thetas=exp10(thetas)+1;
       thetas=pow(thetas,models(i,CORRlTR_I));
-      thetas=(models(i,CORRlTT_I) - models(i,CORRlTB_I))/thetas; 
+      thetas=(models(i,CORRlTT_I) - models(i,CORRlTB_I))/thetas;
       thetas+=models(i,CORRlTB_I);
       thetas=exp(-1*thetas);
 
-      for(unsigned int k=0;k<thetas.n_elem;k++) { 
+      for(unsigned int k=0;k<thetas.n_elem;k++) {
 	if((!std::isfinite(thetas[k])) || (thetas[k]<MIN_THETA)) {  thetas[k]=MIN_THETA;}
 	if(thetas[k]>MAX_THETA) {  thetas[k]=MAX_THETA;}
       }
     }
     //std::cout<<"cfp=["; std::copy(cfp.begin(),cfp.end(),std::ostream_iterator<double>(std::cout," ")); std::cout<<"]"<<std::endl<<std::flush;
     //std::cout<<"thetas=["; copy(thetas.begin(),thetas.end(),std::ostream_iterator<double>(std::cout," ")); std::cout<<"]"<<std::endl<<std::flush;
-    
+
     for(int j=0;j<ncounts;j++) {
       // correlated prob
       arma::vec nbp(mu.n_elem);
       if(localtheta) { // linear theta model
-	for(unsigned int k=0;k<mu.n_elem;k++) { 
+	for(unsigned int k=0;k<mu.n_elem;k++) {
 	  double muv=mu[k]; double x=uc[j];
 	  // choose maximum probability when hitting the grid with the maximum
 	  if((k<(mu.n_elem-1) && x>muv && x<mu[k+1]) || (k==(mu.n_elem-1) && x>muv)) { muv=x; }
-	  nbp[k]=Rf_dnbinom(x,thetas[k],thetas[k]/(thetas[k]+muv),true); 
+	  nbp[k]=Rf_dnbinom(x,thetas[k],thetas[k]/(thetas[k]+muv),true);
 	}
       } else { // constant theta
-	double theta=models(i,CORRT_I); 
-	for(unsigned int k=0;k<mu.n_elem;k++) { 
+	double theta=models(i,CORRT_I);
+	for(unsigned int k=0;k<mu.n_elem;k++) {
 	  double muv=mu[k]; double x=uc[j];
 	  // choose maximum probability when hitting the grid with the maximum
 	  if((k<(mu.n_elem-1) && x>muv && x<mu[k+1]) || (k==(mu.n_elem-1) && x>muv)) { muv=x; }
-	  nbp[k]=Rf_dnbinom(x,theta,theta/(theta+muv),true); 
+	  nbp[k]=Rf_dnbinom(x,theta,theta/(theta+muv),true);
 	}
       }
       //std::cout<<"nbp1=["; copy(nbp.begin(),nbp.end(),std::ostream_iterator<double>(std::cout," ")); std::cout<<"]"<<std::endl<<std::flush;
@@ -185,9 +187,9 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
       nbp=log(nbp);
 
       // find max point
-      if(returnpost==1 || returnpost==3) { 
+      if(returnpost==1 || returnpost==3) {
 	arma::uword maxij;
-	double maxv=nbp.max(maxij);
+	// double maxv=nbp.max(maxij);
 	maxi.push_back(maxij);
       }
       // set the lower bound to min/n.cells
@@ -329,7 +331,7 @@ RcppExport SEXP logBootBatchPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP 
 #define CORRlTS_I 9
 #define CORRlTR_I 10
 #define CONCA2_I 11
-    
+
   Rcpp::IntegerMatrix counti=Rcpp::as<Rcpp::IntegerMatrix>(CountsI);
   Rcpp::List ucl(Ucl);
   int ncells=ucl.size();
@@ -353,29 +355,29 @@ RcppExport SEXP logBootBatchPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP 
     std::vector< arma::uword > maxi;
     arma::vec mu=magnitudes * models(i,CORRA_I);
     mu+=models(i,CORRB_I); mu=exp(mu);
-    arma::vec cfp; 
+    arma::vec cfp;
     if(squarelogitconc) {
       cfp=models(i,CONCA_I) + magnitudes*models(i,CONCA2_I);
       cfp%=magnitudes;
     } else {
       cfp=magnitudes * models(i,CONCA_I);
     }
-    cfp+=models(i,CONCB_I); 
+    cfp+=models(i,CONCB_I);
     cfp=1/(exp(cfp)+1);
     arma::vec cfpr=1-cfp;
     cfp=log(cfp); cfpr=log(cfpr);
     double maxcfp=max(cfp);
     arma::colvec thetas;
     if(localtheta) { // linear theta model - prepare theta values
-      thetas=-1*magnitudes + models(i,CORRlTM_I); 
+      thetas=-1*magnitudes + models(i,CORRlTM_I);
       thetas*=models(i,CORRlTS_I);
-      thetas=exp10(thetas)+1; 
+      thetas=exp10(thetas)+1;
       thetas=pow(thetas,models(i,CORRlTR_I));
-      thetas=(models(i,CORRlTT_I) - models(i,CORRlTB_I))/thetas; 
+      thetas=(models(i,CORRlTT_I) - models(i,CORRlTB_I))/thetas;
       thetas+=models(i,CORRlTB_I);
       thetas=exp(-1*thetas);
 
-      for(unsigned int k=0;k<thetas.n_elem;k++) { 
+      for(unsigned int k=0;k<thetas.n_elem;k++) {
 	if((!std::isfinite(thetas[k])) || (thetas[k]<MIN_THETA)) {  thetas[k]=MIN_THETA;}
 	if(thetas[k]>MAX_THETA) {  thetas[k]=MAX_THETA;}
       }
@@ -386,19 +388,19 @@ RcppExport SEXP logBootBatchPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP 
       // correlated prob
       arma::vec nbp(mu.n_elem);
       if(localtheta) { // linear theta model
-	for(unsigned int k=0;k<mu.n_elem;k++) { 
+	for(unsigned int k=0;k<mu.n_elem;k++) {
 	  double muv=mu[k]; double x=uc[j];
 	  // choose maximum probability when hitting the grid with the maximum
 	  if((k<(mu.n_elem-1) && x>muv && x<mu[k+1]) || (k==(mu.n_elem-1) && x>muv)) { muv=x; }
-	  nbp[k]=Rf_dnbinom(x,thetas[k],thetas[k]/(thetas[k]+muv),true); 
+	  nbp[k]=Rf_dnbinom(x,thetas[k],thetas[k]/(thetas[k]+muv),true);
 	}
       } else { // constant theta
-	double theta=models(i,CORRT_I); 
-	for(unsigned int k=0;k<mu.n_elem;k++) { 
+	double theta=models(i,CORRT_I);
+	for(unsigned int k=0;k<mu.n_elem;k++) {
 	  double muv=mu[k]; double x=uc[j];
 	  // choose maximum probability when hitting the grid with the maximum
 	  if((k<(mu.n_elem-1) && x>muv && x<mu[k+1]) || (k==(mu.n_elem-1) && x>muv)) { muv=x; }
-	  nbp[k]=Rf_dnbinom(x,theta,theta/(theta+muv),true); 
+	  nbp[k]=Rf_dnbinom(x,theta,theta/(theta+muv),true);
 	}
       }
       nbp+=cfpr;
@@ -412,9 +414,9 @@ RcppExport SEXP logBootBatchPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP 
       nbp/=sum(nbp);
       nbp=log(nbp);
       // find max point
-      if(returnpost==1) { 
+      if(returnpost==1) {
 	arma::uword maxij;
-	double maxv=nbp.max(maxij);
+	//double maxv=nbp.max(maxij);
 	maxi.push_back(maxij);
       }
       // set the lower bound to min/n.cells
@@ -440,7 +442,7 @@ RcppExport SEXP logBootBatchPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP 
   for(int i=0;i<nboot;i++) { // sampling iteration
     //std::cout<<"."<<std::flush;
     tjp.zeros();
-    for(int k=0;k<comp.size();k++) { // over batches 
+    for(int k=0;k<comp.size();k++) { // over batches
       int nsamp=comp[k];
       if(nsamp>0) { // sample cells from k-th batch
 	Rcpp::IntegerVector bi(Rcpp::as<Rcpp::IntegerVector>(batchil[k])); // indecies of cells within the current batch

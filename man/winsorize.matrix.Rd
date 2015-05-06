@@ -9,12 +9,12 @@ winsorize.matrix(mat, trim)
 \arguments{
 \item{mat}{matrix}
 
-\item{trim}{fraction of outliers (on each side) that should be Winsorized, or (if the value is >=1) the number of outliers to be trimmed on each side}
+\item{trim}{fraction of outliers (on each side) that should be Winsorized, or (if the value is  >= 1) the number of outliers to be trimmed on each side}
 }
 \value{
 Winsorized matrix
 }
 \description{
-Sets the ncol(mat)*trim top outliers in each row to the next lowest value; same for the lowest outliers
+Sets the ncol(mat)*trim top outliers in each row to the next lowest value same for the lowest outliers
 }
 
