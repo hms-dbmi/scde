@@ -43,8 +43,11 @@ NULL
 ##' @examples
 ##' \donttest{
 ##' data(es.mef.small)
-##' cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+##' cd <- es.mef.small
+##' cd <- cd[rowSums(cd) > 0, ]
+##' cd <- cd[, colSums(cd) > 1e4]
+##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
+##' names(sg) <- colnames(cd)
 ##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 ##' }
 ##' @export
@@ -84,8 +87,11 @@ scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshol
 ##' @examples
 ##' \donttest{
 ##' data(es.mef.small)
-##' cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+##' cd <- es.mef.small
+##' cd <- cd[rowSums(cd) > 0, ]
+##' cd <- cd[, colSums(cd) > 1e4]
+##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
+##' names(sg) <- colnames(cd)
 ##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 ##' }
@@ -153,12 +159,16 @@ scde.expression.prior <- function(models, counts, length.out = 400, show.plot = 
 ##' @examples
 ##' \donttest{
 ##' data(es.mef.small)
-##' cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+##' cd <- es.mef.small
+##' cd <- cd[rowSums(cd) > 0, ]
+##' cd <- cd[, colSums(cd) > 1e4]
+##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
+##' names(sg) <- colnames(cd)
 ##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 ##' # make sure groups corresponds to the models (o.ifm)
-##' groups <- factor(gsub("(MEF|ESC).*", "\\1", rownames(o.ifm)), levels = c("ESC", "MEF")) names(groups) <- row.names(o.ifm)
+##' groups <- factor(gsub("(MEF|ESC).*", "\\1", rownames(o.ifm)), levels = c("ESC", "MEF"))
+##' names(groups) <- row.names(o.ifm)
 ##' ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups = groups, n.randomizations = 100, n.cores = n.cores, verbose = 1)
 ##' }
 ##'
@@ -205,7 +215,7 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
     #  cat("ERROR: cannot control for batch effect, as some batches are found only in one group:\n")
     #  print(bgti)
     #}
-    if(bgti.ft$p.value<1e-3) {
+    if(bgti.ft$p.value < 1e-3) {
       cat("WARNING: strong interaction between groups and batches! Correction may be ineffective:\n")
       print(bgti.ft)
     }
@@ -286,12 +296,16 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
 ##' @examples
 ##' \donttest{
 ##' data(es.mef.small)
-##' cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+##' cd <- es.mef.small
+##' cd <- cd[rowSums(cd) > 0, ]
+##' cd <- cd[, colSums(cd) > 1e4]
+##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
+##' names(sg) <- colnames(cd)
 ##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 ##' # make sure groups corresponds to the models (o.ifm)
-##' groups <- factor(gsub("(MEF|ESC).*", "\\1", rownames(o.ifm)), levels = c("ESC", "MEF")) names(groups) <- row.names(o.ifm)
+##' groups <- factor(gsub("(MEF|ESC).*", "\\1", rownames(o.ifm)), levels = c("ESC", "MEF"))
+##' names(groups) <- row.names(o.ifm)
 ##' ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups = groups, n.randomizations = 100, n.cores = n.cores, verbose = 1)
 ##' }
 ##' @export
@@ -360,8 +374,11 @@ get.scde.server <- function(port = NULL, ip = '127.0.0.1') {
 ##' @examples
 ##' \donttest{
 ##' data(es.mef.small)
-##' cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+##' cd <- es.mef.small
+##' cd <- cd[rowSums(cd) > 0, ]
+##' cd <- cd[, colSums(cd) > 1e4]
+##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
+##' names(sg) <- colnames(cd)
 ##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 ##' # calculate joint posteriors
@@ -410,7 +427,7 @@ scde.posteriors <- function(models, counts, prior, n.randomizations = 100, batch
 
   chunk <- function(x, n) split(x, sort(rank(x) %% n.cores))
   if(n.cores > 1 && nrow(counts) > n.cores) { # split by genes
-    xl <- bplapply(chunk(1:nrow(counts), BPPARAM = MulticoreParam(workers = n.cores)), function(ii) {
+    xl <- bplapply(chunk(seq_len(nrow(counts)), n.cores), function(ii) {
       ucl <- lapply(seq_len(ncol(counts)), function(i) as.vector(unique(counts[ii, i, drop = F])))
       uci <- do.call(cbind, lapply(seq_len(ncol(counts)), function(i) match(counts[ii, i, drop = F], ucl[[i]])-1))
       #x <- logBootPosterior(models, ucl, uci, marginals, n.randomizations, 1, postflag)
@@ -419,7 +436,7 @@ scde.posteriors <- function(models, counts, prior, n.randomizations = 100, batch
       } else {
         x <- .Call("logBootPosterior", mm, ucl, uci, marginals, n.randomizations, ii[1], postflag, localthetaflag, squarelogitconc, ensembleflag, PACKAGE = "scde")
       }
-    }, mc.cores = n.cores)
+    }, BPPARAM = MulticoreParam(workers = n.cores))
     if(postflag == 0) {
       x <- do.call(rbind, xl)
     } else if(postflag == 1) {
@@ -488,8 +505,11 @@ scde.posteriors <- function(models, counts, prior, n.randomizations = 100, batch
 ##' @examples
 ##' \donttest{
 ##' data(es.mef.small)
-##' cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+##' cd <- es.mef.small
+##' cd <- cd[rowSums(cd) > 0, ]
+##' cd <- cd[, colSums(cd) > 1e4]
+##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
+##' names(sg) <- colnames(cd)
 ##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 ##' # get expression magniutude estimates
 ##' lfpm <- scde.expression.magnitude(o.ifm, cd)
@@ -513,8 +533,11 @@ scde.expression.magnitude <- function(models, counts) {
 ##' @examples
 ##' \donttest{
 ##' data(es.mef.small)
-##' cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+##' cd <- es.mef.small
+##' cd <- cd[rowSums(cd) > 0, ]
+##' cd <- cd[, colSums(cd) > 1e4]
+##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
+##' names(sg) <- colnames(cd)
 ##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 ##' # calculate probability of observing a drop out at a given set of magnitudes in different cells
@@ -574,8 +597,11 @@ scde.failure.probability <- function(models, magnitudes = NULL, counts = NULL) {
 ##' @examples
 ##' \donttest{
 ##' data(es.mef.small)
-##' cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+##' cd <- es.mef.small
+##' cd <- cd[rowSums(cd) > 0, ]
+##' cd <- cd[, colSums(cd) > 1e4]
+##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
+##' names(sg) <- colnames(cd)
 ##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 ##' scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior = o.prior)
@@ -770,8 +796,11 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 ##' # by calculating average expression of each gene across single cells
 ##' # fit the models first
 ##' data(es.mef.small)
-##' cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+##' cd <- es.mef.small
+##' cd <- cd[rowSums(cd) > 0, ]
+##' cd <- cd[, colSums(cd) > 1e4]
+##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
+##' names(sg) <- colnames(cd)
 ##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 ##' # calculate joint posteriors across all cells
@@ -928,7 +957,6 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
   # TODO:
   #  - implement check for k >= n.cells (to avoid correlation calculations)
   #  - implement error reporting/handling for failed cell fits
-
 
   if(is.null(groups)) {
     groups <- as.factor(rep("cell", ncol(counts)))
@@ -2899,12 +2927,16 @@ calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose =
   }
 }
 
-# V1 optimized methods
+
+#######
+## V1 optimized methods
+#######
 
 # gets an array summary of gam model structure (assumes a flat ifm list)
 get.compressed.v1.models <- function(ifml) {
   data.frame(do.call(rbind, lapply(ifml, get.compressed.v1.model)))
 }
+
 # get a vector representation of a given model
 get.compressed.v1.model <- function(m1) {
     if(class(m1@model[[2]]) == "FLXMRnb2gthC") { # linear fit model
@@ -2990,7 +3022,6 @@ calculate.ratio.posterior <- function(pmat1, pmat2, prior, n.cores = 15, skip.pr
   }
   x <- x/rowSums(x)
 
-  #x <- cbind(do.call(cbind, mclapply(n:2, function(i) rowSums(pmat1[, 1:(n-i+1), drop = F]*pmat2[, i:n, drop = F]), mc.cores = n.cores)), do.call(cbind, mclapply(1:n, function(i) rowSums(pmat1[, i:n, drop = F]*pmat2[, 1:(n-i+1), drop = F]), mc.cores = n.cores)))
   rv <- seq(prior$x[1]-prior$x[length(prior$x)], prior$x[length(prior$x)]-prior$x[1], length = length(prior$x)*2-1)
   colnames(x) <- as.character(rv)
   rownames(x) <- rownames(pmat1)
@@ -3008,7 +3039,6 @@ get.ratio.posterior.Z.score <- function(rpost, min.p = 1e-15) {
   z <- ifelse(abs(zl) > abs(zg), zl, zg)
 }
 
-
 # calculate a joint posterior matrix with bootstrap
 jpmatLogBoot <- function(Matl, Nboot, Seed) {
   .Call("jpmatLogBoot", Matl, Nboot, Seed, PACKAGE = "scde")
@@ -3023,7 +3053,6 @@ jpmatLogBatchBoot <- function(Matll, Comp, Nboot, Seed) {
 matSlideMult <- function(Mat1, Mat2) {
   .Call("matSlideMult", Mat1, Mat2, PACKAGE = "scde")
 }
-
 
 calculate.failure.p <- function(dat, ifm, n.cores = 32) {
   lapply(ifm, function(group.ifm) {
@@ -3042,8 +3071,6 @@ calculate.failure.lfpm.p <- function(lfpm, ifm, n.cores = 32) {
     })
   })
 }
-
-
 
 # get expected fpm from counts
 get.fpm.estimates <- function(m1, counts) {
@@ -3064,11 +3091,13 @@ get.fpm.estimates <- function(m1, counts) {
   }
 }
 
-##### INTERNAL FUNCTIONS
+
+#######
+## INTERNAL FUNCTIONS
+#######
 
 # clean up stale web server reference
 .onAttach <- function(...) {
-
 
   if(exists("___scde.server", envir = globalenv())) {
     old.server <- get("___scde.server", envir = globalenv())
@@ -3130,7 +3159,6 @@ fit.nb2.mixture.model <- function(rdf, zero.count.threshold = 10, prior = cbind(
   return(m1)
 }
 
-
 fit.nb2gth.mixture.model <- function(rdf, zero.count.threshold = 10, prior = as.integer(rdf$count >= zero.count.threshold | rdf$fpm<median(rdf$fpm[rdf$count<zero.count.threshold]))+1, nrep = 0, verbose = 0 , full.theta.range = c(1e-2, 1e2), theta.fit.range = full.theta.range, theta.sp = 1e-2, use.constant.theta.fit = F, alpha.weight.power = 1/2, iter = 50) {
   #mo1 <- FLXMRglmC(count~1, components = c(1), family = "poisson")
     #matrix(cbind(ifelse(rdf$count<= zero.count.threshold, 0.95, 0.05), ifelse(rdf$count > zero.count.threshold, 0.95, 0.05)))
@@ -3139,7 +3167,6 @@ fit.nb2gth.mixture.model <- function(rdf, zero.count.threshold = 10, prior = as.
   m1 <- mc.stepFlexmix(count~1, data = rdf, k = 2, model = list(mo1, mo2), control = list(verbose = verbose, minprior = 0, iter = iter), concomitant = FLXPmultinom(~I(log(fpm))+I(log(fpm)^2)+1), cluster = prior, nrep = nrep)
   return(m1)
 }
-
 
 # rdf : count/fpm data frame
 # en : experiment name for plotting
@@ -3246,8 +3273,6 @@ plot.nb2.mixture.fit <- function(m1, rdf, en, do.par = T, n.zero.windows = 50, c
   if(do.par) {   dev.off() }
 }
 
-
-
 ## from nb2.crossmodels.r
 mc.stepFlexmix <- function(..., nrep = 5, n.cores = nrep, return.all = F) {
   if(nrep == 1) {
@@ -3262,7 +3287,6 @@ mc.stepFlexmix <- function(..., nrep = 5, n.cores = nrep, return.all = F) {
     ml[[which.max(logLiks)]]
   }
 }
-
 
 # df: count matrix
 # xr: expression level for each row in the matrix
@@ -3353,7 +3377,6 @@ get.component.model.loglik <- function(m1, newdata) {
   return(cp+cm0)
 }
 
-
 # returns a matrix of posterior values, with rows corresponding to genes, and
 # columns to marginal values (prior fpkm grid)
 # m1 - model
@@ -3410,8 +3433,6 @@ get.exp.sample <- function(m1, counts, marginals, prior.x, n, rescale = T) {
   }, BPPARAM = MulticoreParam(workers = 10)))
 }
 
-
-
 # gets a probability of failed detection for a given observation
 # optional vector of fpm values (log) can be supplied to evaluate mixing probability
 # at a point other than MLE fpm
@@ -3428,7 +3449,6 @@ get.concomitant.prob <- function(m1, counts = NULL, lfpm = NULL) {
   return(as.numeric(cm0[, 1]))
 }
 
-
 # copied from flexmix
 log.row.sums <- function(m) {
   M <- m[cbind(seq_len(nrow(m)), max.col(m, ties.method = "first"))] # "random" doesnt' work!
@@ -3436,7 +3456,9 @@ log.row.sums <- function(m) {
 }
 
 
-### from nb1gml.R
+#######
+## from nb1gml.R
+#######
 
 # nb2 glm implementation
 setClass("FLXMRnb2glm", contains = "FLXMRglm", package = "flexmix")
@@ -3511,8 +3533,6 @@ FLXMRnb2glmC <- function(... , components = NULL) {
     z
 }
 
-
-
 # nb2 glm implementation
 setClass("FLXMRnb2gam", contains = "FLXMRglm", package = "flexmix")
 
@@ -3520,8 +3540,6 @@ setClass("FLXcomponentE",
          representation(refitTheta = "function",
                         theta.fit = "ANY"),
          contains = "FLXcomponent", package = "flexmix")
-
-
 
 # nb2 implementation with a simple trimmed-mean/median slope, and a gam theta fit
 setClass("FLXMRnb2gth", contains = "FLXMRglm", package = "flexmix")
@@ -3545,7 +3563,6 @@ get.corr.theta <- function(model, lfpm, theta.range = NULL) {
   }
   th
 }
-
 
 FLXMRnb2gth <- function(formula = . ~ .,  offset = NULL, full.theta.range = c(1e-3, 1e3), theta.fit.range = full.theta.range*c(1e-1, 1e1), theta.fit.sp = c(-1), constant.theta = F, slope.mean.trim = 0.4, alpha.weight.power = 1/2, ...) {
     if(slope.mean.trim<0) { slope.mean.trim <- 0 }
@@ -3690,8 +3707,6 @@ FLXMRnb2gthC <- function(... , components = NULL) {
   z
 }
 
-
-
 setMethod("FLXdeterminePostunscaled", signature(model = "FLXMRnb2glmC"), function(model, components, ...) {
   if(is.null(model@vci)) {
     #message("FLXMRnb2glmC:FLXdeterminePostunscaled - applying to all components")
@@ -3765,9 +3780,6 @@ setMethod("FLXmstep", signature(model = "FLXMRnb2gthC"), function(model, weights
   }), recursive = F)
 })
 
-
-
-
 # component-specific version of the nb2glm
 # nb2 glm implementation
 setClass("FLXMRglmC", representation(vci = "ANY"), contains = "FLXMRglm", package = "flexmix")
@@ -3820,8 +3832,6 @@ setMethod("FLXmstep", signature(model = "FLXMRglmC"), function(model, weights, .
   }), recursive = F)
 })
 
-
-
 # mu-fixed version
 setClass("FLXMRglmCf", representation(mu = "numeric"), contains = "FLXMRglmC", package = "flexmix")
 
@@ -3845,8 +3855,6 @@ setMethod("FLXmstep", signature(model = "FLXMRglmCf"), function(model, weights, 
     list(comp.1)
   }), recursive = F)
 })
-
-
 
 # a magnitude-weighted version of the FLXPmultinom (to downweight low-fpkm points during concomitant fit)
 # alternatively: some kind of non-decreasing function could be used
@@ -3877,7 +3885,6 @@ FLXPmultinomW <- function(formula = ~1) {
   }
   z
 }
-
 
 # variation of negative.binomial family that keeps theta value accessible
 negbin.th <- function (theta = stop("'theta' must be specified"), link = "log")
@@ -4047,7 +4054,6 @@ glm.nb.fit <- function(x, y, weights = rep(1, nobs), control = list(trace = 0, m
   fit$offset <- offset
   fit
 }
-
 
 custom.glm.fit <- function (x, y, weights = rep(1, nobs), start = NULL, etastart = NULL,
     mustart = NULL, offset = rep(0, nobs), family = gaussian(),
@@ -4322,7 +4328,6 @@ custom.glm.fit <- function (x, y, weights = rep(1, nobs), start = NULL, etastart
         boundary = boundary)
 }
 
-
 # copied from limma
 weighted.median.scde <- function (x, w, na.rm = FALSE)
 #       Weighted median
@@ -4555,7 +4560,10 @@ quick.distribution.summary <- function(s.bdiffp) {
   data.frame(dq, "ce" = as.numeric(cq), "Z" = as.numeric(z), "cZ" = as.numeric(za))
 }
 
-# INTERNAL PAGODA ROUTINES
+
+#######
+## INTERNAL PAGODA ROUTINES
+#######
 
 # performs weighted centering of mat rows (mat - rowSums(mat*weights)/rowSums(weights))
 # possibly accounting for batch effects (i.e. centering each batch separately
@@ -4662,7 +4670,6 @@ pathway.pc.correlation.distance <- function(pcc, xv, n.cores = 10, target.ndf = 
   d
 
 }
-
 
 collapse.aspect.clusters <- function(d, dw, ct, scale = T, pick.top = F) {
   xvm <- do.call(rbind, tapply(seq_len(nrow(d)), factor(ct, levels = sort(unique(ct))), function(ii) {
@@ -5123,8 +5130,6 @@ ViewDiff <- setRefClass(
     )
   )
 
-
-
 t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(mat), colcols = NULL, zlim = NULL, labRow = NA, vhc = NULL, cexCol = 1, cexRow = 1, n.pc = 1, nstarts = 50, row.order = NULL, show.Colv = TRUE, plot = T, trim = 1.1/ncol(mat), bwpca = T, ...) {
   # retrieve gis
   lab <- which(proper.names %in% na.omit(unlist(mget(pathways, env = env, ifnotfound = NA))))
@@ -5217,6 +5222,7 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
   xp$zlim <- zlim
   return(invisible(xp))
 }
+
 ##' View pathway or gene weighted PCA
 ##'
 ##' Takes in a list of pathways (or a list of genes), runs weighted PCA, optionally showing the result.
@@ -5491,8 +5497,6 @@ calculate.go.enrichment <- function(genelist, universe, pvalue.cutoff = 1e-3, mi
     return(list(over = data.frame(t = rownames(cv)[ovi], o = cv$s[ovi], u = cv$u[ovi], p.raw = exp(lpr[ovi]), fdr = exp(lpra)[ovi], Z = z[ovi], Za = za[ovi], fe = cv$s[ovi]/(ns*cv$u[ovi]/us), fer = cv$s[ovi]/(length(genelist)*cv$u[ovi]/length(universe))), under = data.frame(t = rownames(cv)[uvi], o = cv$s[uvi], u = cv$u[uvi], p.raw = exp(lpr[uvi]), fdr = exp(lpra)[uvi], Z = z[uvi], Za = za[uvi], fe = cv$s[uvi]/(ns*cv$u[uvi]/us))))
   }
 }
-
-
 
 # application class
 ViewPagodaApp <- setRefClass(
