@@ -1,0 +1,47 @@
+Package: scde
+Type: Package
+Title: Single Cell Differential Expression
+Version: 2.0.0
+Date: 2015-05-06
+Author: Peter Kharchenko [aut, cre],
+    Jean Fan [aut]
+Authors@R: c(person("Peter", "Kharchenko", role = c("aut", "cre"),
+		     email = "Peter_Kharchenko@hms.harvard.edu"),
+	      person("Jean, "Fan", role = "aut",
+	         email = "jeanfan@fas.harvard.edu"),
+	      person("Joe", "Herman", role = "ctb",
+		     email = "Herman@hms.harvard.edu"))
+Maintainer: Jean Fan <jeanfan@fas.harvard.edu>
+Description: SCDE implements routines for Bayesian analysis of single-cell
+    RNA-seq data to identify differentially expressed genes as well as
+    identify and characterize putative subpopulations
+License: GPL-2
+Depends:
+    R (>= 3.0.0),
+    flexmix,
+    parallel
+Imports:
+    Rcpp (>= 0.10.4),
+    RcppArmadillo (>= 0.3.900.0),
+    mgcv,
+    Rook,
+    rjson,
+    MASS,
+    Cairo,
+    RColorBrewer,
+    edgeR,
+    quantreg,
+    methods,
+    nnet,
+    RMTstat,
+    extRemes,
+    pcaMethods
+Suggests:
+    knitr,
+    cba,
+    fastcluster,
+    WGCNA
+biocViews: RNASeq, StatisticalMethod, DifferentialExpression, Bayesian,
+    Transcription, Software
+LinkingTo: Rcpp, RcppArmadillo
+VignetteBuilder: knitr

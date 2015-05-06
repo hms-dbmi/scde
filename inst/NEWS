@@ -1,0 +1,6 @@
+Version 2.0.0
+
+Version 1.1.0
+	- added support for batch bias correction (see scde.expression.difference and scde.test.gene.expression.difference).
+	- added a browser interface to view differential expression results. see scde.browse.diffexp().
+	- added ability to fit models to a reference transcriptome (usually a bulk measurement). see scde.fit.models.to.reference().
