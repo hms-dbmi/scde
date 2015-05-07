@@ -22,27 +22,35 @@ library(scde)
 
 ```{r data, cache=TRUE}
 # load example dataset
-data(es.mef.small);
+data(es.mef.small)
 # factor determining cell types
-sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(es.mef.small)), levels=c("ESC", "MEF"));
-names(sg) <- colnames(es.mef.small); # the group factor should be named accordingly
-table(sg);
+sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(es.mef.small)), levels=c("ESC", "MEF"))
+# the group factor should be named accordingly
+names(sg) <- colnames(es.mef.small)  
+table(sg)
 
 # clean up the dataset
-cd <- es.mef.small;
+cd <- es.mef.small
 # omit genes that are never detected
-cd <- cd[rowSums(cd)>0, ];
+cd <- cd[rowSums(cd)>0, ]
 # omit cells with very poor coverage
-cd <- cd[, colSums(cd)>1e4]; 
+cd <- cd[, colSums(cd)>1e4]
 ```
 ### Fitting error models
 
 As a next step we fit the error models on which all subsequent calculations will rely. The fitting process relies on a subset of robust genes that are detected in multiple cross-cell comparisons. Here we supply the `groups=sg` argument, so that the error models for the two cell types are fit independently (using two different sets of "robust" genes). If the `groups` argument is omitted, the models will be fit using a common set.
-```{r fit, cache=TRUE, include=TRUE}
+
+Note this step takes a considerable amount of time unless multiple cores are used. For the purposes of this vignette, the model has been precomputed. 
+```{r fit, eval=FALSE}
 # number of local process cores to use in processing
-n.cores <- 1;
+n.cores <- 1
 # calculate models
-o.ifm <- scde.error.models(counts=cd, groups=sg, n.cores=n.cores, threshold.segmentation=T, save.crossfit.plots=F, save.model.plots=F, verbose=1);
+o.ifm <- scde.error.models(counts=cd, groups=sg, n.cores=n.cores, threshold.segmentation=T, save.crossfit.plots=F, save.model.plots=F, verbose=1)
+# devtools::use_data(o.ifm)  # save for later since this step takes a long time
+```
+
+```{r, results='hide'}
+data(o.ifm)
 ```
 
 The `o.ifm` is a dataframe with error model coefficients for each cell (rows):
@@ -56,9 +64,9 @@ Particularly poor cells may result in abnormal fits, most commonly showing negti
 ```{r}
 # filter out cells that don't show positive correlation with
 # the expected expression magnitudes (very poor fits)
-valid.cells <- o.ifm$corr.a >0;
+valid.cells <- o.ifm$corr.a > 0
 table(valid.cells)
-o.ifm <- o.ifm[valid.cells, ];
+o.ifm <- o.ifm[valid.cells, ]
 ```
 Here, all the fits were valid.
 
@@ -81,7 +89,7 @@ ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups=groups, n.randomi
 # top upregulated genes (tail would show top downregulated ones)
 head(ediff[order(ediff$Z, decreasing=T), ])
 # write out a table with all the results, showing most significantly different genes (in both directions) on top
-write.table(ediff[order(abs(ediff$Z), decreasing=T), ], file="results.txt", row.names=T, col.names=T, sep="\t", quote=F)
+#write.table(ediff[order(abs(ediff$Z), decreasing=T), ], file="results.txt", row.names=T, col.names=T, sep="\t", quote=F)
 ```
 Alternatively we can run the differential expression on a single gene, and visualize the results:
 ```{r post, cache=TRUE, fig.height=9, fig.width=6}
