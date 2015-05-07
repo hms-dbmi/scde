@@ -1,10 +1,11 @@
 *~
+R/*~
 .DS_Store
 .Rbuildignore
 .Rhistory
 .Rproj.user
 .git
 .Rproj.user
-*.o
-*.so
-*.Rproj
+src/*.o
+src/*.so
+scde.Rproj
