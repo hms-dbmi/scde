@@ -1,0 +1,10 @@
+*~
+.DS_Store
+.Rbuildignore
+.Rhistory
+.Rproj.user
+.git
+.Rproj.user
+*.o
+*.so
+*.Rproj
