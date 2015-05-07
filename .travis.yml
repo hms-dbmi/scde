@@ -3,12 +3,18 @@ sudo: true
 
 # Use R
 language: r
+bioc_required: true
 
 # Be strict when checking our package
 warnings_are_errors: true
 
 # By default, Travis CI will find all R packages listed as dependencies in your package's DESCRIPTION file
-# and install them from CRAN so no need to augment for now
+# and install them from CRAN
+# need to specify if installing from Bioconductor
+bioc_packages:
+  - edgeR
+  - pcaMethods
+  - BiocParallel
 
 # Turn off email notifications
 nortifications:
