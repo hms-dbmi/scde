@@ -1,0 +1,21 @@
+# Enable installation
+sudo: true
+
+# Use R
+language: r
+
+# Be strict when checking our package
+warnings_are_errors: true
+
+# By default, Travis CI will find all R packages listed as dependencies in your package's DESCRIPTION file
+# and install them from CRAN so no need to augment for now
+
+# Turn off email notifications
+nortifications:
+  email: false
+
+# Codecov integration
+r_github_packages:
+  - jimhester/covr
+after_success:
+  - Rscript -e 'library(covr); codecov()'
