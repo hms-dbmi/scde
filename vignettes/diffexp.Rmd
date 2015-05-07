@@ -40,7 +40,7 @@ cd <- cd[,colSums(cd)>1e4];
 As a next step we fit the error models on which all subsequent calculations will rely. The fitting process relies on a subset of robust genes that are detected in multiple cross-cell comparisons. Here we supply the `groups=sg` argument, so that the error models for the two cell types are fit independently (using two different sets of "robust" genes). If the `groups` argument is omitted, the models will be fit using a common set.
 ```{r fit,cache=TRUE,include=TRUE}
 # number of local process cores to use in processing
-n.cores <- 10;
+n.cores <- 1;
 # calculate models
 o.ifm <- scde.error.models(counts=cd,groups=sg,n.cores=n.cores,threshold.segmentation=T,save.crossfit.plots=F,save.model.plots=F,verbose=1);
 ```
