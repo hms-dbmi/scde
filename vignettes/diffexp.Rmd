@@ -42,10 +42,8 @@ As a next step we fit the error models on which all subsequent calculations will
 
 Note this step takes a considerable amount of time unless multiple cores are used. For the purposes of this vignette, the model has been precomputed. 
 ```{r fit, eval=FALSE}
-# number of local process cores to use in processing
-n.cores <- 1
 # calculate models
-o.ifm <- scde.error.models(counts=cd, groups=sg, n.cores=n.cores, threshold.segmentation=T, save.crossfit.plots=F, save.model.plots=F, verbose=1)
+o.ifm <- scde.error.models(counts=cd, groups=sg, n.cores=1, threshold.segmentation=T, save.crossfit.plots=F, save.model.plots=F, verbose=1)
 # devtools::use_data(o.ifm)  # save for later since this step takes a long time
 ```
 
@@ -85,7 +83,7 @@ To test for differential expression, we first define a factor that specifies whi
 groups <- factor(gsub("(MEF|ESC).*", "\\1", rownames(o.ifm)), levels=c("ESC", "MEF"))
 names(groups) <- row.names(o.ifm)
 # run differential expression tests on all genes.
-ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups=groups, n.randomizations=100, n.cores=n.cores, verbose=1)
+ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups=groups, n.randomizations=100, n.cores=1, verbose=1)
 # top upregulated genes (tail would show top downregulated ones)
 head(ediff[order(ediff$Z, decreasing=T), ])
 # write out a table with all the results, showing most significantly different genes (in both directions) on top
@@ -116,5 +114,5 @@ In the plot above, the grey lines are used to show posterior distributions based
 Similarly, batch correction can be performed when calculating expression differences for the entire dataset:
 ```{r, cache=TRUE}
 # test for all of the genes
-ediff.batch <- scde.expression.difference(o.ifm, cd, o.prior, groups=groups, batch=batch, n.randomizations=100, n.cores=n.cores, return.posteriors=T, verbose=1)
+ediff.batch <- scde.expression.difference(o.ifm, cd, o.prior, groups=groups, batch=batch, n.randomizations=100, n.cores=1, return.posteriors=T, verbose=1)
 ```
