@@ -21,8 +21,10 @@ cd <- cd[rowSums(cd)>0, ]
 cd <- cd[, colSums(cd)>1e4]
 
 # calculate models
-o.ifm <- scde.error.models(counts=cd, groups=sg, n.cores=1, threshold.segmentation=T, save.crossfit.plots=F, save.model.plots=F, verbose=1)
+# takes too long to run on travis...
+# o.ifm <- scde.error.models(counts=cd, groups=sg, n.cores=1, threshold.segmentation=T, save.crossfit.plots=F, save.model.plots=F, verbose=1)
 # devtools::use_data(o.ifm)  # save for later since this step takes a long time
+data(o.ifm)
 
 # filter out cells that don't show positive correlation with
 # the expected expression magnitudes (very poor fits)
