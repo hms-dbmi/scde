@@ -2,7 +2,7 @@
 title: "scde basic"
 author: "Peter Kharchenko"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+# output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{scde basic}
   %\VignetteEngine{knitr::knitr}
