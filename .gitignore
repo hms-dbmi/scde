@@ -9,3 +9,4 @@ R/*~
 src/*.o
 src/*.so
 scde.Rproj
+vignette/*.Rmd
