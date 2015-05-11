@@ -33,6 +33,6 @@ bwpca(mat, matw = NULL, npcs = 2, nstarts = 1, smooth = 0,
 a list containing eigenvector matrix ($rotation), projections ($scores), variance (weighted) explained by each component ($var), total (weighted) variance of the dataset ($totalvar)
 }
 \description{
-Implements a weighted
+Implements a weighted PCA
 }
 

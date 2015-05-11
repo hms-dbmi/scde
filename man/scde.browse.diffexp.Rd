@@ -37,12 +37,16 @@ The arguments generally correspond to the \code{scde.expression.difference()} ca
 \examples{
 \donttest{
 data(es.mef.small)
-cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+cd <- es.mef.small
+cd <- cd[rowSums(cd) > 0, ]
+cd <- cd[, colSums(cd) > 1e4]
+sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
+names(sg) <- colnames(cd)
 o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 # make sure groups corresponds to the models (o.ifm)
-groups <- factor(gsub("(MEF|ESC).*", "\\\\1", rownames(o.ifm)), levels = c("ESC", "MEF")) names(groups) <- row.names(o.ifm)
+groups <- factor(gsub("(MEF|ESC).*", "\\\\1", rownames(o.ifm)), levels = c("ESC", "MEF"))
+names(groups) <- row.names(o.ifm)
 ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups = groups, n.randomizations = 100, n.cores = n.cores, verbose = 1)
 }
 }

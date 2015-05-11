@@ -28,7 +28,7 @@ pagoda.top.aspects(pwpca, clpca = NULL, n.cells = NULL,
 
 \item{score.alpha}{significance lelvel of the confidence interval for determining upper/lower bounds}
 
-\item{use.oe.scale}{whether the variance of the returned aspect patterns should be normalized using oberved/expected value instead of the default chi-squared derived variance corresponding to overdispersion Z score}
+\item{use.oe.scale}{whether the variance of the returned aspect patterns should be normalized using observed/expected value instead of the default chi-squared derived variance corresponding to overdispersion Z score}
 
 \item{effective.cells.start}{starting value for the pagoda.effective.cells() call}
 }

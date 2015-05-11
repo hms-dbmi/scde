@@ -17,7 +17,7 @@ scde.test.gene.expression.difference(gene, models, counts, prior,
 
 \item{counts}{read count matrix (must contain the row corresponding to the specified gene)}
 
-\item{prior}{expression magntiude prior}
+\item{prior}{expression magnitude prior}
 
 \item{groups}{a two-level factor specifying between which cells (rows of the models matrix) the comparison should be made}
 
@@ -48,8 +48,11 @@ The function performs differential expression test and optionally plots posterio
 \examples{
 \donttest{
 data(es.mef.small)
-cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+cd <- es.mef.small
+cd <- cd[rowSums(cd) > 0, ]
+cd <- cd[, colSums(cd) > 1e4]
+sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
+names(sg) <- colnames(cd)
 o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior = o.prior)

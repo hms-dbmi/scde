@@ -10,19 +10,19 @@ scde.posteriors(models, counts, prior, n.randomizations = 100, batch = NULL,
   n.cores = 20)
 }
 \arguments{
-\item{models}{models models determiend by \code{\link{scde.error.models}}}
+\item{models}{models models determined by \code{\link{scde.error.models}}}
 
 \item{counts}{read count matrix}
 
-\item{prior}{gene expression prior as determiend by \code{\link{scde.expression.prior}}}
+\item{prior}{gene expression prior as determined by \code{\link{scde.expression.prior}}}
 
 \item{n.randomizations}{number of bootstrap iterations to perform}
 
 \item{batch}{a factor describing which batch group each cell (i.e. each row of \code{models} matrix) belongs to}
 
-\item{composition}{a vector describing the batch compoisition of a group to be sampled}
+\item{composition}{a vector describing the batch composition of a group to be sampled}
 
-\item{return.individual.posteriors}{whether exprssion posteriors of each cell should be returned}
+\item{return.individual.posteriors}{whether expression posteriors of each cell should be returned}
 
 \item{return.individual.posterior.modes}{whether modes of expression posteriors of each cell should be returned}
 
@@ -35,13 +35,16 @@ scde.posteriors(models, counts, prior, n.randomizations = 100, batch = NULL,
 \subsection{return.individual.posteriors}{ a list is returned, with the \code{$post} slot giving a list of individual posterior matrices, in a form analogous to the joint posterior matrix, but reported on log scale }
 }
 \description{
-Calculates expression magnitude posteriors for the individual cells, and then uses boostrap resampling to calculate a joint expression posterior for all the specified cells. Alternatively during batch-effect correction procedure, the joint posterior can be calculated for a random composition of cells of different groups (see \code{batch} and \code{composition} parameters).
+Calculates expression magnitude posteriors for the individual cells, and then uses bootstrap resampling to calculate a joint expression posterior for all the specified cells. Alternatively during batch-effect correction procedure, the joint posterior can be calculated for a random composition of cells of different groups (see \code{batch} and \code{composition} parameters).
 }
 \examples{
 \donttest{
 data(es.mef.small)
-cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+cd <- es.mef.small
+cd <- cd[rowSums(cd) > 0, ]
+cd <- cd[, colSums(cd) > 1e4]
+sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
+names(sg) <- colnames(cd)
 o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 # calculate joint posteriors

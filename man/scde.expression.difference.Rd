@@ -9,11 +9,11 @@ scde.expression.difference(models, counts, prior, groups = NULL,
   batch.models = models, return.posteriors = F, verbose = 0)
 }
 \arguments{
-\item{models}{models determiend by \code{\link{scde.error.models}}}
+\item{models}{models determined by \code{\link{scde.error.models}}}
 
 \item{counts}{read count matrix}
 
-\item{prior}{gene expression prior as determiend by \code{\link{scde.expression.prior}}}
+\item{prior}{gene expression prior as determined by \code{\link{scde.expression.prior}}}
 
 \item{groups}{a factor determining the two groups of cells being compared. The factor entries should correspond to the rows of the model matrix. The factor should have two levels. NAs are allowed (cells will be omitted from comparison).}
 
@@ -52,12 +52,16 @@ Use the individual cell error models to test for differential expression between
 \examples{
 \donttest{
 data(es.mef.small)
-cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+cd <- es.mef.small
+cd <- cd[rowSums(cd) > 0, ]
+cd <- cd[, colSums(cd) > 1e4]
+sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
+names(sg) <- colnames(cd)
 o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
 # make sure groups corresponds to the models (o.ifm)
-groups <- factor(gsub("(MEF|ESC).*", "\\\\1", rownames(o.ifm)), levels = c("ESC", "MEF")) names(groups) <- row.names(o.ifm)
+groups <- factor(gsub("(MEF|ESC).*", "\\\\1", rownames(o.ifm)), levels = c("ESC", "MEF"))
+names(groups) <- row.names(o.ifm)
 ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups = groups, n.randomizations = 100, n.cores = n.cores, verbose = 1)
 }
 }

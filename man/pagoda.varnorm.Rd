@@ -21,7 +21,7 @@ pagoda.varnorm(models, counts, batch = NULL, trim = 0, prior = NULL,
 
 \item{prior}{expression magnitude prior}
 
-\item{plot}{wether to plot the results}
+\item{plot}{whether to plot the results}
 
 \item{minimize.underdispersion}{whether underdispersion should be minimized (can increase sensitivity in datasets with high complexity of population, however cannot be effectively used in datasets where multiple batches are present)}
 

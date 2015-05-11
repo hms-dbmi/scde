@@ -52,8 +52,11 @@ Fit error models given a set of single-cell data (counts) and an optional groupi
 \examples{
 \donttest{
 data(es.mef.small)
-cd <- es.mef.small cd <- cd[rowSums(cd) > 0, ] cd <- cd[, colSums(cd) > 1e4]
-sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF")) names(sg) <- colnames(cd)
+cd <- es.mef.small
+cd <- cd[rowSums(cd) > 0, ]
+cd <- cd[, colSums(cd) > 1e4]
+sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
+names(sg) <- colnames(cd)
 o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
 }
 }

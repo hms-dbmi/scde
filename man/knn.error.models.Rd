@@ -35,7 +35,7 @@ knn.error.models(counts, groups = NULL, k = round(ncol(counts)/2),
 
 \item{cor.method}{correlation measure to be used in determining k nearest cells}
 
-\item{verbose}{level of verbocity}
+\item{verbose}{level of verbosity}
 
 \item{fpm.estimate.trim}{trim fraction to be used in estimating group-average gene expression magnitude for model fitting (0.5 would be median, 0 would turn off trimming)}
 
@@ -51,7 +51,7 @@ knn.error.models(counts, groups = NULL, k = round(ncol(counts)/2),
 a data frame with parameters of the fit error models (rows- cells, columns- fitted parameters)
 }
 \description{
-Builds cell-specific error models assumming that there are multiple subpopulations present
+Builds cell-specific error models assuming that there are multiple subpopulations present
 among the measured cells. The models for each cell are based on average expression estimates
 obtained from K closest cells within a given group (if groups = NULL, then within the entire
 set of measured cells). The method implements fitting of both the original log-fit models

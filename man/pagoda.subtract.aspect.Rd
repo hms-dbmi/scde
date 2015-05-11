@@ -7,7 +7,7 @@
 pagoda.subtract.aspect(varinfo, aspect, center = T)
 }
 \arguments{
-\item{varinfo}{normalized varinace info (from pagoda.varnorm())}
+\item{varinfo}{normalized variance info (from pagoda.varnorm())}
 
 \item{aspect}{a vector giving a cell-to-cell variation pattern that should be controlled for (length should be corresponding to ncol(varinfo$mat))}
 

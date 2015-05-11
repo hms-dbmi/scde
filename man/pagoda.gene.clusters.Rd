@@ -14,7 +14,7 @@ pagoda.gene.clusters(varinfo, trim = 3.1/ncol(varinfo$mat),
 \arguments{
 \item{varinfo}{varinfo adjusted variance info from pagoda.varinfo() (or pagoda.subtract.aspect())}
 
-\item{trim}{additional Winsorization trim value to be used in determining clusters (to remove clusters that group outliers ocurring in a given cell). Use higher values (5-15) if the reulting clusters group outlier patterns}
+\item{trim}{additional Winsorization trim value to be used in determining clusters (to remove clusters that group outliers occurring in a given cell). Use higher values (5-15) if the resulting clusters group outlier patterns}
 
 \item{n.clusters}{number of clusters to be determined (recommended range is 100-200)}
 
@@ -38,7 +38,7 @@ pagoda.gene.clusters(varinfo, trim = 3.1/ncol(varinfo$mat),
 
 \item{method}{clustering method to be used in determining gene clusters}
 
-\item{secondary.correlation}{whether clustering shuold be performed on the correlation of the correlation matrix instead}
+\item{secondary.correlation}{whether clustering should be performed on the correlation of the correlation matrix instead}
 
 \item{n.cells}{number of cells to use for the randomly generated cluster lambda1 model}
 

@@ -20,7 +20,7 @@ pagoda.pathway.wPCA(varinfo, setenv, n.components = 2,
 
 \item{min.pathway.size}{minimum number of observed genes that should be contained in a valid gene set}
 
-\item{max.pathway.size}{maximum number of observed gnees in a valid gene set}
+\item{max.pathway.size}{maximum number of observed genes in a valid gene set}
 
 \item{n.randomizations}{number of random gene sets (of the same size) to be evaluated in parallel with each gene set (can be kept at 5 or 10, but should be increased to 50-100 if the significance of pathway overdispersion will be determined relative to random gene set models)}
 
@@ -28,13 +28,13 @@ pagoda.pathway.wPCA(varinfo, setenv, n.components = 2,
 
 \item{n.starts}{number of random starts for the EM method in each evaluation}
 
-\item{center}{whether the expression matirx should be recentered}
+\item{center}{whether the expression matrix should be recentered}
 
 \item{batch.center}{whether batch-specific centering should be used}
 
 \item{proper.gene.names}{alternative vector of gene names (replacing rownames(varinfo$mat)) to be used in cases when the provided setenv uses different gene names}
 
-\item{verbose}{verbosity lelel}
+\item{verbose}{verbosity level}
 }
 \value{
 a list of weighted PCA info for each valid gene set
