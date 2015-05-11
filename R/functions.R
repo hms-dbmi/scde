@@ -260,7 +260,7 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
             cat("adjusting for batch effects\n")
         }
         # adjust for batch effects
-        a.bdiffp <- calculate.ratio.posterior(bdiffp, batch.bdiffp, prior = data.frame(x = as.numeric(colnames(bdiffp)), y = rep(1/ncol(bdiffp), ncol(bdiffp))), skip.prior.adjustment = T)
+        a.bdiffp <- calculate.ratio.posterior(bdiffp, batch.bdiffp, prior = data.frame(x = as.numeric(colnames(bdiffp)), y = rep(1/ncol(bdiffp), ncol(bdiffp))), skip.prior.adjustment = T, n.cores = n.cores)
         a.bdiffp.rep <- quick.distribution.summary(a.bdiffp)
 
         # return with batch correction info
