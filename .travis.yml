@@ -1,5 +1,9 @@
 # Sample .travis.yml for R projects
 
+# Enable installation
+sudo: true
+
+# Use R
 language: r
 warnings_are_errors: true
 
