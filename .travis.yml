@@ -1,27 +1,27 @@
-# Enable installation
-sudo: true
+# Sample .travis.yml for R projects
 
-# Use R
 language: r
-bioc_required: true
-
-# Be strict when checking our package
 warnings_are_errors: true
 
-# By default, Travis CI will find all R packages listed as dependencies in your package's DESCRIPTION file
-# and install them from CRAN
-# need to specify if installing from Bioconductor
-bioc_packages:
-  - edgeR
-  - pcaMethods
-  - BiocParallel
+notifications:
+  email:
+    on_success: change
+    on_failure: change
 
-# Turn off email notifications
-nortifications:
-  email: false
+install:
+  ## For installing all CRAN dependencies using DESCRIPTION
+  - ./travis-tool.sh install_deps
 
-# Codecov integration
-r_github_packages:
-  - jimhester/covr
-after_success:
-  - Rscript -e 'library(covr); codecov()'
+  ## For installing all Bioconductor dependencies using DESCRIPTION
+  - ./travis-tool.sh install_bioc_deps
+
+env:
+  global:
+    - BIOC_USE_DEVEL="FALSE"  ## Use the current release version
+    - R_CHECK_ARGS="--no-build-vignettes --no-manual --timings"  ## do not build vignettes or manual
+    - _R_CHECK_TIMINGS_="0"  ## get the timing information for the examples for all of your functions
+
+## Check how much time was spent in each of the example pages
+after_script:
+  - ./travis-tool.sh dump_logs_by_extension "timings"
+  - ./travis-tool.sh dump_sysinfo

@@ -10,3 +10,5 @@ src/*.o
 src/*.so
 scde.Rproj
 vignettes/*.Rmd
+*_bak
+.*_bak
