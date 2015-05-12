@@ -40,3 +40,10 @@ after_failure:
 after_script:
   - ./travis-tool.sh dump_logs_by_extension "timings"
   - ./travis-tool.sh dump_sysinfo
+
+## CodeCov
+r_github_packages:
+  - jimhester/covr
+  - JEFworks/scde
+after_success:
+  - Rscript -e 'library(covr); codecov()'
