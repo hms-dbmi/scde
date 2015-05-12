@@ -1,7 +1,7 @@
 Package: scde
 Type: Package
 Title: Single Cell Differential Expression
-Version: 2.0.0
+Version: 1.99.0
 Date: 2015-05-06
 Description: The scde package implements a set of statistical methods for analyzing single-cell RNA-seq data.
     scde fits individual error models for single-cell RNA-seq measurements. These models can then be used for
