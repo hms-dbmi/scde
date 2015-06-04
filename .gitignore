@@ -1,3 +1,4 @@
+ls
 *~
 R/*~
 .DS_Store
@@ -9,6 +10,5 @@ R/*~
 src/*.o
 src/*.so
 scde.Rproj
-vignettes/*.Rmd
 *_bak
 .*_bak
