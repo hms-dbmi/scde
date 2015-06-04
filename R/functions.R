@@ -2324,7 +2324,22 @@ view.aspects <- function(mat, row.clustering = NA, cell.clustering = NA, zlim = 
 }
 
 
-
+##' Make the PAGODA app
+##'
+##' Create an interactive user interface to explore output of PAGODA.
+##' @param tamr Combined pathways that show similar expression patterns. Output of `pagoda.reduce.redundancy`
+##' @param tam Combined pathways that are driven by the same gene sets. Output of `pagoda.reduce.loading.redundancy`
+##' @param varinfo Variance information. Output of `pagoda.varnorm`
+##' @param env Gene sets as an environment variable.
+##' @param pwpca Weighted PC magnitudes for each gene set provided in the `env`. Output of `pagoda.pathway.wPCA`
+##' @param clpca Weighted PC magnitudes for de novo gene sets identified by clustering on expression. Output of `pagoda.gene.clusters`
+##' @param col.cols  Matrix of column colors. Useful for visualizing cell annotations such as batch labels. Defult NULL.
+##' @param cell.clustering Dendrogram of cell clustering. Output of `pagoda.cluster.cells`. Default NULL.
+##' @param row.clustering Dendrogram of combined pathways clustering. Default NULL.
+##' @param title Title text to be used in the browser label for the app. Default, set as 'pathway clustering'
+##' @param zlim Range of the normalized gene expression levels, inputted as a list: c(lower_bound, upper_bound). Values outside this range will be winsorized. Useful for increasing the contrast of the heatmap visualizations. Default, set to the 5th and 95th percentiles.
+##'
+##' @export
 make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.cols = NULL, cell.clustering = NULL, row.clustering = NULL, title = "pathway clustering", zlim = c(-1, 1)*quantile(tamr$xv, p = 0.95)) {
     # rcm - xv
     # matvar
@@ -5504,7 +5519,10 @@ calculate.go.enrichment <- function(genelist, universe, pvalue.cutoff = 1e-3, mi
     }
 }
 
-# application class
+
+##' PAGODA application class
+##'
+##' This ROOK application class communicates with the ExtJS framework and Inchlib HTML5 canvas libraries to create the graphical user interface for PAGODA
 ViewPagodaApp <- setRefClass(
     'ViewPagodaApp',
     fields = c('results', 'genes', 'pathways', 'mat', 'matw', 'goenv', 'renv', 'name', 'trim', 'batch'),

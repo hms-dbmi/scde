@@ -24,6 +24,9 @@ install:
   ## For installing all Bioconductor dependencies using DESCRIPTION
   - ./travis-tool.sh install_bioc_deps
 
+  ## Install Github packages
+  - ./travis-tool.sh install_github jimhester/covr
+
 env:
   global:
     - BIOC_USE_DEVEL="FALSE"  ## Use the current release version
@@ -42,8 +45,5 @@ after_script:
   - ./travis-tool.sh dump_sysinfo
 
 ## CodeCov
-r_github_packages:
-  - jimhester/covr
-  - JEFworks/scde
 after_success:
   - Rscript -e 'library(covr); codecov()'
