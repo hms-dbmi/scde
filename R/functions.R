@@ -307,6 +307,7 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
 ##' groups <- factor(gsub("(MEF|ESC).*", "\\1", rownames(o.ifm)), levels = c("ESC", "MEF"))
 ##' names(groups) <- row.names(o.ifm)
 ##' ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups = groups, n.randomizations = 100, n.cores = n.cores, verbose = 1)
+##' scde.browse.diffexp(ediff, o.ifm, cd, o.prior, groups = groups, geneLookupURL="http://www.informatics.jax.org/searchtool/Search.do?query={0}")  # creates browser
 ##' }
 ##' @export
 scde.browse.diffexp <- function(results, models, counts, prior, groups = NULL, batch = NULL, geneLookupURL = NULL, server = NULL, name = "scde", port = NULL) {
@@ -318,6 +319,8 @@ scde.browse.diffexp <- function(results, models, counts, prior, groups = NULL, b
     browseURL(paste(server$full_url(name), "index.html", sep = "/"))
     return(server)
 }
+
+
 ##' View pagoda or scde application
 ##'
 ##' Installs a given pagoda app (or any other rook app) into a server, optionally
@@ -2366,6 +2369,8 @@ make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.co
     # merge go.env
     if(!is.null(clpca)) {
         set.env <- list2env(c(as.list(env), clpca$clusters))
+    } else {
+        set.env <- env
     }
     sa <- ViewPagodaApp$new(fres, df, gene.df, varinfo$mat, varinfo$matw, set.env, name = title, trim = 0, batch = varinfo$batch)
 }
@@ -5025,7 +5030,7 @@ ViewDiff <- setRefClass(
                                      <meta http-equiv = "Content-Type" content = "text/html charset = iso-8859-1" >
                                      <title > SCDE: ', paste(levels(groups), collapse = " vs. "), '</title >
                                      <!-- ExtJS -- >
-                                     <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/ext-4.2.1.883/resources/css/ext-all.css" / >
+                                     <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/extjs/resources/ext-theme-neptune/ext-theme-neptune-all.css" / >
 
                                      <!-- Shared -- >
                                      <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/ext-4.2.1.883/examples/shared/example.css" / >
