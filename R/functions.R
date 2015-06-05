@@ -1747,14 +1747,14 @@ pagoda.subtract.aspect <- function(varinfo, aspect, center = TRUE) {
 ##' @param min.pathway.size minimum number of observed genes that should be contained in a valid gene set
 ##' @param max.pathway.size maximum number of observed genes in a valid gene set
 ##' @param n.randomizations number of random gene sets (of the same size) to be evaluated in parallel with each gene set (can be kept at 5 or 10, but should be increased to 50-100 if the significance of pathway overdispersion will be determined relative to random gene set models)
-##' @param n.internal.shuffles number of internal (independent row shuffles) randomizations of expression data that should be evaluated for each gene set (needed only if one is interested in gene set coherence P values)
+##' @param n.internal.shuffles number of internal (independent row shuffles) randomizations of expression data that should be evaluated for each gene set (needed only if one is interested in gene set coherence P values, disabled by default; set to 10-30 to estimate)
 ##' @param n.starts number of random starts for the EM method in each evaluation
 ##' @param center whether the expression matrix should be recentered
 ##' @param batch.center whether batch-specific centering should be used
 ##' @param proper.gene.names alternative vector of gene names (replacing rownames(varinfo$mat)) to be used in cases when the provided setenv uses different gene names
 ##' @param verbose verbosity level
 ##' @return a list of weighted PCA info for each valid gene set
-pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = detectCores(), min.pathway.size = 10, max.pathway.size = 1e3, n.randomizations = 10, n.internal.shuffles = 10, n.starts = 10, center = TRUE, batch.center = TRUE, proper.gene.names = NULL, verbose = 0) {
+pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = detectCores(), min.pathway.size = 10, max.pathway.size = 1e3, n.randomizations = 10, n.internal.shuffles = 0, n.starts = 10, center = TRUE, batch.center = TRUE, proper.gene.names = NULL, verbose = 0) {
     mat <- varinfo$mat
     matw <- varinfo$matw
     gsl <- NULL
@@ -1860,7 +1860,7 @@ pagoda.effective.cells <- function(pwpca, start = NULL) {
 ##' @param cor.method correlation method ("pearson", "spearman") to be used as a distance measure for clustering
 ##' @param n.samples number of randomly generated matrix samples to test the background distribution of lambda1 on
 ##' @param n.starts number of wPCA EM algorithm starts at each iteration
-##' @param n.internal.shuffles number of internal shuffles to perform (only if interested in set coherence, which is quite high for clusters by definition)
+##' @param n.internal.shuffles number of internal shuffles to perform (only if interested in set coherence, which is quite high for clusters by definition, disabled by default; set to 10-30 shuffles to estimate)
 ##' @param n.cores number of cores to use
 ##' @param verbose verbosity level
 ##' @param plot whether a plot showing distribution of random lambda1 values should be shown (along with the extreme value distribution fit)
