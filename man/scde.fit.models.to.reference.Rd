@@ -5,7 +5,7 @@
 \title{fit scde models relative to provided set of expression magnitudes}
 \usage{
 scde.fit.models.to.reference(counts, reference, n.cores = 10,
-  zero.count.threshold = 1, nrep = 1, save.plots = F,
+  zero.count.threshold = 1, nrep = 1, save.plots = FALSE,
   plot.filename = "reference.model.fits.pdf", verbose = 0, min.fpm = 1)
 }
 \arguments{
@@ -45,10 +45,10 @@ cd <- cd[rowSums(cd) > 0, ]
 cd <- cd[, colSums(cd) > 1e4]
 sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
 names(sg) <- colnames(cd)
-o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
-o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 # calculate joint posteriors across all cells
-jp <- scde.posteriors(models = o.ifm, cd, o.prior, n.cores = 10, return.individual.posterior.modes = T, n.randomizations = 100)
+jp <- scde.posteriors(models = o.ifm, cd, o.prior, n.cores = 10, return.individual.posterior.modes = TRUE, n.randomizations = 100)
 # use expected expression magnitude for each gene
 av.mag <- as.numeric(jp$jp \%*\% as.numeric(colnames(jp$jp)))
 # translate into counts

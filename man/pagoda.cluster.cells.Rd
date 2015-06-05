@@ -4,8 +4,8 @@
 \alias{pagoda.cluster.cells}
 \title{Determine optimal cell clustering based on the genes driving the significant aspects}
 \usage{
-pagoda.cluster.cells(tam, varinfo, method = "ward", include.aspects = F,
-  verbose = 0, return.details = F)
+pagoda.cluster.cells(tam, varinfo, method = "ward", include.aspects = FALSE,
+  verbose = 0, return.details = FALSE)
 }
 \arguments{
 \item{tam}{result of pagoda.top.aspects() call}
@@ -15,6 +15,10 @@ pagoda.cluster.cells(tam, varinfo, method = "ward", include.aspects = F,
 \item{method}{clustering method ('ward' by default)}
 
 \item{include.aspects}{whether the aspect patterns themselves should be included alongside with the individual genes in calculating cell distance}
+
+\item{verbose}{0 or 1 depending on level of desired verbosity}
+
+\item{return.details}{Boolean of whether to return just the hclust result or a list containing the hclust result plus the distance matrix and gene values}
 }
 \value{
 hclust result

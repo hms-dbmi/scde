@@ -5,17 +5,16 @@ date: "3/16/2015"
 output: html_document
 ---
 
-The following tutorial illustrates how to use PAGODA routines (implemented in the scde package) using T-cell data from [_Pollen et al._](www.ncbi.nlm.nih.gov/pubmed/25086649).
+The following tutorial illustrates how to use PAGODA routines (implemented in the scde package) using single cell data from [_Pollen et al._](www.ncbi.nlm.nih.gov/pubmed/25086649).
 
 ```{r,include=FALSE}
-.libPaths(c("/home/pkharchenko/R/x86_64-pc-linux-gnu-library/3.1",.libPaths()))
-library(scde); library(WGCNA)
+library(scde)
 ```
 ### Preparing data
 The read count table and cell group annotations from _Pollen et al._ can be loaded using {{data("pollen") call}}. Some additional filter sare applied:
 ```{r data,cache=TRUE,hide=TRUE,eval=TRUE}
   # read in the expression matrix
-  load("pollen.rda")
+  data(pollen)
 
   cd <- pollen.counts
     
@@ -43,19 +42,19 @@ l1cols <- c("red","orange","blue","green")[as.integer(as.factor(pollen.groups[co
 # sample sources
 x <- gsub("^Hi_(.*)_.*","\\1",colnames(cd))
 l2cols <- c("coral4","olivedrab3","skyblue2","slateblue3")[as.integer(factor(x,levels=c("NPC","GW16","GW21","GW21+3")))]
-
-```
-
-```{r dataload,include=FALSE}
-#load("cd.RData")
 ```
 
 ### Fitting error models
 Next, we'll construct error models for individual cells. Here we'll use k-nearest neighbour model fitting procedure implemented by knn.error.models() method. This is a relatively noisy dataset (non-UMI), so we raise the min.count.threshold to 2 (minimum number of reads for the gene to be initially classified as a non-failed measurement), requiring at least 5 non-failed measurements per gene. We're providing a rough guess to the complexity of the population, by fitting the error models based on 1/4 of most similar cells (i.e. gussing there might be ~4 subpopulations). 
 
-```{r models,cache=TRUE,hide=TRUE,warning=FALSE,message=FALSE}
-n.cores <- 10; # number of parallel cores to use
+```{r models,eval=FALSE,hide=TRUE,warning=FALSE,message=FALSE}
+n.cores <- 1 # number of parallel cores to use
 knn <- knn.error.models(cd,k=ncol(cd)/4,n.cores=n.cores,min.count.threshold=2,min.nonfailed=5,max.model.plots=10)
+devtools::use_data(knn)  # save for later since this step takes a long time
+```
+
+```{r, results = 'hide'}
+data(knn)
 ```
 
 The fitting process above wrote out cell.models.pdf file in the current directory showing model fits for the first 10 cells (see max.model.plots argument). Here's an example of such plot:
@@ -82,10 +81,9 @@ Even with all the corrections, sequencing depth or gene coverage is typically st
 varinfo <- pagoda.subtract.aspect(varinfo,colSums(cd[,rownames(knn)]>0))
 ```
 
-
 ### Evaluate overdispersion of pre-defined gene sets
-For pre-defined gene sets we'll use GO annotations. To do so we'll construct an environment mapping GO terms to the set of genes contained in it.
-```{r goenv,cache=TRUE}
+For pre-defined gene sets we'll use GO annotations. To do so an environment mapping GO terms to the set of genes contained in it has been pre-computed using the following code.
+```{r goenv, eval=FALSE}
 library(org.Hs.eg.db)
 # translate gene names to ids
 ids <- unlist(lapply(mget(rownames(cd),org.Hs.egALIAS2EG,ifnotfound=NA),function(x) x[1]))
@@ -100,10 +98,19 @@ go.env <- go.env[unlist(lapply(go.env,length))>5];
 library(GO.db)
 desc <- unlist(lapply(mget(names(go.env),GOTERM,ifnotfound=NA),function(x) if(is.logical(x)) { return("") } else { slot(x,"Term")}))
 names(go.env) <- paste(names(go.env),desc); # append description to the names
+
+go.env.subset <- list2env(go.env[1:200]); # convert a subset to an environment
 go.env <- list2env(go.env); # convert to an environment
+
+devtools::use_data(go.env, go.env.subset)  # save for later
 ```
 
-Calculate weighted PC magnitudes of GO gene sets:
+```{r, results = 'hide'}
+data(go.env.subset)
+go.env <- go.env.subset
+```
+
+Calculate weighted PC magnitudes of GO gene sets for subset of GO annotations to save on computing time:
 ```{r pathwaySig,cache=TRUE}
 pwpca <- pagoda.pathway.wPCA(varinfo,go.env,n.components=1,n.cores=n.cores,n.internal.shuffles=50)
 ```

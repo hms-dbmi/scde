@@ -5,10 +5,10 @@
 \title{View pathway or gene weighted PCA}
 \usage{
 pagoda.show.pathways(pathways, varinfo, goenv = NULL, n.genes = 20,
-  two.sided = F, n.pc = rep(1, length(pathways)), colcols = NULL,
-  zlim = NULL, showRowLabels = F, cexCol = 1, cexRow = 1,
+  two.sided = FALSE, n.pc = rep(1, length(pathways)), colcols = NULL,
+  zlim = NULL, showRowLabels = FALSE, cexCol = 1, cexRow = 1,
   nstarts = 10, cell.clustering = NULL, show.cell.dendrogram = TRUE,
-  plot = T, box = T, trim = 0, return.details = F, ...)
+  plot = TRUE, box = TRUE, trim = 0, return.details = FALSE, ...)
 }
 \arguments{
 \item{pathways}{character vector of pathway or gene names}
@@ -47,9 +47,7 @@ pagoda.show.pathways(pathways, varinfo, goenv = NULL, n.genes = 20,
 
 \item{return.details}{whether the function should return the matrix as well as full PCA info instead of just PC1 vector}
 
-\item{...}{}
-
-\item{show.Colv}{whether the column dendrogram should be shown}
+\item{...}{additional arguments are passed to the \code{c.view.pathways}}
 }
 \value{
 cell scores along the first principal component of shown genes (returned as invisible)

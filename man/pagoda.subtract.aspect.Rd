@@ -4,7 +4,7 @@
 \alias{pagoda.subtract.aspect}
 \title{Control for a particular aspect of expression heterogeneity in a given population}
 \usage{
-pagoda.subtract.aspect(varinfo, aspect, center = T)
+pagoda.subtract.aspect(varinfo, aspect, center = TRUE)
 }
 \arguments{
 \item{varinfo}{normalized variance info (from pagoda.varnorm())}

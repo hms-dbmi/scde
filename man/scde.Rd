@@ -4,13 +4,20 @@
 \name{scde}
 \alias{scde}
 \alias{scde-package}
-\title{Single-cell Differential Expression}
+\title{Single-cell Differential Expression (with Pathway And Gene set OverDispersion Analysis)}
 \description{
-SCDE implements routines for analysis single-cell RNA-seq data, including fitting of error models and testing of differential expression. Please see Kharchenko et al., Nat. Methods 2014 Jul11(7):740-2. doi: 10.1038/nmeth.2967.
-See vignette("diffexp") for a brief tutorial.
+The scde package implements a set of statistical methods for analyzing single-cell RNA-seq data.
+scde fits individual error models for single-cell RNA-seq measurements. These models can then be used for
+assessment of differential expression between groups of cells, as well as other types of analysis.
+The scde package also contains the pagoda framework which applies pathway and gene set overdispersion analysis
+to identify and characterize putative cell subpopulations based on transcriptional signatures.
+See vignette("diffexp") for a brief tutorial on differential expression analysis.
+See vignette("pagoda") for a brief tutorial on pathway and gene set overdispersion analysis to identify and characterize cell subpopulations.
 More extensive tutorials are available at \url{http://pklab.med.harvard.edu/scde/index.html}.
 }
 \author{
-Peter Kharchenko \email{peter.kharchenko@post.harvard.edu}
+Peter Kharchenko \email{Peter_Kharchenko@hms.harvard.edu}
+
+Jean Fan \email{jeanfan@fas.harvard.edu}
 }
 

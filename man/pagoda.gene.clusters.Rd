@@ -7,9 +7,9 @@
 pagoda.gene.clusters(varinfo, trim = 3.1/ncol(varinfo$mat),
   n.clusters = 150, n.samples = 60, cor.method = "p",
   n.internal.shuffles = 0, n.starts = 10, n.cores = detectCores(),
-  verbose = 0, plot = F, show.random = F, n.components = 1,
-  method = "ward", secondary.correlation = F, n.cells = ncol(varinfo$mat),
-  old.results = NULL)
+  verbose = 0, plot = FALSE, show.random = FALSE, n.components = 1,
+  method = "ward", secondary.correlation = FALSE,
+  n.cells = ncol(varinfo$mat), old.results = NULL)
 }
 \arguments{
 \item{varinfo}{varinfo adjusted variance info from pagoda.varinfo() (or pagoda.subtract.aspect())}

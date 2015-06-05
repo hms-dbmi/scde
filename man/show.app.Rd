@@ -4,7 +4,7 @@
 \alias{show.app}
 \title{View pagoda or scde application}
 \usage{
-show.app(app, name, browse = T, port = NULL, ip = "127.0.0.1",
+show.app(app, name, browse = TRUE, port = NULL, ip = "127.0.0.1",
   server = NULL)
 }
 \arguments{

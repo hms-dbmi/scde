@@ -5,10 +5,10 @@
 \title{Build error models for heterogeneous cell populations, based on K-nearest neighbor cells.}
 \usage{
 knn.error.models(counts, groups = NULL, k = round(ncol(counts)/2),
-  min.nonfailed = 5, min.count.threshold = 1, save.model.plots = T,
+  min.nonfailed = 5, min.count.threshold = 1, save.model.plots = TRUE,
   max.model.plots = 50, n.cores = parallel::detectCores(),
   min.size.entries = 2000, min.fpm = 0, cor.method = "pearson",
-  verbose = 0, fpm.estimate.trim = 0.25, zero.intercept = T,
+  verbose = 0, fpm.estimate.trim = 0.25, zero.intercept = TRUE,
   local.theta.fit = zero.intercept, theta.fit.range = c(0.01, 100),
   alpha.weight.power = 1/2)
 }
@@ -55,7 +55,7 @@ Builds cell-specific error models assuming that there are multiple subpopulation
 among the measured cells. The models for each cell are based on average expression estimates
 obtained from K closest cells within a given group (if groups = NULL, then within the entire
 set of measured cells). The method implements fitting of both the original log-fit models
-(when zero.intercept = F), or newer linear-fit models (zero.intercept = T, default) with locally
-fit overdispersion coefficient (local.theta.fit = T, default).
+(when zero.intercept = FALSE), or newer linear-fit models (zero.intercept = TRUE, default) with locally
+fit overdispersion coefficient (local.theta.fit = TRUE, default).
 }
 

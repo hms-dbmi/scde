@@ -9,7 +9,7 @@ scde.browse.diffexp(results, models, counts, prior, groups = NULL,
   port = NULL)
 }
 \arguments{
-\item{results}{result object returned by \code{scde.expression.difference()}. Note to browse group posterior levels, use \code{return.posteriors = T} in the \code{scde.expression.difference()} call.}
+\item{results}{result object returned by \code{scde.expression.difference()}. Note to browse group posterior levels, use \code{return.posteriors = TRUE} in the \code{scde.expression.difference()} call.}
 
 \item{models}{model matrix}
 
@@ -26,6 +26,8 @@ scde.browse.diffexp(results, models, counts, prior, groups = NULL,
 \item{server}{optional previously returned instance of the server, if want to reuse it.}
 
 \item{name}{app name (needs to be altered only if adding more than one app to the server using \code{server} parameter)}
+
+\item{port}{Interactive browser port}
 }
 \value{
 server instance, on which $stop() function can be called to kill the process.
@@ -42,12 +44,13 @@ cd <- cd[rowSums(cd) > 0, ]
 cd <- cd[, colSums(cd) > 1e4]
 sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
 names(sg) <- colnames(cd)
-o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
-o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 # make sure groups corresponds to the models (o.ifm)
 groups <- factor(gsub("(MEF|ESC).*", "\\\\1", rownames(o.ifm)), levels = c("ESC", "MEF"))
 names(groups) <- row.names(o.ifm)
 ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups = groups, n.randomizations = 100, n.cores = n.cores, verbose = 1)
+scde.browse.diffexp(ediff, o.ifm, cd, o.prior, groups = groups, geneLookupURL="http://www.informatics.jax.org/searchtool/Search.do?query={0}")  # creates browser
 }
 }
 

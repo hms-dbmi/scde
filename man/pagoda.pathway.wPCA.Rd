@@ -7,7 +7,8 @@
 pagoda.pathway.wPCA(varinfo, setenv, n.components = 2,
   n.cores = detectCores(), min.pathway.size = 10, max.pathway.size = 1000,
   n.randomizations = 10, n.internal.shuffles = 10, n.starts = 10,
-  center = T, batch.center = T, proper.gene.names = NULL, verbose = 0)
+  center = TRUE, batch.center = TRUE, proper.gene.names = NULL,
+  verbose = 0)
 }
 \arguments{
 \item{varinfo}{adjusted variance info from pagoda.varinfo() (or pagoda.subtract.aspect())}

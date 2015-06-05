@@ -6,7 +6,7 @@
 \usage{
 scde.expression.difference(models, counts, prior, groups = NULL,
   batch = NULL, n.randomizations = 150, n.cores = 10,
-  batch.models = models, return.posteriors = F, verbose = 0)
+  batch.models = models, return.posteriors = FALSE, verbose = 0)
 }
 \arguments{
 \item{models}{models determined by \code{\link{scde.error.models}}}
@@ -40,7 +40,7 @@ a data frame with the following fields:
 }
  If batch correction has been performed (\code{batch} has been supplied), analogous data frames are returned in slots \code{$batch.adjusted} for batch-corrected results, and \code{$batch.effect} for the differences explained by batch effects alone.
 }}
-\subsection{return.posteriors = T}{
+\subsection{return.posteriors = TRUE}{
 A list is returned, with the default results data frame given in the \code{$resutls} slot.
 \code{difference.posterior} returns a matrix of estimated expression difference posteriors (rows - genes, columns correspond to different magnitudes of fold-change - log2 values are given in the column names)
 \code{joint.posteriors} a list of two joint posterior matrices (rows - genes, columns correspond to the expression levels, given by prior$x grid)
@@ -57,8 +57,8 @@ cd <- cd[rowSums(cd) > 0, ]
 cd <- cd[, colSums(cd) > 1e4]
 sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
 names(sg) <- colnames(cd)
-o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
-o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 # make sure groups corresponds to the models (o.ifm)
 groups <- factor(gsub("(MEF|ESC).*", "\\\\1", rownames(o.ifm)), levels = c("ESC", "MEF"))
 names(groups) <- row.names(o.ifm)

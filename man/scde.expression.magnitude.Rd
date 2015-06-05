@@ -25,7 +25,7 @@ cd <- cd[rowSums(cd) > 0, ]
 cd <- cd[, colSums(cd) > 1e4]
 sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
 names(sg) <- colnames(cd)
-o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
 # get expression magniutude estimates
 lfpm <- scde.expression.magnitude(o.ifm, cd)
 }

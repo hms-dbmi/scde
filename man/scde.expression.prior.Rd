@@ -4,7 +4,7 @@
 \alias{scde.expression.prior}
 \title{Estimate prior distribution for gene expression magnitudes}
 \usage{
-scde.expression.prior(models, counts, length.out = 400, show.plot = F,
+scde.expression.prior(models, counts, length.out = 400, show.plot = FALSE,
   pseudo.count = 1, bw = 0.1, max.quantile = 1 - 0.001,
   max.value = NULL)
 }
@@ -39,8 +39,8 @@ cd <- cd[rowSums(cd) > 0, ]
 cd <- cd[, colSums(cd) > 1e4]
 sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
 names(sg) <- colnames(cd)
-o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
-o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 }
 }
 

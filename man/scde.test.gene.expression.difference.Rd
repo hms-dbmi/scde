@@ -6,8 +6,8 @@
 \usage{
 scde.test.gene.expression.difference(gene, models, counts, prior,
   groups = NULL, batch = NULL, batch.models = models,
-  n.randomizations = 1000, show.plots = T, return.details = F,
-  verbose = F, ratio.range = NULL, show.individual.posteriors = T,
+  n.randomizations = 1000, show.plots = TRUE, return.details = FALSE,
+  verbose = FALSE, ratio.range = NULL, show.individual.posteriors = TRUE,
   n.cores = 1)
 }
 \arguments{
@@ -40,7 +40,7 @@ scde.test.gene.expression.difference(gene, models, counts, prior,
 \item{n.cores}{number of cores to use (default = 1)}
 }
 \value{
-by default returns MLE of log2 expression difference, 95% CI (upper, lower bound), and a Z-score testing for expression difference. If return.details = T, a list is returned containing the above structure, as well as the expression fold difference posterior itself.
+by default returns MLE of log2 expression difference, 95% CI (upper, lower bound), and a Z-score testing for expression difference. If return.details = TRUE, a list is returned containing the above structure, as well as the expression fold difference posterior itself.
 }
 \description{
 The function performs differential expression test and optionally plots posteriors for a specified gene.
@@ -53,8 +53,8 @@ cd <- cd[rowSums(cd) > 0, ]
 cd <- cd[, colSums(cd) > 1e4]
 sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
 names(sg) <- colnames(cd)
-o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
-o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior = o.prior)
 }
 }

@@ -4,9 +4,9 @@
 \alias{pagoda.reduce.loading.redundancy}
 \title{Collapse aspects driven by the same combinations of genes}
 \usage{
-pagoda.reduce.loading.redundancy(tam, pwpca, clpca = NULL, plot = F,
+pagoda.reduce.loading.redundancy(tam, pwpca, clpca = NULL, plot = FALSE,
   cluster.method = "complete", distance.threshold = 0.01, corr.power = 4,
-  n.cores = detectCores(), abs = T, ...)
+  n.cores = detectCores(), abs = TRUE, ...)
 }
 \arguments{
 \item{tam}{output of pagoda.top.aspects()}
@@ -24,6 +24,8 @@ pagoda.reduce.loading.redundancy(tam, pwpca, clpca = NULL, plot = F,
 \item{corr.power}{power to which the product of loading and score correlation is raised}
 
 \item{n.cores}{number of cores to use during processing}
+
+\item{abs}{Boolean of whether to use absolute correlation}
 
 \item{...}{additional arguments are passed to the pagoda.view.aspects() method during plotting}
 }

@@ -5,8 +5,8 @@
 \title{Calculate joint expression magnitude posteriors across a set of cells}
 \usage{
 scde.posteriors(models, counts, prior, n.randomizations = 100, batch = NULL,
-  composition = NULL, return.individual.posteriors = F,
-  return.individual.posterior.modes = F, ensemble.posterior = F,
+  composition = NULL, return.individual.posteriors = FALSE,
+  return.individual.posterior.modes = FALSE, ensemble.posterior = FALSE,
   n.cores = 20)
 }
 \arguments{
@@ -25,6 +25,8 @@ scde.posteriors(models, counts, prior, n.randomizations = 100, batch = NULL,
 \item{return.individual.posteriors}{whether expression posteriors of each cell should be returned}
 
 \item{return.individual.posterior.modes}{whether modes of expression posteriors of each cell should be returned}
+
+\item{ensemble.posterior}{Boolean (default: FALSE)}
 
 \item{n.cores}{number of cores to utilize}
 }
@@ -45,8 +47,8 @@ cd <- cd[rowSums(cd) > 0, ]
 cd <- cd[, colSums(cd) > 1e4]
 sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
 names(sg) <- colnames(cd)
-o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
-o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = F)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 # calculate joint posteriors
 jp <- scde.posteriors(o.ifm, cd, o.prior, n.cores = 10)
 }

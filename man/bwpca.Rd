@@ -5,7 +5,7 @@
 \title{Determine principal components of a matrix using per-observation/per-variable weights}
 \usage{
 bwpca(mat, matw = NULL, npcs = 2, nstarts = 1, smooth = 0,
-  em.tol = 1e-06, em.maxiter = 25, seed = 1, center = T,
+  em.tol = 1e-06, em.maxiter = 25, seed = 1, center = TRUE,
   n.shuffles = 0)
 }
 \arguments{

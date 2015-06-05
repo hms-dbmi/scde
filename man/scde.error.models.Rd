@@ -5,11 +5,11 @@
 \title{Fit single-cell error/regression models}
 \usage{
 scde.error.models(counts, groups = NULL, min.nonfailed = 3,
-  threshold.segmentation = T, min.count.threshold = 4,
+  threshold.segmentation = TRUE, min.count.threshold = 4,
   zero.count.threshold = min.count.threshold, zero.lambda = 0.1,
-  save.crossfit.plots = F, save.model.plots = T, n.cores = 12,
+  save.crossfit.plots = FALSE, save.model.plots = TRUE, n.cores = 12,
   min.size.entries = 2000, max.pairs = 5000, min.pairs.per.cell = 10,
-  verbose = 0, linear.fit = F, local.theta.fit = T,
+  verbose = 0, linear.fit = FALSE, local.theta.fit = TRUE,
   theta.fit.range = c(0.01, 100))
 }
 \arguments{
@@ -19,27 +19,33 @@ scde.error.models(counts, groups = NULL, min.nonfailed = 3,
 
 \item{min.nonfailed}{minimal number of non-failed observations required for a gene to be used in the final model fitting}
 
-\item{threshold.segmentation}{use a fast threshold-based segmentation during cross-fit (default: T)}
+\item{threshold.segmentation}{use a fast threshold-based segmentation during cross-fit (default: TRUE)}
 
-\item{min.count.threshold}{the number of reads to use to guess which genes may have "failed" to be detected in a given measurement during cross-cell comparison (default 4 reads)}
+\item{min.count.threshold}{the number of reads to use to guess which genes may have "failed" to be detected in a given measurement during cross-cell comparison (default: 4)}
 
 \item{zero.count.threshold}{threshold to guess the initial value (failed/non-failed) during error model fitting procedure (defaults to the min.count.threshold value)}
 
-\item{zero.lambda}{the rate of the Poisson (failure) component (default : 0.1)}
+\item{zero.lambda}{the rate of the Poisson (failure) component (default: 0.1)}
 
-\item{save.crossfit.plots}{whether png files showing cross-fit segmentations should be written out (default: F)}
+\item{save.crossfit.plots}{whether png files showing cross-fit segmentations should be written out (default: FALSE)}
 
-\item{save.model.plots}{whether pdf files showing model fits should be written out (default = T)}
+\item{save.model.plots}{whether pdf files showing model fits should be written out (default = TRUE)}
 
 \item{n.cores}{number of cores to use}
 
 \item{min.size.entries}{minimum number of genes to use when determining expected expression magnitude during model fitting}
 
-\item{max.pairs}{maximum number of cross-fit comparisons that should be performed per group (default 5000)}
+\item{max.pairs}{maximum number of cross-fit comparisons that should be performed per group (default: 5000)}
 
 \item{min.pairs.per.cell}{minimum number of pairs that each cell should be cross-compared with}
 
 \item{verbose}{1 for increased output}
+
+\item{linear.fit}{Boolean of whether to use a linear fit in the regression (default: FALSE)}
+
+\item{local.theta.fit}{Boolean of whether to fit the overdispersion parameter theta, ie. the negative binomial size parameter, based on local regression (default: TRUE)}
+
+\item{theta.fit.range}{Range of valid values for the overdispersion parameter theta, ie. the negative binomial size parameter (default: c(1e-2, 1e2))}
 }
 \value{
 a model matrix, with rows corresponding to different cells, and columns representing different parameters of the determined models
@@ -57,7 +63,7 @@ cd <- cd[rowSums(cd) > 0, ]
 cd <- cd[, colSums(cd) > 1e4]
 sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
 names(sg) <- colnames(cd)
-o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = T)
+o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
 }
 }
 

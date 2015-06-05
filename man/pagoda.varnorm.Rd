@@ -5,7 +5,7 @@
 \title{Normalize gene expression variance relative to transcriptome-wide expectations}
 \usage{
 pagoda.varnorm(models, counts, batch = NULL, trim = 0, prior = NULL,
-  plot = T, minimize.underdispersion = F, n.cores = detectCores(),
+  plot = TRUE, minimize.underdispersion = FALSE, n.cores = detectCores(),
   n.randomizations = 100, weight.k = 0.9, verbose = 0,
   weight.df.power = 1, smooth.df = -1, max.adj.var = 10,
   theta.range = c(0.01, 100), gene.length = NULL)

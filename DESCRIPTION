@@ -17,10 +17,8 @@ Authors@R: c(
     person("Peter", "Kharchenko", role = c("aut", "cre"),
 		     email = "Peter_Kharchenko@hms.harvard.edu"),
     person("Jean", "Fan", role = "aut",
-	         email = "jeanfan@fas.harvard.edu"),
-    person("Joe", "Herman", role = "ctb",
-		     email = "Herman@hms.harvard.edu")
-		     )
+	         email = "jeanfan@fas.harvard.edu")
+	         )
 Maintainer: Jean Fan <jeanfan@fas.harvard.edu>
 URL: http://pklab.med.harvard.edu/scde/index.html
 BugReports: https://github.com/JEFworks/scde/issues
@@ -28,8 +26,7 @@ License: GPL-2
 LazyData: true
 Depends:
     R (>= 3.0.0),
-    flexmix,
-    BiocParallel
+    flexmix
 Imports:
     Rcpp (>= 0.10.4),
     RcppArmadillo (>= 0.3.900.0),
@@ -45,7 +42,9 @@ Imports:
     nnet,
     RMTstat,
     extRemes,
-    pcaMethods
+    pcaMethods,
+    BiocParallel,
+    parallel
 Suggests:
     knitr,
     cba,
