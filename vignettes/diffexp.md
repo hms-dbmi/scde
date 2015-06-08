@@ -2,7 +2,7 @@
 title: "Getting Started with `scde`"
 author: "Peter Kharchenko, Jean Fan"
 date: '2015-06-07'
-output: pdf_document
+output: html_document
 vignette: |
   %\VignetteIndexEntry{Vignette Title} \usepackage[utf8]{inputenc}
 ---
@@ -16,6 +16,7 @@ The `scde` package implements routines for fitting individual error models for s
 ### Preparing data
 
 The analysis starts with a matrix of read counts. Depending on the protocol, these may be raw numbers of reads mapped to each gene, or count values adjusted for potential biases (sequence dependency, splice variant coverage, etc. - the values must be integers). The `scde` package includes a subset of the ES/MEF cell dataset published by [_Islam et al._](http://www.ncbi.nlm.nih.gov/pubmed/?term=24363023). The subset includes first 20 ES and MEF cells. Here we load the cells and define a factor separating ES and MEF cell types:
+
 
 
 
@@ -50,6 +51,7 @@ As a next step we fit the error models on which all subsequent calculations will
 
 Note this step takes a considerable amount of time unless multiple cores are used. For the purposes of this vignette, the model has been precomputed. 
 
+
 ```r
 # calculate models
 o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 1, threshold.segmentation = TRUE, save.crossfit.plots = FALSE, save.model.plots = FALSE, verbose = 1)
@@ -71,6 +73,7 @@ Here, `corr.a` and `corr.b` are slope and intersept of the correlated component 
 
 Particularly poor cells may result in abnormal fits, most commonly showing negtive `corr.a`, and should be removed:
 
+
 ```r
 # filter out cells that don't show positive correlation with
 # the expected expression magnitudes (very poor fits)
@@ -87,9 +90,11 @@ table(valid.cells)
 ```r
 o.ifm <- o.ifm[valid.cells, ]
 ```
+
 Here, all the fits were valid.
 
 Finally, we need to define an expression magnitude prior for the genes. Its main function, however, is to define a grid of expression magnitude values on which the numerical calculations will be carried out:
+
 
 ```r
 # estimate gene expression prior
@@ -101,6 +106,7 @@ Here we used a grid of 400 points, and let the maxmimum expression magnitude be 
 ### Testing for differential expression
 
 To test for differential expression, we first define a factor that specifies which two groups of cells are to be compared. The factor elements correspond to the rows of the model matrix (`o.ifm`), and can contain `NA` values (i.e. cells that won't be included in either group). Here we key off the the ES and MEF names.
+
 
 ```r
 # define two groups of cells
@@ -139,7 +145,9 @@ head(ediff[order(ediff$Z, decreasing  =  TRUE), ])
 # write out a table with all the results, showing most significantly different genes (in both directions) on top
 write.table(ediff[order(abs(ediff$Z), decreasing = TRUE), ], file = "results.txt", row.names = TRUE, col.names = TRUE, sep = "\t", quote = FALSE)
 ```
+
 Alternatively we can run the differential expression on a single gene, and visualize the results:
+
 
 ```r
 scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior = o.prior)
@@ -157,6 +165,7 @@ The top and the bottom plots show expression posteriors derived from individual 
 ### Correcting for batch effects
 
 When the data combines cells that were measured in different batches, it is sometimes necessary to explicitly account for the expression differences that could be explained by the batch composition of the cell groups being compared. The example below makes up a random batch composition for the ES/MEF cells, and re-test the expression difference.
+
 
 
 
@@ -188,6 +197,7 @@ scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior =
 In the plot above, the grey lines are used to show posterior distributions based on the batch composition alone. The expression magnitude posteriors (top and botom plots) look very similar, and as a result the log2 expression ratio posterior is close to 0. The thin black line shows log2 expression ratio posterior before correction. The batch correction doesn't shift the location, but increases uncertainty in the ratio estimate (since we're controlling for another factor).
 
 Similarly, batch correction can be performed when calculating expression differences for the entire dataset:
+
 
 ```r
 # test for all of the genes

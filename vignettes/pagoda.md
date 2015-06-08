@@ -14,7 +14,9 @@ The `pagoda` routines implemented in the `scde` resolves multiple, potentially o
 
 
 ### Preparing data
+
 The analysis starts with a matrix of read counts. Here, we use the read count table and cell group annotations from [_Pollen et al._](www.ncbi.nlm.nih.gov/pubmed/25086649) can be loaded using {{data("pollen") call}}. Some additional filters are applied:
+
 
 ```r
   # read in the expression matrix
@@ -37,6 +39,7 @@ The analysis starts with a matrix of read counts. Here, we use the read count ta
 
 Next, we'll translate group and sample source data from [_Pollen et al._](www.ncbi.nlm.nih.gov/pubmed/25086649) into color codes. These will be used later to compare [_Pollen et al._](www.ncbi.nlm.nih.gov/pubmed/25086649)'s derived annotation with subpopulations identified by `pagoda`:
 
+
 ```r
 l1cols <- c("red", "orange", "blue", "green")[as.integer(as.factor(pollen.groups[colnames(cd)]))]
 # sample sources
@@ -45,9 +48,11 @@ l2cols <- c("coral4", "olivedrab3", "skyblue2", "slateblue3")[as.integer(factor(
 ```
 
 ### Fitting error models
+
 Next, we'll construct error models for individual cells. Here, we use k-nearest neighbour model fitting procedure implemented by `knn.error.models()` method. This is a relatively noisy dataset (non-UMI), so we raise the `min.count.threshold` to 2 (minimum number of reads for the gene to be initially classified as a non-failed measurement), requiring at least 5 non-failed measurements per gene. We're providing a rough guess to the complexity of the population, by fitting the error models based on 1/4 of most similar cells (i.e. gussing there might be ~4 subpopulations). 
 
 Note this step takes a considerable amount of time unless multiple cores are used. For the purposes of this vignette, the model has been precomputed. 
+
 
 ```r
 knn <- knn.error.models(cd, k = ncol(cd)/4, n.cores = 1, min.count.threshold = 2, min.nonfailed = 5, max.model.plots = 10)
@@ -60,12 +65,15 @@ data(knn)
 ```
 
 The fitting process above wrote out `cell.models.pdf` file in the current directory showing model fits for the first 10 cells (see `max.model.plots` argument). Here's an example of such plot:
+
 ![cell 3 model](figures/pagoda-cell.model.fits-0.png)
 
 The two scatter plots on the left show observed (in a given cell) vs. expected (from k similar cells) expression magnitudes for each gene that is being used for model fitting. The second (from the left) scatter plot shows genes belonging to the drop-out component in red. The black dashed lines show 95% confidence band for the amplified genes (the grey dashed lines show confidence band for an alternative constant-theta model). The third plot shows drop-out probability as a function of magnitude, and the fourth plot shows negative binomial theta local regression fit as a function of magnitude (for the amplified component). 
 
 ### Normalizing variance
+
 In order to accurately quantify excess variance or overdispersion, we must normalize out expected levels of technical and intrinsic biological noise. Briefly, variance of the NB/Poisson mixture processes derived from the error modeling step are modeled as a $\chi^2$ distribution using adjusted degrees of freedom and observation weights based on the drop-out probability of a given gene. Here, we normalize variance, trimming 3 most extreme cells and limiting maximum adjusted variance to 5.
+
 
 ```r
 varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = TRUE)
@@ -103,6 +111,7 @@ In order to detect significant aspects of heterogeneity across the population of
 
 For pre-defined gene sets, we'll use GO annotations. To do so, an environment mapping GO terms to the set of genes contained in it has been pre-computed:
 
+
 ```r
 library(org.Hs.eg.db)
 # translate gene names to ids
@@ -131,6 +140,7 @@ data(go.env)
 ```
 
 Now, we can calculate weighted first prinicpal component magnitudes for each GO gene set in the provided environment:
+
 
 ```r
 pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components = 1, n.cores = 1, n.internal.shuffles = 0)
@@ -178,6 +188,7 @@ head(df)
 
 We can also test 'de novo' gene sets whose expression profiles are well-correlated within the given dataset. The following procedure will determine 'de novo' gene clusters in the data, and build a background model for the expectation of the gene cluster weighted principal component magnitudes. Note the higher trim values for the clusters, as we want to avoid clusters that are formed by outlier cells.
 
+
 ```r
 clpca <- pagoda.gene.clusters(varinfo, trim = 7.1/ncol(varinfo$mat), n.clusters = 150, n.cores = 1, plot = TRUE)
 ```
@@ -188,35 +199,38 @@ The plot above shows background distribution of the first principal component (`
 
 Now the set of top aspects can be recalculated taking these `de novo` gene clusters into account:
 
+
 ```r
 df <- pagoda.top.aspects(pwpca, clpca, return.table = TRUE, plot = TRUE, z.score = 1.96)
 head(df)
 ```
 
 ```
-##                                                                          name npc  n    score         z     adj.z sh.z
-## 421                                        GO:0003170 heart valve development   1 13 3.049964 10.125464  9.786492   NA
-## 422                                      GO:0003179 heart valve morphogenesis   1 13 3.049964 10.125464  9.786492   NA
-## 426                                GO:0003208 cardiac ventricle morphogenesis   1 25 2.978694 11.961732 11.627068   NA
-## 123  GO:0000979 RNA polymerase II core promoter sequence-specific DNA binding   1 22 2.803050 10.666884 10.328873   NA
-## 4408                          GO:0060563 neuroepithelial cell differentiation   1 23 2.782324 10.710213 10.372253   NA
-## 4329      GO:0060045 positive regulation of cardiac muscle cell proliferation   1 10 2.713999  8.053025  7.721521   NA
-##      adj.sh.z
-## 421        NA
-## 422        NA
-## 426        NA
-## 123        NA
-## 4408       NA
-## 4329       NA
+##                                                                          name
+## 421                                        GO:0003170 heart valve development
+## 422                                      GO:0003179 heart valve morphogenesis
+## 426                                GO:0003208 cardiac ventricle morphogenesis
+## 123  GO:0000979 RNA polymerase II core promoter sequence-specific DNA binding
+## 4408                          GO:0060563 neuroepithelial cell differentiation
+## 4329      GO:0060045 positive regulation of cardiac muscle cell proliferation
+##      npc  n    score         z     adj.z sh.z adj.sh.z
+## 421    1 13 3.049964 10.125464  9.786492   NA       NA
+## 422    1 13 3.049964 10.125464  9.786492   NA       NA
+## 426    1 25 2.978694 11.961732 11.627068   NA       NA
+## 123    1 22 2.803050 10.666884 10.328873   NA       NA
+## 4408   1 23 2.782324 10.710213 10.372253   NA       NA
+## 4329   1 10 2.713999  8.053025  7.721521   NA       NA
 ```
 
 ![plot of chunk topPathways2](figures/pagoda-topPathways2-1.png) 
+
 The gene clusters and their corresponding model expected value and 95% upper bound are shown in green.
 
 
 ### Visualize significant aspects of heterogeneity
 
 To view top heterogeneity aspects, we will first obtain information on all the significant aspects of transcriptional heterogeneity. We will also determine the overall cell clustering based on this full information:
+
 
 ```r
 # get full info on the top aspects
@@ -227,11 +241,13 @@ hc <- pagoda.cluster.cells(tam, varinfo)
 
 Next, we will reduce redudant aspects in two steps. First we will combine pathways that are driven by the same sets of genes:
 
+
 ```r
 tamr <- pagoda.reduce.loading.redundancy(tam, pwpca, clpca)
 ```
 
 In the second step we will combine aspects that show similar patterns (i.e. separate the same sets of cells). Here we will plot the cells using the overall cell clustering determined above:
+
 
 ```r
 tamr2 <- pagoda.reduce.redundancy(tamr, distance.threshold = 0.9, plot = TRUE, cell.clustering = hc, labRow = NA, labCol = NA, box = TRUE, margins = c(0.5, 0.5), trim = 0)
@@ -241,11 +257,12 @@ tamr2 <- pagoda.reduce.redundancy(tamr, distance.threshold = 0.9, plot = TRUE, c
 
 In the plot above, the columns are cells, rows are different significant aspects, clustered by their similarity pattern.The green-to-orange color scheme shows low-to-high weighted PCA scores (aspect patterns), where generally orange indicates higher expression. Blocks of color on the left margin show which aspects have been combined by the command above. Here the number of resulting aspects is relatively small. "top" argument (i.e. top = 10) can be used to limit further analysis to top N aspects.
 
-We will view the top aspects, clustering them by pattern similarity (note, to view aspects in the order of increasing `lambda1` magnitude, use row.clustering = NA). 
+We will view the top aspects, clustering them by pattern similarity (note, to view aspects in the order of increasing `lambda1` magnitude, use `row.clustering = NA`). 
+
 
 ```r
 col.cols <- rbind(groups = cutree(hc, 3))
-pagoda.view.aspects(tamr2, cell.clustering = hc, box = TRUE, labCol = NA, margins = c(0.5, 15), col.cols = rbind(l1cols))
+pagoda.view.aspects(tamr2, cell.clustering = hc, box = TRUE, labCol = NA, margins = c(0.5, 20), col.cols = rbind(l1cols))
 ```
 
 ![plot of chunk viewAspects](figures/pagoda-viewAspects-1.png) 
@@ -253,6 +270,7 @@ pagoda.view.aspects(tamr2, cell.clustering = hc, box = TRUE, labCol = NA, margin
 While each row here represents a cluster of pathways, the row names are assigned to be the top overdispersed aspect in each cluster.
 
 To interactively browse and explore the output, we can create a `pagoda` app:
+
 
 ```r
 # compile a browsable app, showing top three clusters with the top color bar
@@ -268,6 +286,7 @@ The `pagoda` app allows you to view the gene sets grouped within each aspect (ro
 
 Similar views can be obtained in the R session itself. For instance, here we'll view top 10 genes associated with the top two pathways in the neurogenesis cluster: "neurogenesis" (GO:0022008) and "generation of neurons" (GO:0048699)
 
+
 ```r
 pagoda.show.pathways(c("GO:0022008 neurogenesis","GO:0048699 generation of neurons"), varinfo, go.env, cell.clustering = hc, margins = c(1,5), show.cell.dendrogram = TRUE, showRowLabels = TRUE, showPC = TRUE)
 ```
@@ -276,7 +295,7 @@ pagoda.show.pathways(c("GO:0022008 neurogenesis","GO:0048699 generation of neuro
 
 ### Controlling for undesired aspects of heterogeneity
 
-To explicitly control for aspects of heterogeneity that are not of interest for this particular experiment we will use pagoda.subtract.aspect method that we've previously used to control for residual patterns associated with sequencing depth differences. Here we illustrate how to control for the mitotic cell cycle pattern which showed up as one of the four significant aspects in the analysis above.
+Depending on the biological setting, certain dominant aspects of transcriptional heterogeneity may not be of interest. To explicitly control for these aspects of heterogeneity that are not of interest, we will use `pagoda.subtract.aspect` method that we've previously used to control for residual patterns associated with sequencing depth differences. Here, we illustrate how to control for the mitotic cell cycle pattern which showed up as one of the four significant aspects in the analysis above.
 
 
 ```r
