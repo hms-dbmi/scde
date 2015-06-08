@@ -35,4 +35,12 @@ a list containing eigenvector matrix ($rotation), projections ($scores), varianc
 \description{
 Implements a weighted PCA
 }
+\examples{
+set.seed(0)
+mat <- matrix( c(rnorm(5*10,mean=0,sd=1), rnorm(5*10,mean=5,sd=1)), 10, 10)  # random matrix
+base.pca <- bwpca(mat)  # non-weighted pca, equal weights set automatically
+matw <- matrix( c(rnorm(5*10,mean=0,sd=1), rnorm(5*10,mean=5,sd=1)), 10, 10)  # random weight matrix
+matw <- abs(matw)/max(matw)
+base.pca.weighted <- bwpca(mat, matw)  # weighted pca
+}
 

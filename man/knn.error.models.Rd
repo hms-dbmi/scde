@@ -58,4 +58,14 @@ set of measured cells). The method implements fitting of both the original log-f
 (when zero.intercept = FALSE), or newer linear-fit models (zero.intercept = TRUE, default) with locally
 fit overdispersion coefficient (local.theta.fit = TRUE, default).
 }
+\examples{
+\donttest{
+data(pollen)
+cd <- pollen.counts
+cd <- cd[,colSums(cd>0)>1.8e3]
+cd <- cd[rowSums(cd)>10,]
+cd <- cd[rowSums(cd>0)>5,]
+knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
+}
+}
 

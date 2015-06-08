@@ -60,4 +60,13 @@ Normalizes gene expression magnitudes to ensure that the variance follows chi-sq
 with respect to its ratio to the transcriptome-wide expectation as determined by local regression
 on expression magnitude (and optionally gene length). Corrects for batch effects.
 }
+\examples{
+data(pollen)
+cd <- pollen.counts
+cd <- cd[,colSums(cd>0)>1.8e3]
+cd <- cd[rowSums(cd)>10,]
+cd <- cd[rowSums(cd>0)>5,]
+data(knn)  # Load precomputed model. Use ?knn.error.models to see how knn was generated
+varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
+}
 

@@ -47,13 +47,11 @@ NULL
 ##' @export
 NULL
 
-##' Internal model data
-##'
-##' Numerically-derived correction for NB->chi squared approximation stored as an local regression model
-##'
-##' @name scde.edff
-##' @docType data
-NULL
+# Internal model data
+#
+# Numerically-derived correction for NB->chi squared approximation stored as an local regression model
+#
+# @name scde.edff
 
 ################################# SCDE Methods
 
@@ -132,16 +130,12 @@ scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshol
 ##' @return a structure describing expression magnitude grid ($x, on log10 scale) and prior ($y)
 ##'
 ##' @examples
-##' \donttest{
 ##' data(es.mef.small)
 ##' cd <- es.mef.small
 ##' cd <- cd[rowSums(cd) > 0, ]
 ##' cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
-##' names(sg) <- colnames(cd)
-##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+##' data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
-##' }
 ##'
 ##' @export
 scde.expression.prior <- function(models, counts, length.out = 400, show.plot = FALSE, pseudo.count = 1, bw = 0.1, max.quantile = 1-1e-3, max.value = NULL) {
@@ -330,6 +324,7 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
     }
 }
 
+
 ##' View differential expression results in a browser
 ##'
 ##' Launches a browser app that shows the differential expression results, allowing to sort, filter, etc.
@@ -361,7 +356,7 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
 ##' # make sure groups corresponds to the models (o.ifm)
 ##' groups <- factor(gsub("(MEF|ESC).*", "\\1", rownames(o.ifm)), levels = c("ESC", "MEF"))
 ##' names(groups) <- row.names(o.ifm)
-##' ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups = groups, n.randomizations = 100, n.cores = n.cores, verbose = 1)
+##' ediff <- scde.expression.difference(o.ifm, cd, o.prior, groups = groups, n.randomizations = 100, n.cores = 10, verbose = 1)
 ##' scde.browse.diffexp(ediff, o.ifm, cd, o.prior, groups = groups, geneLookupURL="http://www.informatics.jax.org/searchtool/Search.do?query={0}")  # creates browser
 ##' }
 ##'
@@ -377,7 +372,7 @@ scde.browse.diffexp <- function(results, models, counts, prior, groups = NULL, b
 }
 
 
-##' View pagoda or scde application
+##' View PAGODA application
 ##'
 ##' Installs a given pagoda app (or any other rook app) into a server, optionally
 ##' making a call to show it in the browser.
@@ -388,6 +383,13 @@ scde.browse.diffexp <- function(results, models, counts, prior, groups = NULL, b
 ##' @param port optional port on which the server should be initiated
 ##' @param ip IP on which the server should listen (typically localhost)
 ##' @param server an (optional) Rook server instance (defaults to ___scde.server)
+##'
+##' @examples
+##' \donttest{
+##' app <- make.pagoda.app(tamr2, tam, varinfo, go.env, pwpca, clpca, col.cols=col.cols, cell.clustering=hc, title="NPCs")
+##' # show app in the browser (port 1468)
+##' show.app(app, "pollen", browse = TRUE, port=1468)
+##' }
 ##'
 ##' @return Rook server instance
 ##'
@@ -438,18 +440,14 @@ get.scde.server <- function(port = NULL, ip = '127.0.0.1') {
 ##' \subsection{return.individual.posteriors}{ a list is returned, with the \code{$post} slot giving a list of individual posterior matrices, in a form analogous to the joint posterior matrix, but reported on log scale }
 ##'
 ##' @examples
-##' \donttest{
 ##' data(es.mef.small)
 ##' cd <- es.mef.small
 ##' cd <- cd[rowSums(cd) > 0, ]
 ##' cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
-##' names(sg) <- colnames(cd)
-##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+##' data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ##' # calculate joint posteriors
-##' jp <- scde.posteriors(o.ifm, cd, o.prior, n.cores = 10)
-##' }
+##' jp <- scde.posteriors(o.ifm, cd, o.prior, n.cores = 1)
 ##'
 ##' @export
 scde.posteriors <- function(models, counts, prior, n.randomizations = 100, batch = NULL, composition = NULL, return.individual.posteriors = FALSE, return.individual.posterior.modes = FALSE, ensemble.posterior = FALSE, n.cores = 20) {
@@ -573,17 +571,13 @@ scde.posteriors <- function(models, counts, prior, n.randomizations = 100, batch
 ##' @return a matrix of expression magnitudes on a log scale (rows - genes, columns - cells)
 ##'
 ##' @examples
-##' \donttest{
 ##' data(es.mef.small)
 ##' cd <- es.mef.small
 ##' cd <- cd[rowSums(cd) > 0, ]
 ##' cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
-##' names(sg) <- colnames(cd)
-##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+##' data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
 ##' # get expression magniutude estimates
 ##' lfpm <- scde.expression.magnitude(o.ifm, cd)
-##' }
 ##'
 ##' @export
 scde.expression.magnitude <- function(models, counts) {
@@ -605,14 +599,11 @@ scde.expression.magnitude <- function(models, counts) {
 ##' @return a vector or a matrix of drop-out probabilities
 ##'
 ##' @examples
-##' \donttest{
 ##' data(es.mef.small)
 ##' cd <- es.mef.small
 ##' cd <- cd[rowSums(cd) > 0, ]
 ##' cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
-##' names(sg) <- colnames(cd)
-##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+##' data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ##' # calculate probability of observing a drop out at a given set of magnitudes in different cells
 ##' mags <- c(1.0, 1.5, 2.0)
@@ -620,7 +611,6 @@ scde.expression.magnitude <- function(models, counts) {
 ##' # calculate probability of observing the dropout at a magnitude corresponding to the
 ##' # number of reads actually observed in each cell
 ##' self.p <- scde.failure.probability(o.ifm, counts = cd)
-##' }
 ##'
 ##' @export
 scde.failure.probability <- function(models, magnitudes = NULL, counts = NULL) {
@@ -673,17 +663,13 @@ scde.failure.probability <- function(models, magnitudes = NULL, counts = NULL) {
 ##' @return by default returns MLE of log2 expression difference, 95% CI (upper, lower bound), and a Z-score testing for expression difference. If return.details = TRUE, a list is returned containing the above structure, as well as the expression fold difference posterior itself.
 ##'
 ##' @examples
-##' \donttest{
 ##' data(es.mef.small)
 ##' cd <- es.mef.small
 ##' cd <- cd[rowSums(cd) > 0, ]
 ##' cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
-##' names(sg) <- colnames(cd)
-##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+##' data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ##' scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior = o.prior)
-##' }
 ##'
 ##' @export
 scde.test.gene.expression.difference <- function(gene, models, counts, prior, groups = NULL, batch = NULL, batch.models = models, n.randomizations = 1e3, show.plots = TRUE, return.details = FALSE, verbose = FALSE, ratio.range = NULL, show.individual.posteriors = TRUE, n.cores = 1) {
@@ -752,7 +738,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 
     if(show.plots) {
         # show each posterior
-        layout(matrix(c(1:3), 3, 1, byrow = TRUE), heights = c(2, 1, 2), widths = c(1), F)
+        layout(matrix(c(1:3), 3, 1, byrow = TRUE), heights = c(2, 1, 2), widths = c(1), FALSE)
         par(mar = c(2.5, 3.5, 2.5, 3.5), mgp = c(1.5, 0.65, 0), cex = 0.9)
         #par(mar = c(2.5, 3.5, 0.5, 3.5), mgp = c(1.5, 0.65, 0), cex = 0.9)
 
@@ -872,7 +858,6 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 ##' @return matrix of scde models
 ##'
 ##' @examples
-##' \donttest{
 ##' # since we don't have bulk reference in this dataset, we'll make a fake one
 ##' # by calculating average expression of each gene across single cells
 ##' # fit the models first
@@ -880,9 +865,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 ##' cd <- es.mef.small
 ##' cd <- cd[rowSums(cd) > 0, ]
 ##' cd <- cd[, colSums(cd) > 1e4]
-##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
-##' names(sg) <- colnames(cd)
-##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+##' data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ##' # calculate joint posteriors across all cells
 ##' jp <- scde.posteriors(models = o.ifm, cd, o.prior, n.cores = 10, return.individual.posterior.modes = TRUE, n.randomizations = 100)
@@ -891,8 +874,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 ##' # translate into counts
 ##' av.mag.counts <- as.integer(round(av.mag))
 ##' # now, fit alternative models using av.mag as a reference (normally this would correspond to bulk RNA expression magnitude)
-##' ref.models <- scde.fit.models.to.reference(cd, av.mag.counts, n.cores = 10)
-##' }
+##' ref.models <- scde.fit.models.to.reference(cd, av.mag.counts, n.cores = 1)
 ##'
 ##' @export
 scde.fit.models.to.reference <- function(counts, reference, n.cores = 10, zero.count.threshold = 1, nrep = 1, save.plots = FALSE, plot.filename = "reference.model.fits.pdf", verbose = 0, min.fpm = 1) {
@@ -1059,15 +1041,12 @@ winsorize.matrix <- function(mat, trim) {
 ##'
 ##' @examples
 ##' \donttest{
-##'   data(pollen)
-##'   cd <- pollen.counts
-##'   vi <- colSums(cd>0)>1.8e3
-##'   cd <- cd[,vi]
-##'   vi <- rowSums(cd)>10
-##'   cd <- cd[vi,]
-##'   vi <- rowSums(cd>0)>5
-##'   cd <- cd[vi,]
-##'   knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
+##' data(pollen)
+##' cd <- pollen.counts
+##' cd <- cd[,colSums(cd>0)>1.8e3]
+##' cd <- cd[rowSums(cd)>10,]
+##' cd <- cd[rowSums(cd>0)>5,]
+##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' }
 ##'
 ##' @export
@@ -1239,7 +1218,13 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
 ##' @param gene.length optional vector of gene lengths (corresponding to the rows of counts matrix)
 ##'
 ##' @examples
-##'
+##' data(pollen)
+##' cd <- pollen.counts
+##' cd <- cd[,colSums(cd>0)>1.8e3]
+##' cd <- cd[rowSums(cd)>10,]
+##' cd <- cd[rowSums(cd>0)>5,]
+##' data(knn)  # Load precomputed model. Use ?knn.error.models to see how knn was generated
+##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
 ##'
 ##' @return a list containing the following fields:
 ##' \itemize{
@@ -1715,10 +1700,26 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
 ##' across cells, for instance sequencing depth, or PC corresponding to an undesired process
 ##' such as ribosomal pathway variation) and subtracts it from the data so that it is controlled
 ##' for in the subsequent weighted PCA analysis.
+##'
 ##' @param varinfo normalized variance info (from pagoda.varnorm())
 ##' @param aspect a vector giving a cell-to-cell variation pattern that should be controlled for (length should be corresponding to ncol(varinfo$mat))
 ##' @param center whether the matrix should be re-centered following pattern subtraction
+##'
 ##' @return a modified varinfo object with adjusted expression matirx (varinfo$mat)
+##'
+##' @examples
+##' data(pollen)
+##' cd <- pollen.counts
+##' cd <- cd[,colSums(cd>0)>1.8e3]
+##' cd <- cd[rowSums(cd)>10,]
+##' cd <- cd[rowSums(cd>0)>5,]
+##' data(knn)  # Load precomputed model. Use ?knn.error.models to see how knn was generated
+##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
+##' data(go.env)  # Load GO annotations as an environment
+##' cc.pattern <- pagoda.show.pathways(ls(go.env)[1:2], varinfo, go.env, show.cell.dendrogram = TRUE, showRowLabels = TRUE)  # Look at pattern from 2 GO annotations
+##' # subtract the pattern
+##' varinfo.cc <- pagoda.subtract.aspect(varinfo, cc.pattern)
+##'
 ##' @export
 pagoda.subtract.aspect <- function(varinfo, aspect, center = TRUE) {
     if(length(aspect) != ncol(varinfo$mat)) { stop("aspect should be a numeric vector of the same length as the number of cells (i.e. ncol(varinfo$mat))") }
@@ -1740,6 +1741,7 @@ pagoda.subtract.aspect <- function(varinfo, aspect, center = TRUE) {
 ##' For each valid gene set (having appropriate number of genes) in the provided environment (setenv),
 ##' the method will run weighted PCA analysis, along with analogous analyses of random gene sets of the
 ##' same size, or shuffled expression magnitudes for the same gnee set.
+##'
 ##' @param varinfo adjusted variance info from pagoda.varinfo() (or pagoda.subtract.aspect())
 ##' @param setenv environment listing gene sets (contains variables with names corresponding to gene set name, and values being vectors of gene names within each gene set)
 ##' @param n.components number of principal components to determine for each gene set
@@ -1753,7 +1755,23 @@ pagoda.subtract.aspect <- function(varinfo, aspect, center = TRUE) {
 ##' @param batch.center whether batch-specific centering should be used
 ##' @param proper.gene.names alternative vector of gene names (replacing rownames(varinfo$mat)) to be used in cases when the provided setenv uses different gene names
 ##' @param verbose verbosity level
+##'
 ##' @return a list of weighted PCA info for each valid gene set
+##'
+##' @examples
+##' \donttest{
+##' data(pollen)
+##' cd <- pollen.counts
+##' cd <- cd[,colSums(cd>0)>1.8e3]
+##' cd <- cd[rowSums(cd)>10,]
+##' cd <- cd[rowSums(cd>0)>5,]
+##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
+##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
+##' data(go.env)  # Load GO annotations as an environment
+##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
+##' }
+##'
+##' @export
 pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = detectCores(), min.pathway.size = 10, max.pathway.size = 1e3, n.randomizations = 10, n.internal.shuffles = 10, n.starts = 10, center = TRUE, batch.center = TRUE, proper.gene.names = NULL, verbose = 0) {
     mat <- varinfo$mat
     matw <- varinfo$matw
@@ -1776,7 +1794,7 @@ pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = det
     proper.gene.names <- proper.gene.names[vi]
 
     if(is.null(gsl)) {
-        gsl <- ls(env = setenv)
+        gsl <- ls(envir = setenv)
         gsl.ng <- unlist(lapply(sn(gsl), function(go) sum(unique(get(go, envir = setenv)) %in% proper.gene.names)))
         gsl <- gsl[gsl.ng >= min.pathway.size & gsl.ng<= max.pathway.size]
         names(gsl) <- gsl
@@ -1830,9 +1848,26 @@ pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = det
 ##' Examines the dependency between the amount of variance explained by the first principal component
 ##' of a gene set and the number of genes in a gene set to determine the effective number of cells
 ##' for the Tracy-Widom distribution
+##'
 ##' @param pwpca result of the pagoda.pathway.wPCA() call with n.randomizations > 1
 ##' @param start optional starting value for the optimization (if the nls breaks, trying high starting values usually fixed the local gradient problem)
+##'
 ##' @return effective number of cells
+##'
+##' @examples
+##' \donttest{
+##' data(pollen)
+##' cd <- pollen.counts
+##' cd <- cd[,colSums(cd>0)>1.8e3]
+##' cd <- cd[rowSums(cd)>10,]
+##' cd <- cd[rowSums(cd>0)>5,]
+##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
+##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
+##' data(go.env)  # Load GO annotations as an environment
+##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
+##' pagoda.effective.cells(pwpca)
+##' }
+##'
 ##' @export
 pagoda.effective.cells <- function(pwpca, start = NULL) {
     n.genes <- unlist(lapply(pwpca, function(x) rep(x$n, nrow(x$z))))
@@ -1854,6 +1889,7 @@ pagoda.effective.cells <- function(pwpca, start = NULL) {
 ##' Determine de-novo gene clusters and associated overdispersion info
 ##'
 ##' Determine de-novo gene clusters, their weighted PCA lambda1 values, and random matrix expectation.
+##'
 ##' @param varinfo varinfo adjusted variance info from pagoda.varinfo() (or pagoda.subtract.aspect())
 ##' @param trim additional Winsorization trim value to be used in determining clusters (to remove clusters that group outliers occurring in a given cell). Use higher values (5-15) if the resulting clusters group outlier patterns
 ##' @param n.clusters number of clusters to be determined (recommended range is 100-200)
@@ -1870,6 +1906,7 @@ pagoda.effective.cells <- function(pwpca, start = NULL) {
 ##' @param secondary.correlation whether clustering should be performed on the correlation of the correlation matrix instead
 ##' @param n.cells number of cells to use for the randomly generated cluster lambda1 model
 ##' @param old.results optionally, pass old results just to plot the model without recalculating the stats
+##'
 ##' @return a list containing the following fields:
 ##' \itemize{
 ##' \item{clusters} {a list of genes in each cluster values}
@@ -1878,6 +1915,19 @@ pagoda.effective.cells <- function(pwpca, start = NULL) {
 ##' \item{cl.goc} {weighted PCA info for each real gene cluster}
 ##' \item{varm} {standardized lambda1 values for each randomly generated matrix cluster}
 ##' \item{clvlm} {a linear model describing dependency of the cluster lambda1 on a Tracy-Widom lambda1 expectation}
+##' }
+##'
+##' @examples
+##' \donttest{
+##' data(pollen)
+##' cd <- pollen.counts
+##' cd <- cd[,colSums(cd>0)>1.8e3]
+##' cd <- cd[rowSums(cd)>10,]
+##' cd <- cd[rowSums(cd>0)>5,]
+##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
+##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
+##' data(go.env)  # Load GO annotations as an environment
+##' clpca <- pagoda.gene.clusters(varinfo, trim=7.1/ncol(varinfo$mat), n.clusters=150, n.cores=10, plot=FALSE)
 ##' }
 ##'
 ##' @export
@@ -2068,6 +2118,7 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
 ##' Evaluates statistical significance of the gene set and cluster lambda1 values, returning
 ##' either a text table of Z scores, etc, a structure containing normalized values of significant
 ##' aspects, or a set of genes underlying the significant aspects.
+##'
 ##' @param pwpca output of pagoda.pathway.wPCA()
 ##' @param clpca output of pagoda.gene.clusters() (optional)
 ##' @param n.cells effective number of cells (if not provided, will be determined using pagoda.effective.cells())
@@ -2079,12 +2130,27 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
 ##' @param score.alpha significance lelvel of the confidence interval for determining upper/lower bounds
 ##' @param use.oe.scale whether the variance of the returned aspect patterns should be normalized using observed/expected value instead of the default chi-squared derived variance corresponding to overdispersion Z score
 ##' @param effective.cells.start starting value for the pagoda.effective.cells() call
+##'
 ##' @return if return.table = FALSE and return.genes = FALSE (default) returns a list structure containing the following items:
 ##' \itemize{
 ##' \item{xv} {a matrix of normalized aspect patterns (rows- significant aspects, columns- cells}
 ##' \item{xvw} { corresponding weight matrix }
 ##' \item{gw} { set of genes driving the significant aspects }
 ##' \item{df} { text table with the significance testing results }
+##' }
+##'
+##' @examples
+##' \donttest{
+##' data(pollen)
+##' cd <- pollen.counts
+##' cd <- cd[,colSums(cd>0)>1.8e3]
+##' cd <- cd[rowSums(cd)>10,]
+##' cd <- cd[rowSums(cd>0)>5,]
+##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
+##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
+##' data(go.env)  # Load GO annotations as an environment
+##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
+##' tam <- pagoda.top.aspects(pwpca, return.table = TRUE, plot=FALSE, z.score=1.96)  # top aspects based on GO only
 ##' }
 ##'
 ##' @export
@@ -2132,7 +2198,7 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
     vdf$exp <- RMTstat::qWishartMax(0.5, n.cells, vdf$n, var = basevar, lower.tail = FALSE)
     #vdf$z <- qnorm(pWishartMax(vdf$var, n.cells, vdf$n, log.p = TRUE, lower.tail = FALSE, var = basevar), lower.tail = FALSE, log.p = TRUE)
     vdf$z <- qnorm(pWishartMaxFixed(vdf$var, n.cells, vdf$n, lower.tail = FALSE, var = basevar), lower.tail = FALSE, log.p = TRUE)
-    vdf$cz <- qnorm(bh.adjust(pnorm(as.numeric(vdf$z), lower.tail = FALSE, log = TRUE), log = TRUE), lower.tail = FALSE, log.p = TRUE)
+    vdf$cz <- qnorm(bh.adjust(pnorm(as.numeric(vdf$z), lower.tail = FALSE, log.p = TRUE), log = TRUE), lower.tail = FALSE, log.p = TRUE)
     vdf$ub <- RMTstat::qWishartMax(score.alpha/2, n.cells, vdf$n, var = basevar, lower.tail = FALSE)
     vdf$ub.stringent <- RMTstat::qWishartMax(score.alpha/nrow(vdf)/2, n.cells, vdf$n, var = basevar, lower.tail = FALSE)
 
@@ -2268,64 +2334,13 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
 
 }
 
-##' Determine optimal cell clustering based on the genes driving the significant aspects
-##'
-##' Determines cell clustering (hclust result) based on a weighted correlation of genes
-##' underlying the top aspects of transcriptional heterogeneity. Branch orientation is optimized
-##' if 'cba' package is installed.
-##' @param tam result of pagoda.top.aspects() call
-##' @param varinfo result of pagoda.varnorm() call
-##' @param method clustering method ('ward' by default)
-##' @param verbose 0 or 1 depending on level of desired verbosity
-##' @param include.aspects whether the aspect patterns themselves should be included alongside with the individual genes in calculating cell distance
-##' @param return.details Boolean of whether to return just the hclust result or a list containing the hclust result plus the distance matrix and gene values
-##' @return hclust result
-##' @export
-pagoda.cluster.cells <- function(tam, varinfo, method = "ward", include.aspects = FALSE, verbose = 0, return.details = FALSE) {
-    # gene clustering
-    gw <- tam$gw
-    gw <- gw[(rowSums(varinfo$matw)*varinfo$arv)[names(gw)] > 1]
-
-    gw <- gw/gw
-    mi <- match(names(gw), rownames(varinfo$mat))
-    wgm <- varinfo$mat[mi, ]
-    wgm <- wgm*as.numeric(gw)
-    wgwm <- varinfo$matw[mi, ]
-
-    if(include.aspects) {
-        if(verbose) { message("clustering cells based on ", nrow(wgm), " genes and ", nrow(tam$xv), " aspect patterns")}
-        wgm <- rbind(wgm, tam$xv)
-        wgwm <- rbind(wgwm, tam$xvw)
-    } else {
-        if(verbose) { message("clustering cells based on ", nrow(wgm), " genes")}
-    }
-
-    snam <- sample(colnames(wgm))
-
-    dm <- .Call("matWCorr", wgm, wgwm, PACKAGE = "scde")
-    dm <- 1-dm
-    rownames(dm) <- colnames(dm) <- colnames(wgm)
-    wcord <- stats::as.dist(dm, upper = TRUE)
-    hc <- hclust(wcord, method = method)
-
-    if(is.element("cba", installed.packages()[, 1])) {
-        co <- cba::order.optimal(wcord, hc$merge)
-        hc$merge <- co$merge
-        hc$order <- co$order
-    }
-    if(return.details) {
-        return(list(clustering = hc, distance = wcord, genes = gw))
-    } else {
-        return(hc)
-    }
-}
-
 
 ##' Collapse aspects driven by the same combinations of genes
 ##'
 ##' Examines PC loading vectors underlying the identified aspects and clusters aspects based
 ##' on a product of loading and score correlation (raised to corr.power). Clusters of aspects
 ##' driven by the same genes are determined based on the distance.threshold and collapsed.
+##'
 ##' @param tam output of pagoda.top.aspects()
 ##' @param pwpca output of pagoda.pathway.wPCA()
 ##' @param clpca output of pagoda.gene.clusters() (optional)
@@ -2336,7 +2351,24 @@ pagoda.cluster.cells <- function(tam, varinfo, method = "ward", include.aspects 
 ##' @param abs Boolean of whether to use absolute correlation
 ##' @param n.cores number of cores to use during processing
 ##' @param ... additional arguments are passed to the pagoda.view.aspects() method during plotting
+##'
 ##' @return a list structure analogous to that returned by pagoda.top.aspects(), but with addition of a $cnam element containing a list of aspects summarized by each row of the new (reduced) $xv and $xvw
+##'
+##' @examples
+##' \donttest{
+##' data(pollen)
+##' cd <- pollen.counts
+##' cd <- cd[,colSums(cd>0)>1.8e3]
+##' cd <- cd[rowSums(cd)>10,]
+##' cd <- cd[rowSums(cd>0)>5,]
+##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
+##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
+##' data(go.env)  # Load GO annotations as an environment
+##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
+##' tam <- pagoda.top.aspects(pwpca, return.table = TRUE, plot=FALSE, z.score=1.96)  # top aspects based on GO only
+##' tamr <- pagoda.reduce.loading.redundancy(tam, pwpca)
+##' }
+##'
 ##' @export
 pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = FALSE, cluster.method = "complete", distance.threshold = 0.01, corr.power = 4, n.cores = detectCores(), abs = TRUE, ...) {
     pclc <- pathway.pc.correlation.distance(c(pwpca, clpca$cl.goc), tam$xv, target.ndf = 100, n.cores = n.cores)
@@ -2376,6 +2408,7 @@ pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = FA
     return(tam)
 }
 
+
 ##' Collapse aspects driven by similar patterns (i.e. separate the same sets of cells)
 ##'
 ##' Examines PC loading vectors underlying the identified aspects and clusters aspects based on score correlation. Clusters of aspects driven by the same patterns are determined based on the distance.threshold.
@@ -2383,15 +2416,32 @@ pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = FA
 ##' @param tamr output of pagoda.reduce.loading.redundancy()
 ##' @param distance.threshold similarity threshold for grouping interdependent aspects
 ##' @param cluster.method one of the standard clustering methods to be used (fastcluster::hclust is used if available or stats::hclust)
-##' @param corr.power power to which the product of loading and score correlation is raised
-##' @param distance
+##' @param distance distance matrix
 ##' @param weighted.correlation Boolean of whether to use a weighted correlation in determining the similarity of patterns
 ##' @param plot Boolean of whether to show plot
 ##' @param top Restrict output to the top n aspects of heterogeneity
 ##' @param trim Winsorization trim to use prior to determining the top aspects
 ##' @param abs Boolean of whether to use absolute correlation
 ##' @param ... additional arguments are passed to the pagoda.view.aspects() method during plotting
+##'
 ##' @return a list structure analogous to that returned by pagoda.top.aspects(), but with addition of a $cnam element containing a list of aspects summarized by each row of the new (reduced) $xv and $xvw
+##'
+##' @examples
+##' \donttest{
+##' data(pollen)
+##' cd <- pollen.counts
+##' cd <- cd[,colSums(cd>0)>1.8e3]
+##' cd <- cd[rowSums(cd)>10,]
+##' cd <- cd[rowSums(cd>0)>5,]
+##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
+##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
+##' data(go.env)  # Load GO annotations as an environment
+##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
+##' tam <- pagoda.top.aspects(pwpca, return.table = TRUE, plot=FALSE, z.score=1.96)  # top aspects based on GO only
+##' tamr <- pagoda.reduce.loading.redundancy(tam, pwpca)
+##' tamr2 <- pagoda.reduce.redundancy(tamr, distance.threshold = 0.9, plot = TRUE, labRow = NA, labCol = NA, box = TRUE, margins = c(0.5, 0.5), trim = 0)
+##' }
+##'
 ##' @export
 pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.method = "complete", distance = NULL, weighted.correlation = TRUE, plot = FALSE, top = Inf, trim = 0, abs = FALSE, ...) {
     if(is.null(distance)) {
@@ -2447,6 +2497,78 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
 }
 
 
+##' Determine optimal cell clustering based on the genes driving the significant aspects
+##'
+##' Determines cell clustering (hclust result) based on a weighted correlation of genes
+##' underlying the top aspects of transcriptional heterogeneity. Branch orientation is optimized
+##' if 'cba' package is installed.
+##'
+##' @param tam result of pagoda.top.aspects() call
+##' @param varinfo result of pagoda.varnorm() call
+##' @param method clustering method ('ward' by default)
+##' @param verbose 0 or 1 depending on level of desired verbosity
+##' @param include.aspects whether the aspect patterns themselves should be included alongside with the individual genes in calculating cell distance
+##' @param return.details Boolean of whether to return just the hclust result or a list containing the hclust result plus the distance matrix and gene values
+##'
+##' @return hclust result
+##'
+##' @examples
+##' \donttest{
+##' data(pollen)
+##' cd <- pollen.counts
+##' cd <- cd[,colSums(cd>0)>1.8e3]
+##' cd <- cd[rowSums(cd)>10,]
+##' cd <- cd[rowSums(cd>0)>5,]
+##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
+##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
+##' data(go.env)  # Load GO annotations as an environment
+##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
+##' tam <- pagoda.top.aspects(pwpca, return.table = TRUE, plot=FALSE, z.score=1.96)  # top aspects based on GO only
+##' hc <- pagoda.cluster.cells(tam, varinfo)
+##' plot(hc)
+##' }
+##'
+##' @export
+pagoda.cluster.cells <- function(tam, varinfo, method = "ward", include.aspects = FALSE, verbose = 0, return.details = FALSE) {
+    # gene clustering
+    gw <- tam$gw
+    gw <- gw[(rowSums(varinfo$matw)*varinfo$arv)[names(gw)] > 1]
+
+    gw <- gw/gw
+    mi <- match(names(gw), rownames(varinfo$mat))
+    wgm <- varinfo$mat[mi, ]
+    wgm <- wgm*as.numeric(gw)
+    wgwm <- varinfo$matw[mi, ]
+
+    if(include.aspects) {
+        if(verbose) { message("clustering cells based on ", nrow(wgm), " genes and ", nrow(tam$xv), " aspect patterns")}
+        wgm <- rbind(wgm, tam$xv)
+        wgwm <- rbind(wgwm, tam$xvw)
+    } else {
+        if(verbose) { message("clustering cells based on ", nrow(wgm), " genes")}
+    }
+
+    snam <- sample(colnames(wgm))
+
+    dm <- .Call("matWCorr", wgm, wgwm, PACKAGE = "scde")
+    dm <- 1-dm
+    rownames(dm) <- colnames(dm) <- colnames(wgm)
+    wcord <- stats::as.dist(dm, upper = TRUE)
+    hc <- hclust(wcord, method = method)
+
+    if(is.element("cba", installed.packages()[, 1])) {
+        co <- cba::order.optimal(wcord, hc$merge)
+        hc$merge <- co$merge
+        hc$order <- co$order
+    }
+    if(return.details) {
+        return(list(clustering = hc, distance = wcord, genes = gw))
+    } else {
+        return(hc)
+    }
+}
+
+
 ##' View PAGODA output
 ##'
 ##' Create static image of PAGODA output visualizing cell hierarchy and top aspects of transcriptional heterogeneity
@@ -2455,7 +2577,24 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
 ##' @param row.clustering Dendrogram of combined pathways clustering
 ##' @param top Restrict output to the top n aspects of heterogeneity
 ##' @param ... additional arguments are passed to the \code{\link{view.aspects}} method during plotting
+##'
 ##' @return PAGODA heatmap
+##'
+##' @examples
+##' \donttest{
+##' data(pollen)
+##' cd <- pollen.counts
+##' cd <- cd[,colSums(cd>0)>1.8e3]
+##' cd <- cd[rowSums(cd)>10,]
+##' cd <- cd[rowSums(cd>0)>5,]
+##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
+##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
+##' data(go.env)  # Load GO annotations as an environment
+##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
+##' tam <- pagoda.top.aspects(pwpca, return.table = TRUE, plot=FALSE, z.score=1.96)  # top aspects based on GO only
+##' pagoda.view.aspects(tam)
+##' }
+##'
 ##' @export
 pagoda.view.aspects <- function(tamr, row.clustering = hclust(dist(tamr$xv)), top = Inf, ...) {
     if(is.finite(top)) {
@@ -2469,7 +2608,24 @@ pagoda.view.aspects <- function(tamr, row.clustering = hclust(dist(tamr$xv)), to
     view.aspects(tamr$xv, row.clustering = row.clustering, ... )
 }
 
-## View aspects of transcriptional heterogeneity as a heatmap
+
+##' View heatmap
+##'
+##' Internal function to visualize aspects of transcriptional heterogeneity as a heatmap. Used by \code{\link{pagoda.view.aspects}}.
+##'
+##' @param mat Numeric matrix
+##' @param row.clustering Row dendrogram
+##' @param cell.clustering Column dendrogram
+##' @param zlim Range of the normalized gene expression levels, inputted as a list: c(lower_bound, upper_bound). Values outside this range will be winsorized. Useful for increasing the contrast of the heatmap visualizations. Default, set to the 5th and 95th percentiles.
+##' @param row.cols  Matrix of row colors.
+##' @param col.cols  Matrix of column colors. Useful for visualizing cell annotations such as batch labels.
+##' @param cols Heatmap colors
+##' @param show.row.var.colors Boolean of whether to show row variance as a color track
+##' @param top Restrict output to the top n aspects of heterogeneity
+##' @param ... additional arguments for heatmap plotting
+##'
+##' @return A heatmap
+##'
 view.aspects <- function(mat, row.clustering = NA, cell.clustering = NA, zlim = c(-1, 1)*quantile(mat, p = 0.95), row.cols = NULL, col.cols = NULL, cols = colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(1024), show.row.var.colors = TRUE, top = Inf, ...) {
     #row.cols, col.cols are matrices for now
     rcmvar <- apply(mat, 1, var)
@@ -2490,18 +2646,21 @@ view.aspects <- function(mat, row.clustering = NA, cell.clustering = NA, zlim = 
 ##' Make the PAGODA app
 ##'
 ##' Create an interactive user interface to explore output of PAGODA.
-##' @param tamr Combined pathways that show similar expression patterns. Output of `pagoda.reduce.redundancy`
-##' @param tam Combined pathways that are driven by the same gene sets. Output of `pagoda.reduce.loading.redundancy`
-##' @param varinfo Variance information. Output of `pagoda.varnorm`
+##'
+##' @param tamr Combined pathways that show similar expression patterns. Output of \code{\link{pagoda.reduce.redundancy}}
+##' @param tam Combined pathways that are driven by the same gene sets. Output of \code{\link{pagoda.reduce.loading.redundancy}}
+##' @param varinfo Variance information. Output of \code{\link{pagoda.varnorm}}
 ##' @param env Gene sets as an environment variable.
-##' @param pwpca Weighted PC magnitudes for each gene set provided in the `env`. Output of `pagoda.pathway.wPCA`
-##' @param clpca Weighted PC magnitudes for de novo gene sets identified by clustering on expression. Output of `pagoda.gene.clusters`
+##' @param pwpca Weighted PC magnitudes for each gene set provided in the \code{env}. Output of \code{\link{pagoda.pathway.wPCA}}
+##' @param clpca Weighted PC magnitudes for de novo gene sets identified by clustering on expression. Output of \code{\link{pagoda.gene.clusters}}
 ##' @param col.cols  Matrix of column colors. Useful for visualizing cell annotations such as batch labels. Defult NULL.
-##' @param cell.clustering Dendrogram of cell clustering. Output of `pagoda.cluster.cells`. Default NULL.
+##' @param cell.clustering Dendrogram of cell clustering. Output of \code{\link{pagoda.cluster.cells} } . Default   NRUEULL.
 ##' @param row.clustering Dendrogram of combined pathways clustering. Default NULL.
 ##' @param title Title text to be used in the browser label for the app. Default, set as 'pathway clustering'
 ##' @param zlim Range of the normalized gene expression levels, inputted as a list: c(lower_bound, upper_bound). Values outside this range will be winsorized. Useful for increasing the contrast of the heatmap visualizations. Default, set to the 5th and 95th percentiles.
+##'
 ##' @return PAGODA app
+##'
 ##' @export
 make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.cols = NULL, cell.clustering = NULL, row.clustering = NULL, title = "pathway clustering", zlim = c(-1, 1)*quantile(tamr$xv, p = 0.95)) {
     # rcm - xv
@@ -2553,6 +2712,7 @@ make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.co
     sa <- ViewPagodaApp$new(fres, df, gene.df, varinfo$mat, varinfo$matw, set.env, name = title, trim = 0, batch = varinfo$batch)
 }
 
+##################### Internal functions
 
 one.sided.test.id <- function(id, nam1, nam2, ifm, dm, prior, difference.prior = 0.5, bootstrap = TRUE, n.samples = 1e3, show.plots = TRUE, return.posterior = FALSE, return.both = FALSE) {
     gr <- 10^prior$x - 1
@@ -2603,7 +2763,7 @@ one.sided.test.id <- function(id, nam1, nam2, ifm, dm, prior, difference.prior =
 
     if(show.plots) {
         # show each posterior
-        layout(matrix(c(1:3), 3, 1, byrow = TRUE), heights = c(2, 1, 2), widths = c(1), F)
+        layout(matrix(c(1:3), 3, 1, byrow = TRUE), heights = c(2, 1, 2), widths = c(1), FALSE)
         par(mar = c(2.5, 3.5, 2.5, 3.5), mgp = c(1.5, 0.65, 0), cex = 0.9)
         jpr <- range(c(0, pjpc), na.rm = TRUE)
         pp <- exp(lpp)
@@ -5626,7 +5786,7 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
 
 # returns enriched categories for a given genelist as compared with a given universe
 # returns a list with over and under fields containing list of over and underrepresented terms
-calculate.go.enrichment <- function(genelist, universe, pvalue.cutoff = 1e-3, mingenes = 3, env = entrez2GO, subset = NULL, list.genes = FALSE, over.only = FALSE) {
+calculate.go.enrichment <- function(genelist, universe, pvalue.cutoff = 1e-3, mingenes = 3, env = go.env, subset = NULL, list.genes = FALSE, over.only = FALSE) {
     genelist <- unique(genelist)
     all.genes <- unique(ls(env))
     # determine sizes
@@ -5660,9 +5820,9 @@ calculate.go.enrichment <- function(genelist, universe, pvalue.cutoff = 1e-3, mi
         lpr <- ifelse(pv<0.5, phyper(cv$s-1, cv$u, us-cv$u, ns, lower.tail = FALSE, log.p = TRUE), phyper(cv$s+1, cv$u, us-cv$u, ns, lower.tail = TRUE, log.p = TRUE))
     }
     lpr <- phyper(cv$s-1, cv$u, us-cv$u, ns, lower.tail = FALSE, log.p = TRUE)
-    lpra <- bh.adjust(lpr, log = TRUE)
-    z <- qnorm(lpr, lower.tail = FALSE, log = TRUE)
-    za <- qnorm(lpra, lower.tail = FALSE, log = TRUE)
+    lpra <- bh.adjust(lpr, log.p = TRUE)
+    z <- qnorm(lpr, lower.tail = FALSE, log.p = TRUE)
+    za <- qnorm(lpra, lower.tail = FALSE, log.p = TRUE)
     # correct for multiple hypothesis
     mg <- length(which(cv$u > mingenes))
     if(over.only) {
@@ -5790,7 +5950,7 @@ ViewPagodaApp <- setRefClass(
                                      <head >
                                      <title > ', name, '</title >
                                      <meta http-equiv = "Content-Type" content = "text/html charset = iso-8859-1" >
-                                     <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/extjs/resources/ext-theme-classic/ext-theme-classic-all.css" / >
+                                     <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/extjs/resources/ext-theme-neptune/ext-theme-neptune-all.css" / >
                                      <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/extjs/examples/shared/example.css" / >
                                      <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/pathcl.css" / >
                                      <head profile = "http://www.w3.org/2005/10/profile" >
@@ -5809,7 +5969,7 @@ ViewPagodaApp <- setRefClass(
                    '/pathcl.json' = { # report pathway clustering heatmap data
                        # column dendrogram
                        t <- paste(tempfile(), "svg", sep = ".")
-                       svg(file = TRUE, width = 1, height = 1) # will be rescaled later
+                       svg(file = t, width = 1, height = 1) # will be rescaled later
                        par(mar = rep(0, 4), mgp = c(2, 0.65, 0), cex = 1, oma = rep(0, 4))
                        #plot(results$hvc, main = "", sub = "", xlab = "", ylab = "", axes = FALSE, labels = FALSE, xaxs = "i", yaxs = "i", hang = 0.02)
                        plot(as.dendrogram(results$hvc), axes = FALSE, yaxs = "i", xaxs = "i", xlab = "", ylab = "", sub = "", main = "", leaflab = "none")

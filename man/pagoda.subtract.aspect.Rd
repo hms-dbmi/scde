@@ -23,4 +23,17 @@ across cells, for instance sequencing depth, or PC corresponding to an undesired
 such as ribosomal pathway variation) and subtracts it from the data so that it is controlled
 for in the subsequent weighted PCA analysis.
 }
+\examples{
+data(pollen)
+cd <- pollen.counts
+cd <- cd[,colSums(cd>0)>1.8e3]
+cd <- cd[rowSums(cd)>10,]
+cd <- cd[rowSums(cd>0)>5,]
+data(knn)  # Load precomputed model. Use ?knn.error.models to see how knn was generated
+varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
+data(go.env)  # Load GO annotations as an environment
+cc.pattern <- pagoda.show.pathways(ls(go.env)[1:2], varinfo, go.env, show.cell.dendrogram = TRUE, showRowLabels = TRUE)  # Look at pattern from 2 GO annotations
+# subtract the pattern
+varinfo.cc <- pagoda.subtract.aspect(varinfo, cc.pattern)
+}
 

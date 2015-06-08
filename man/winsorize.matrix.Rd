@@ -17,4 +17,12 @@ Winsorized matrix
 \description{
 Sets the ncol(mat)*trim top outliers in each row to the next lowest value same for the lowest outliers
 }
+\examples{
+set.seed(0)
+mat <- matrix( c(rnorm(5*10,mean=0,sd=1), rnorm(5*10,mean=5,sd=1)), 10, 10)  # random matrix
+mat[1,1] <- 1000  # make outlier
+range(mat)  # look at range of values
+win.mat <- winsorize.matrix(mat, 0.1)
+range(win.mat)  # note outliers removed
+}
 

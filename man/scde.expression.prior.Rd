@@ -32,15 +32,11 @@ a structure describing expression magnitude grid ($x, on log10 scale) and prior 
 Use existing count data to determine a prior distribution of genes in the dataset
 }
 \examples{
-\donttest{
 data(es.mef.small)
 cd <- es.mef.small
 cd <- cd[rowSums(cd) > 0, ]
 cd <- cd[, colSums(cd) > 1e4]
-sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
-names(sg) <- colnames(cd)
-o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
 o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
-}
 }
 

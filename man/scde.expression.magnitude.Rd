@@ -18,16 +18,12 @@ a matrix of expression magnitudes on a log scale (rows - genes, columns - cells)
 Return point estimates of expression magnitudes of each gene across a set of cells, based on the regression slopes determined during the model fitting procedure.
 }
 \examples{
-\donttest{
 data(es.mef.small)
 cd <- es.mef.small
 cd <- cd[rowSums(cd) > 0, ]
 cd <- cd[, colSums(cd) > 1e4]
-sg <- factor(gsub("(MEF|ESC).*", "\\\\1", colnames(cd)), levels = c("ESC", "MEF"))
-names(sg) <- colnames(cd)
-o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
+data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
 # get expression magniutude estimates
 lfpm <- scde.expression.magnitude(o.ifm, cd)
-}
 }
 

@@ -49,8 +49,6 @@ scde.error.models(counts, groups = NULL, min.nonfailed = 3,
 }
 \value{
 a model matrix, with rows corresponding to different cells, and columns representing different parameters of the determined models
-
-a data frame containing model parameters
 }
 \description{
 Fit error models given a set of single-cell data (counts) and an optional grouping factor (groups). The cells (within each group) are first cross-compared to determine a subset of genes showing consistent expression. The set of genes is then used to fit a mixture model (Poisson-NB mixture, with expression-dependent concomitant).

@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{show.app}
 \alias{show.app}
-\title{View pagoda or scde application}
+\title{View PAGODA application}
 \usage{
 show.app(app, name, browse = TRUE, port = NULL, ip = "127.0.0.1",
   server = NULL)
@@ -26,5 +26,12 @@ Rook server instance
 \description{
 Installs a given pagoda app (or any other rook app) into a server, optionally
 making a call to show it in the browser.
+}
+\examples{
+\donttest{
+app <- make.pagoda.app(tamr2, tam, varinfo, go.env, pwpca, clpca, col.cols=col.cols, cell.clustering=hc, title="NPCs")
+# show app in the browser (port 1468)
+show.app(app, "pollen", browse = TRUE, port=1468)
+}
 }
 

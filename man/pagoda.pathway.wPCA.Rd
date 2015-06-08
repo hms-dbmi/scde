@@ -45,4 +45,17 @@ For each valid gene set (having appropriate number of genes) in the provided env
 the method will run weighted PCA analysis, along with analogous analyses of random gene sets of the
 same size, or shuffled expression magnitudes for the same gnee set.
 }
+\examples{
+\donttest{
+data(pollen)
+cd <- pollen.counts
+cd <- cd[,colSums(cd>0)>1.8e3]
+cd <- cd[rowSums(cd)>10,]
+cd <- cd[rowSums(cd>0)>5,]
+knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
+varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
+data(go.env)  # Load GO annotations as an environment
+pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
+}
+}
 
