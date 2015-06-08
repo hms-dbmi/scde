@@ -1972,7 +1972,7 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
         if(is.element("fastcluster", installed.packages()[, 1])) {
             gcl <- fastcluster::hclust(gd, method = method)
         } else {
-            y <- stats::hclust(gd, method = method)
+            gcl <- stats::hclust(gd, method = method)
         }
         gcll <- cutree(gcl, n.clusters)
         gcls <- tapply(rownames(mat)[vi], as.factor(gcll), I)

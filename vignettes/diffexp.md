@@ -95,6 +95,7 @@ Finally, we need to define an expression magnitude prior for the genes. Its main
 # estimate gene expression prior
 o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ```
+
 Here we used a grid of 400 points, and let the maxmimum expression magnitude be determined by the default 0.999 quantile (use `max.value` parameter to specify the maximum expression magntiude explicitly - on log10 scale).
 
 ### Testing for differential expression
@@ -150,6 +151,7 @@ scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior =
 ```
 
 ![plot of chunk diffexp3](figures/scde-diffexp3-1.png) 
+
 The top and the bottom plots show expression posteriors derived from individual cells (colored lines) and joint posteriors (black lines). The middle plot shows posterior of the expression fold difference between the two cell groups, highlighting the 95% credible interval by the red shading.
 
 ### Correcting for batch effects
@@ -182,6 +184,7 @@ scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior =
 ```
 
 ![plot of chunk batch](figures/scde-batch-1.png) 
+
 In the plot above, the grey lines are used to show posterior distributions based on the batch composition alone. The expression magnitude posteriors (top and botom plots) look very similar, and as a result the log2 expression ratio posterior is close to 0. The thin black line shows log2 expression ratio posterior before correction. The batch correction doesn't shift the location, but increases uncertainty in the ratio estimate (since we're controlling for another factor).
 
 Similarly, batch correction can be performed when calculating expression differences for the entire dataset:

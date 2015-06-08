@@ -182,9 +182,7 @@ We can also test 'de novo' gene sets whose expression profiles are well-correlat
 clpca <- pagoda.gene.clusters(varinfo, trim = 7.1/ncol(varinfo$mat), n.clusters = 150, n.cores = 1, plot = TRUE)
 ```
 
-```
-## Error in nrow(tree$merge): object 'gcl' not found
-```
+![plot of chunk clusterPCA](figures/pagoda-clusterPCA-1.png) 
 
 The plot above shows background distribution of the first principal component (`PC1`) variance (`lambda1`) magnitude. The blue scatterplot on the left shows `lambda1` magnitude vs. cluster size for clusters determined based on randomly-generated matrices of the same size. The black circles show top cluster in each simulation. The red lines show expected magnitude and 95% confidence interval based on Tracy-Widom distribution. The right plot shows extreme value distribution fit of residual cluster `PC1` variance magnitude relative to the Tracy-Widom F1 distribution.
 
@@ -196,20 +194,20 @@ head(df)
 ```
 
 ```
-##                                                                          name
-## 5224                                                           geneCluster.58
-## 421                                        GO:0003170 heart valve development
-## 422                                      GO:0003179 heart valve morphogenesis
-## 426                                GO:0003208 cardiac ventricle morphogenesis
-## 123  GO:0000979 RNA polymerase II core promoter sequence-specific DNA binding
-## 4408                          GO:0060563 neuroepithelial cell differentiation
-##      npc   n    score        z     adj.z sh.z adj.sh.z
-## 5224   1 162 4.006657 13.72162 13.353475   NA       NA
-## 421    1  13 3.049964 10.12546  9.786492   NA       NA
-## 422    1  13 3.049964 10.12546  9.786492   NA       NA
-## 426    1  25 2.978694 11.96173 11.627068   NA       NA
-## 123    1  22 2.803050 10.66688 10.328873   NA       NA
-## 4408   1  23 2.782324 10.71021 10.372253   NA       NA
+##                                                                          name npc  n    score         z     adj.z sh.z
+## 421                                        GO:0003170 heart valve development   1 13 3.049964 10.125464  9.786492   NA
+## 422                                      GO:0003179 heart valve morphogenesis   1 13 3.049964 10.125464  9.786492   NA
+## 426                                GO:0003208 cardiac ventricle morphogenesis   1 25 2.978694 11.961732 11.627068   NA
+## 123  GO:0000979 RNA polymerase II core promoter sequence-specific DNA binding   1 22 2.803050 10.666884 10.328873   NA
+## 4408                          GO:0060563 neuroepithelial cell differentiation   1 23 2.782324 10.710213 10.372253   NA
+## 4329      GO:0060045 positive regulation of cardiac muscle cell proliferation   1 10 2.713999  8.053025  7.721521   NA
+##      adj.sh.z
+## 421        NA
+## 422        NA
+## 426        NA
+## 123        NA
+## 4408       NA
+## 4329       NA
 ```
 
 ![plot of chunk topPathways2](figures/pagoda-topPathways2-1.png) 
@@ -265,6 +263,7 @@ saveRDS(app, file = "pollen.app.rds")
 ```
 
 The `pagoda` app allows you to view the gene sets grouped within each aspect (row), as well as genes underlying the detected heterogeneity patterns. A screenshot of the app is provided below:
+
 ![pagoda app](figures/pagoda-Screen_Shot_2015-06-07_at_4.53.46_PM.png)
 
 Similar views can be obtained in the R session itself. For instance, here we'll view top 10 genes associated with the top two pathways in the neurogenesis cluster: "neurogenesis" (GO:0022008) and "generation of neurons" (GO:0048699)
@@ -276,6 +275,7 @@ pagoda.show.pathways(c("GO:0022008 neurogenesis","GO:0048699 generation of neuro
 ![plot of chunk showTopPathwayGenes](figures/pagoda-showTopPathwayGenes-1.png) 
 
 ### Controlling for undesired aspects of heterogeneity
+
 To explicitly control for aspects of heterogeneity that are not of interest for this particular experiment we will use pagoda.subtract.aspect method that we've previously used to control for residual patterns associated with sequencing depth differences. Here we illustrate how to control for the mitotic cell cycle pattern which showed up as one of the four significant aspects in the analysis above.
 
 
@@ -287,4 +287,5 @@ varinfo.cc <- pagoda.subtract.aspect(varinfo, cc.pattern)
 ```
 
 ![plot of chunk controlForCellCycle](figures/pagoda-controlForCellCycle-1.png) 
+
 Now we can go through the same analysis as shown above, starting with the pagoda.pathway.wPCA() call, using varinfo.cc instead of varinfo, which will control for the cell cylce heterogeneity between the cells.

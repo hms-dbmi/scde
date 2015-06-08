@@ -207,7 +207,7 @@ pagoda.show.pathways(c("GO:0022008 neurogenesis","GO:0048699 generation of neuro
 ```
 
 ### Controlling for undesired aspects of heterogeneity
-To explicitly control for aspects of heterogeneity that are not of interest for this particular experiment we will use pagoda.subtract.aspect method that we've previously used to control for residual patterns associated with sequencing depth differences. Here we illustrate how to control for the mitotic cell cycle pattern which showed up as one of the four significant aspects in the analysis above.
+Depending on the biological setting, certain dominant aspects of transcriptional heterogeneity may not be of interest. To explicitly control for these aspects of heterogeneity that are not of interest, we will use `pagoda.subtract.aspect` method that we've previously used to control for residual patterns associated with sequencing depth differences. Here, we illustrate how to control for the mitotic cell cycle pattern which showed up as one of the four significant aspects in the analysis above.
 
 ```{r, controlForCellCycle}
 # get cell cycle signature and view the top genes
