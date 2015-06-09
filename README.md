@@ -28,7 +28,7 @@ The overall approach to pathawys and gene set overdispersion analysis is detaile
 <table>
   <tr>
     <td width=300px>
-      <img src="vignettes/figures/scde-diffexp3-1.png" width="300px">
+      <img src="vignettes/figures/scde-diffexp3-1.png" width="250px">
     </td>
     <td>
       <pre>
