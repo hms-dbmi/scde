@@ -15,8 +15,8 @@ The overall approach to pathawys and gene set overdispersion analysis is detaile
 ## Single cell error modeling
 <table>
   <tr>
-    <td width=600px>
-      <img src="vignettes/figures/pagoda-cell.model.fits-0.png" width="600px">
+    <td width=400px>
+      <img src="vignettes/figures/pagoda-cell.model.fits-0.png" width="400px">
     </td>
     <td>
       <code>scde</code> fits individual error models for single cells using counts derived from single-cell RNA-seq data to estimate drop-out and amplification biases on gene expression magnitude.
@@ -28,9 +28,9 @@ The overall approach to pathawys and gene set overdispersion analysis is detaile
 <table>
   <tr>
     <td width=300px>
-      <img src="vignettes/figures/scde-diffexp3-1.png" width="300">
+      <img src="vignettes/figures/scde-diffexp3-1.png" width="300px">
     </td>
-    <td width=300px>
+    <td>
       <pre>
                    lb      mle        ub       ce        Z       cZ
 Dppa5a        8.075160 9.965929 11.541570 8.075160 7.160813 5.968921
@@ -48,12 +48,12 @@ Ift46         5.435961 7.366121  9.217500 5.435961 7.150271 5.968921
 ## Pathway and gene set overdispersion analysis with GUI
 <table>
   <tr>
-    <td width=600px>
-      <img src="vignettes/figures/pagoda-Screen_Shot_2015-06-07_at_4.53.46_PM.png" width="600"> 
+    <td width=400px>
+      <img src="vignettes/figures/pagoda-Screen_Shot_2015-06-07_at_4.53.46_PM.png" width="400px"> 
     </td>
     <td>
       <code>scde</code> contains <code>pagoda</code> routines that characterize aspects of transcriptional heterogeneity in populations of single cells using pre-defined gene sets as well as 'de novo' gene sets derived from the data. Significant aspects are used to cluster cells into subpopulations. A graphical user interface can be deployed to interactively explore results. 
-    <td>
+    </td>
   </tr>
 </table>
     
