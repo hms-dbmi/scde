@@ -32,13 +32,12 @@ The overall approach to pathawys and gene set overdispersion analysis is detaile
     </td>
     <td>
       <pre>
-                   lb      mle        ub       ce        Z       cZ
-Dppa5a        8.075160 9.965929 11.541570 8.075160 7.160813 5.968921
-Pou5f1        5.357179 7.208557  9.178109 5.357179 7.160333 5.968921
-Gm13242       5.672307 7.681250  9.768974 5.672307 7.159987 5.968921
-Tdh           5.829872 8.075160 10.281057 5.829872 7.159599 5.968921
-Ift46         5.435961 7.366121  9.217500 5.435961 7.150271 5.968921
-4930509G22Rik 5.435961 7.484295  9.808365 5.435961 7.115804 5.957784 </pre>
+             lb   mle     ub    ce     Z    cZ
+Dppa5a    8.075 9.965 11.541 8.075 7.160 5.968
+Pou5f1    5.357 7.208  9.178 5.357 7.160 5.968
+Gm13242   5.672 7.681  9.768 5.672 7.159 5.968
+Tdh       5.829 8.075 10.281 5.829 7.159 5.968
+Ift46     5.435 7.366  9.217 5.435 7.150 5.968</pre>
       <br>
       <code>scde</code> compares groups of single cells and tests for differential expression, taking into account variability in the single cell RNA-seq data due to drop-out and amplification biases in order to identify more robustly differentially expressed genes. 
     </td>
