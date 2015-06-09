@@ -47,6 +47,16 @@ NULL
 ##' @export
 NULL
 
+##' Sample error model
+##'
+##' SCDE error model generated from the Pollen et al. 2014 dataset.
+##'
+##' @name knn
+##' @docType data
+##' @references \url{www.ncbi.nlm.nih.gov/pubmed/25086649}
+##' @export
+NULL
+
 # Internal model data
 #
 # Numerically-derived correction for NB->chi squared approximation stored as an local regression model
@@ -895,7 +905,7 @@ scde.fit.models.to.reference <- function(counts, reference, n.cores = 10, zero.c
         } else {
             return(m1)
         }
-    }, BPPARAM = MulticoreParam(workers = n.cores), mc.preschedule = FALSE)
+    }, BPPARAM = MulticoreParam(workers = n.cores))
     names(ml) <- ids
 
     # check if there were errors in the multithreaded portion
@@ -1218,13 +1228,15 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
 ##' @param gene.length optional vector of gene lengths (corresponding to the rows of counts matrix)
 ##'
 ##' @examples
+##' \donttest{
 ##' data(pollen)
 ##' cd <- pollen.counts
 ##' cd <- cd[,colSums(cd>0)>1.8e3]
 ##' cd <- cd[rowSums(cd)>10,]
 ##' cd <- cd[rowSums(cd>0)>5,]
-##' data(knn)  # Load precomputed model. Use ?knn.error.models to see how knn was generated
+##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
+##' }
 ##'
 ##' @return a list containing the following fields:
 ##' \itemize{

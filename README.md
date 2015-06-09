@@ -29,6 +29,6 @@ devtools::install_github("hms-dbmi/scde")
 
 Please refer to the following vignettes to help you get started with using `scde`:
 - [Single cell differential expression analysis](vignettes/diffexp.md)
-- [Identifying and characterizing single cell subpoopulations using pathway and gene set overdispersion analysis](vignettes/pagoda.md)
+- [Characterizing single cell transcriptional heterogeneity using pathway and gene set overdispersion analysis](vignettes/pagoda.md)
 
 Additional tutorials are available on the [Kharchenko Lab website](http://pklab.med.harvard.edu/scde/index.html). 

@@ -1,19 +1,19 @@
 ---
 title: "Getting Started with `scde`"
 author: "Peter Kharchenko, Jean Fan"
-date: '2015-06-07'
+date: '2015-06-09'
 output: html_document
 vignette: |
   %\VignetteIndexEntry{Vignette Title} \usepackage[utf8]{inputenc}
 ---
 
-# Single-Cell Differential Expression
+# Single-Cell Differential Expression Analysis
 
 In this vignette, we show you how perform single cell differential expression analysis using single cell RNA-seq data. 
 
 The `scde` package implements routines for fitting individual error models for single-cell RNA-seq measurements. Breifly, the read counts observed for each gene are modeled using a mixture of a negative binomial (NB) distribution (for the amplified/detected transcripts) and low-level Poisson distribution (for the unobserved or background-level signal of genes that failed to amplify or were not detected for other reasons). These models can then be used to identify robustly differentially expressed genes between groups of cells. 
 
-### Preparing data
+## Preparing data
 
 The analysis starts with a matrix of read counts. Depending on the protocol, these may be raw numbers of reads mapped to each gene, or count values adjusted for potential biases (sequence dependency, splice variant coverage, etc. - the values must be integers). The `scde` package includes a subset of the ES/MEF cell dataset published by [_Islam et al._](http://www.ncbi.nlm.nih.gov/pubmed/?term=24363023). The subset includes first 20 ES and MEF cells. Here we load the cells and define a factor separating ES and MEF cell types:
 
@@ -45,19 +45,20 @@ cd <- cd[rowSums(cd)>0, ]
 cd <- cd[, colSums(cd)>1e4]
 ```
 
-### Fitting error models
+## Fitting error models
 
-As a next step we fit the error models on which all subsequent calculations will rely. The fitting process relies on a subset of robust genes that are detected in multiple cross-cell comparisons. Here we supply the `groups = sg` argument, so that the error models for the two cell types are fit independently (using two different sets of "robust" genes). If the `groups` argument is omitted, the models will be fit using a common set.
+As a next step we fit the error models on which all subsequent calculations will rely. The fitting process relies on a subset of robust genes that are detected in multiple cross-cell comparisons. Here we supply the `groups = sg` argument, so that the error models for the two cell types are fit independently (using two different sets of "robust" genes). If the `groups` argument is omitted, the models will be fit using a common set. 
 
-Note this step takes a considerable amount of time unless multiple cores are used. For the purposes of this vignette, the model has been precomputed. 
-
+Note this step takes a considerable amount of time unless multiple cores are used. 
 
 ```r
+# EVALUATION NOT NEEDED
 # calculate models
 o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 1, threshold.segmentation = TRUE, save.crossfit.plots = FALSE, save.model.plots = FALSE, verbose = 1)
 devtools::use_data(o.ifm)  # save for later since this step takes a long time
 ```
 
+For the purposes of this vignette, the model has been precomputed and can simply be loaded.
 
 ```r
 data(o.ifm)
@@ -103,7 +104,7 @@ o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, 
 
 Here we used a grid of 400 points, and let the maxmimum expression magnitude be determined by the default 0.999 quantile (use `max.value` parameter to specify the maximum expression magntiude explicitly - on log10 scale).
 
-### Testing for differential expression
+## Testing for differential expression
 
 To test for differential expression, we first define a factor that specifies which two groups of cells are to be compared. The factor elements correspond to the rows of the model matrix (`o.ifm`), and can contain `NA` values (i.e. cells that won't be included in either group). Here we key off the the ES and MEF names.
 
@@ -162,7 +163,7 @@ scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior =
 
 The top and the bottom plots show expression posteriors derived from individual cells (colored lines) and joint posteriors (black lines). The middle plot shows posterior of the expression fold difference between the two cell groups, highlighting the 95% credible interval by the red shading.
 
-### Correcting for batch effects
+## Correcting for batch effects
 
 When the data combines cells that were measured in different batches, it is sometimes necessary to explicitly account for the expression differences that could be explained by the batch composition of the cell groups being compared. The example below makes up a random batch composition for the ES/MEF cells, and re-test the expression difference.
 
