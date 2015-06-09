@@ -27,7 +27,7 @@ The overall approach to pathawys and gene set overdispersion analysis is detaile
 ## Differential expression analysis
 <table>
   <tr>
-    <td width=300px>
+    <td width=250px>
       <img src="vignettes/figures/scde-diffexp3-1.png" width="250px">
     </td>
     <td>
