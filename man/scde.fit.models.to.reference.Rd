@@ -35,9 +35,7 @@ If group-average expression magnitudes are available (e.g. from bulk measurement
 to fit individual cell error models relative to that reference
 }
 \examples{
-# since we don't have bulk reference in this dataset, we'll make a fake one
-# by calculating average expression of each gene across single cells
-# fit the models first
+\donttest{
 data(es.mef.small)
 cd <- es.mef.small
 cd <- cd[rowSums(cd) > 0, ]
@@ -52,5 +50,6 @@ av.mag <- as.numeric(jp$jp \%*\% as.numeric(colnames(jp$jp)))
 av.mag.counts <- as.integer(round(av.mag))
 # now, fit alternative models using av.mag as a reference (normally this would correspond to bulk RNA expression magnitude)
 ref.models <- scde.fit.models.to.reference(cd, av.mag.counts, n.cores = 1)
+}
 }
 

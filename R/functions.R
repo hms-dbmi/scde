@@ -868,9 +868,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 ##' @return matrix of scde models
 ##'
 ##' @examples
-##' # since we don't have bulk reference in this dataset, we'll make a fake one
-##' # by calculating average expression of each gene across single cells
-##' # fit the models first
+##' \donttest{
 ##' data(es.mef.small)
 ##' cd <- es.mef.small
 ##' cd <- cd[rowSums(cd) > 0, ]
@@ -885,6 +883,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 ##' av.mag.counts <- as.integer(round(av.mag))
 ##' # now, fit alternative models using av.mag as a reference (normally this would correspond to bulk RNA expression magnitude)
 ##' ref.models <- scde.fit.models.to.reference(cd, av.mag.counts, n.cores = 1)
+##' }
 ##'
 ##' @export
 scde.fit.models.to.reference <- function(counts, reference, n.cores = 10, zero.count.threshold = 1, nrep = 1, save.plots = FALSE, plot.filename = "reference.model.fits.pdf", verbose = 0, min.fpm = 1) {
