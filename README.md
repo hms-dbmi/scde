@@ -44,7 +44,7 @@ Ift46     5.435 7.366  9.217 5.435 7.150 5.968</pre>
   </tr>
 </table>
 
-## Pathway and gene set overdispersion analysis with GUI
+## Pathway and gene set overdispersion analysis
 <table>
   <tr>
     <td width=400px>

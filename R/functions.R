@@ -57,6 +57,15 @@ NULL
 ##' @export
 NULL
 
+##' GO annotation
+##'
+##' GO gene sets as an environment
+##'
+##' @name go.env
+##' @docType data
+##' @export
+NULL
+
 # Internal model data
 #
 # Numerically-derived correction for NB->chi squared approximation stored as an local regression model
