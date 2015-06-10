@@ -1,7 +1,7 @@
 ---
 title: "Getting Started with `pagoda` Routines"
 author: "Peter Kharchenko, Jean Fan"
-date: '2015-06-09'
+date: '2015-06-10'
 output: html_document
 vignette: |
   %\VignetteIndexEntry{Vignette Title} \usepackage[utf8]{inputenc}
@@ -23,7 +23,7 @@ The analysis starts with a matrix of read counts. Here, we use the read count ta
 ```r
   # read in the expression matrix
   data(pollen)
-  cd <- pollen.counts
+  cd <- pollen
   # filter data
   # filter out low-gene cells
   cd <- cd[, colSums(cd>0)>1.8e3]

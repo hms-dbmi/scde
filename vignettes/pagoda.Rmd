@@ -34,7 +34,7 @@ The analysis starts with a matrix of read counts. Here, we use the read count ta
 ```{r, data}
   # read in the expression matrix
   data(pollen)
-  cd <- pollen.counts
+  cd <- pollen
   # filter data
   # filter out low-gene cells
   cd <- cd[, colSums(cd>0)>1.8e3]

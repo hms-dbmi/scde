@@ -1060,7 +1060,7 @@ winsorize.matrix <- function(mat, trim) {
 ##' @examples
 ##' \donttest{
 ##' data(pollen)
-##' cd <- pollen.counts
+##' cd <- pollen
 ##' cd <- cd[,colSums(cd>0)>1.8e3]
 ##' cd <- cd[rowSums(cd)>10,]
 ##' cd <- cd[rowSums(cd>0)>5,]
@@ -1238,7 +1238,7 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
 ##' @examples
 ##' \donttest{
 ##' data(pollen)
-##' cd <- pollen.counts
+##' cd <- pollen
 ##' cd <- cd[,colSums(cd>0)>1.8e3]
 ##' cd <- cd[rowSums(cd)>10,]
 ##' cd <- cd[rowSums(cd>0)>5,]
@@ -1730,7 +1730,7 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
 ##' @examples
 ##' \donttest{
 ##' data(pollen)
-##' cd <- pollen.counts
+##' cd <- pollen
 ##' cd <- cd[,colSums(cd>0)>1.8e3]
 ##' cd <- cd[rowSums(cd)>10,]
 ##' cd <- cd[rowSums(cd>0)>5,]
@@ -1783,7 +1783,7 @@ pagoda.subtract.aspect <- function(varinfo, aspect, center = TRUE) {
 ##' @examples
 ##' \donttest{
 ##' data(pollen)
-##' cd <- pollen.counts
+##' cd <- pollen
 ##' cd <- cd[,colSums(cd>0)>1.8e3]
 ##' cd <- cd[rowSums(cd)>10,]
 ##' cd <- cd[rowSums(cd>0)>5,]
@@ -1879,7 +1879,7 @@ pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = det
 ##' @examples
 ##' \donttest{
 ##' data(pollen)
-##' cd <- pollen.counts
+##' cd <- pollen
 ##' cd <- cd[,colSums(cd>0)>1.8e3]
 ##' cd <- cd[rowSums(cd)>10,]
 ##' cd <- cd[rowSums(cd>0)>5,]
@@ -1942,7 +1942,7 @@ pagoda.effective.cells <- function(pwpca, start = NULL) {
 ##' @examples
 ##' \donttest{
 ##' data(pollen)
-##' cd <- pollen.counts
+##' cd <- pollen
 ##' cd <- cd[,colSums(cd>0)>1.8e3]
 ##' cd <- cd[rowSums(cd)>10,]
 ##' cd <- cd[rowSums(cd>0)>5,]
@@ -2164,7 +2164,7 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
 ##' @examples
 ##' \donttest{
 ##' data(pollen)
-##' cd <- pollen.counts
+##' cd <- pollen
 ##' cd <- cd[,colSums(cd>0)>1.8e3]
 ##' cd <- cd[rowSums(cd)>10,]
 ##' cd <- cd[rowSums(cd>0)>5,]
@@ -2379,7 +2379,7 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
 ##' @examples
 ##' \donttest{
 ##' data(pollen)
-##' cd <- pollen.counts
+##' cd <- pollen
 ##' cd <- cd[,colSums(cd>0)>1.8e3]
 ##' cd <- cd[rowSums(cd)>10,]
 ##' cd <- cd[rowSums(cd>0)>5,]
@@ -2451,7 +2451,7 @@ pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = FA
 ##' @examples
 ##' \donttest{
 ##' data(pollen)
-##' cd <- pollen.counts
+##' cd <- pollen
 ##' cd <- cd[,colSums(cd>0)>1.8e3]
 ##' cd <- cd[rowSums(cd)>10,]
 ##' cd <- cd[rowSums(cd>0)>5,]
@@ -2537,7 +2537,7 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
 ##' @examples
 ##' \donttest{
 ##' data(pollen)
-##' cd <- pollen.counts
+##' cd <- pollen
 ##' cd <- cd[,colSums(cd>0)>1.8e3]
 ##' cd <- cd[rowSums(cd)>10,]
 ##' cd <- cd[rowSums(cd>0)>5,]
@@ -2605,7 +2605,7 @@ pagoda.cluster.cells <- function(tam, varinfo, method = "ward", include.aspects 
 ##' @examples
 ##' \donttest{
 ##' data(pollen)
-##' cd <- pollen.counts
+##' cd <- pollen
 ##' cd <- cd[,colSums(cd>0)>1.8e3]
 ##' cd <- cd[rowSums(cd)>10,]
 ##' cd <- cd[rowSums(cd>0)>5,]

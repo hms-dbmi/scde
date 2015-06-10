@@ -1,7 +1,5 @@
 # SCDE
 
-[![Build Status](https://travis-ci.org/hms-dbmi/scde.svg?branch=master)](https://travis-ci.org/hms-dbmi/scde)
-
 The `scde` package implements a set of statistical methods for analyzing single-cell RNA-seq data. `scde` fits individual error models for single-cell RNA-seq measurements. These models can then be used for assessment of differential expression between groups of cells, as well as other types of analysis. The `scde` package also contains the `pagoda` framework which applies pathway and gene set overdispersion analysis to identify aspects of transcriptional heterogeneity among single cells. 
   
 The overall approach to the differential expression analysis is detailed in the following publication:  
