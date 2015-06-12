@@ -11,7 +11,7 @@ vignette: |
 
 In this vignette, we show you how perform single cell differential expression analysis using single cell RNA-seq data. 
 
-The `scde` package implements routines for fitting individual error models for single-cell RNA-seq measurements. Breifly, the read counts observed for each gene are modeled using a mixture of a negative binomial (NB) distribution (for the amplified/detected transcripts) and low-level Poisson distribution (for the unobserved or background-level signal of genes that failed to amplify or were not detected for other reasons). These models can then be used to identify robustly differentially expressed genes between groups of cells. 
+The `scde` package implements routines for fitting individual error models for single-cell RNA-seq measurements. Briefly, the read counts observed for each gene are modeled using a mixture of a negative binomial (NB) distribution (for the amplified/detected transcripts) and low-level Poisson distribution (for the unobserved or background-level signal of genes that failed to amplify or were not detected for other reasons). These models can then be used to identify robustly differentially expressed genes between groups of cells. 
 
 ## Preparing data
 
@@ -71,9 +71,9 @@ The `o.ifm` is a dataframe with error model coefficients for each cell (rows).
 head(o.ifm)
 ```
 
-Here, `corr.a` and `corr.b` are slope and intersept of the correlated component fit, `conc.*` refer to the concomitant fit, `corr.theta` is the NB over-dispersion, and `fail.r` is the background Poisson rate (fixed).
+Here, `corr.a` and `corr.b` are slope and intercept of the correlated component fit, `conc.*` refer to the concomitant fit, `corr.theta` is the NB over-dispersion, and `fail.r` is the background Poisson rate (fixed).
 
-Particularly poor cells may result in abnormal fits, most commonly showing negtive `corr.a`, and should be removed.
+Particularly poor cells may result in abnormal fits, most commonly showing negative `corr.a`, and should be removed.
 
 ```{r, fit4}
 # filter out cells that don't show positive correlation with
@@ -92,7 +92,7 @@ Finally, we need to define an expression magnitude prior for the genes. Its main
 o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ```
 
-Here we used a grid of 400 points, and let the maxmimum expression magnitude be determined by the default 0.999 quantile (use `max.value` parameter to specify the maximum expression magntiude explicitly - on log10 scale).
+Here we used a grid of 400 points, and let the maximum expression magnitude be determined by the default 0.999 quantile (use `max.value` parameter to specify the maximum expression magnitude explicitly - on log10 scale).
 
 ## Testing for differential expression
 
@@ -137,7 +137,7 @@ table(groups, batch)
 scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior = o.prior, batch = batch)
 ```
 
-In the plot above, the grey lines are used to show posterior distributions based on the batch composition alone. The expression magnitude posteriors (top and botom plots) look very similar, and as a result the log2 expression ratio posterior is close to 0. The thin black line shows log2 expression ratio posterior before correction. The batch correction doesn't shift the location, but increases uncertainty in the ratio estimate (since we're controlling for another factor).
+In the plot above, the grey lines are used to show posterior distributions based on the batch composition alone. The expression magnitude posteriors (top and bottom plots) look very similar, and as a result the log2 expression ratio posterior is close to 0. The thin black line shows log2 expression ratio posterior before correction. The batch correction doesn't shift the location, but increases uncertainty in the ratio estimate (since we're controlling for another factor).
 
 Similarly, batch correction can be performed when calculating expression differences for the entire dataset:
 

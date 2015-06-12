@@ -57,7 +57,7 @@ l2cols <- c("coral4", "olivedrab3", "skyblue2", "slateblue3")[as.integer(factor(
 
 ## Fitting error models
 
-Next, we'll construct error models for individual cells. Here, we use k-nearest neighbour model fitting procedure implemented by `knn.error.models()` method. This is a relatively noisy dataset (non-UMI), so we raise the `min.count.threshold` to 2 (minimum number of reads for the gene to be initially classified as a non-failed measurement), requiring at least 5 non-failed measurements per gene. We're providing a rough guess to the complexity of the population, by fitting the error models based on 1/4 of most similar cells (i.e. gussing there might be ~4 subpopulations). 
+Next, we'll construct error models for individual cells. Here, we use k-nearest neighbor model fitting procedure implemented by `knn.error.models()` method. This is a relatively noisy dataset (non-UMI), so we raise the `min.count.threshold` to 2 (minimum number of reads for the gene to be initially classified as a non-failed measurement), requiring at least 5 non-failed measurements per gene. We're providing a rough guess to the complexity of the population, by fitting the error models based on 1/4 of most similar cells (i.e. guessing there might be ~4 subpopulations). 
 
 Note this step takes a considerable amount of time unless multiple cores are used. 
 
@@ -87,14 +87,14 @@ In order to accurately quantify excess variance or overdispersion, we must norma
 varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = TRUE)
 ```
 
-The plot on the left shows coefficient of variance squared (on log10 scale) as a function of expression magntidue (log10 FPM). The red line shows local regression model for the genome-wide average dependency. The plot on the right shows adjusted variance (derived based on chi-squared probability of observed/genomewide expected ratio for each gene, with degrees of freedom adjusted for each gene). The adjusted variance of 1 means that a given gene exchibits as much variance as expected for a gene of such population average expression magnitude. Genes with high adjusted variance are overdispersed within the measured population and most likely show subpopulation-specific expression:
+The plot on the left shows coefficient of variance squared (on log10 scale) as a function of expression magnitude (log10 FPM). The red line shows local regression model for the genome-wide average dependency. The plot on the right shows adjusted variance (derived based on chi-squared probability of observed/genomewide expected ratio for each gene, with degrees of freedom adjusted for each gene). The adjusted variance of 1 means that a given gene exhibits as much variance as expected for a gene of such population average expression magnitude. Genes with high adjusted variance are overdispersed within the measured population and most likely show subpopulation-specific expression:
 
 ```{r, varnorm2}
 # list top overdispersed genes
 sort(varinfo$arv, decreasing = TRUE)[1:10]
 ```
 
-## Controling for sequencing depth 
+## Controlling for sequencing depth 
 
 Even with all the corrections, sequencing depth or gene coverage is typically still a major aspects of variability. In most studies, we would want to control for that as a technical artifact (exceptions are cell mixtures where subtypes significantly differ in the amount of total mRNA). Below we will control for the gene coverage (estimated as a number of genes with non-zero magnitude per cell) and normalize out that aspect of cell heterogeneity: 
 
@@ -137,7 +137,7 @@ An environment mapping GO terms to the set of genes contained in it has been pre
 data(go.env)
 ```
 
-Now, we can calculate weighted first prinicpal component magnitudes for each GO gene set in the provided environment.
+Now, we can calculate weighted first principal component magnitudes for each GO gene set in the provided environment.
 
 ```{r, pathwaySig}
 pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components = 1, n.cores = 1, n.internal.shuffles = 0)
@@ -149,13 +149,13 @@ We can now evaluate the statistical significance of the observed overdispersion 
 df <- pagoda.top.aspects(pwpca, return.table = TRUE, plot = TRUE, z.score = 1.96)
 ```
 
-Each point on the plot shows the PC1 variance (lambda1) magtnidue (normalized by set size) as a function of set size. The red lines show expected (solid) and 95% upper bound (dashed) magnitudes based on the Tracey-Widom model.
+Each point on the plot shows the PC1 variance (lambda1) magnitude (normalized by set size) as a function of set size. The red lines show expected (solid) and 95% upper bound (dashed) magnitudes based on the Tracey-Widom model.
 
 ```{r, df}
 head(df)
 ```
 
-* The z column gives the Z-score of pathway over-dispersion realtive to the genome-wide model (Z-score of 1.96 corresponds to P-value of 5%, etc.). 
+* The z column gives the Z-score of pathway over-dispersion relative to the genome-wide model (Z-score of 1.96 corresponds to P-value of 5%, etc.). 
 * "z.adj" column shows the Z-score adjusted for multiple hypothesis (using Benjamini-Hochberg correction). 
 * "score" gives observed/expected variance ratio
 * "sh.z" and "adj.sh.z" columns give the raw and adjusted Z-scores of "pathway cohesion", which compares the observed PC1 magnitude to the magnitudes obtained when the observations for each gene are randomized with respect to cells. When such Z-score is high (e.g. for GO:0008009) then multiple genes within the pathway contribute to the coordinated pattern.
@@ -192,7 +192,7 @@ tam <- pagoda.top.aspects(pwpca, clpca, n.cells = NULL, z.score = qnorm(0.01/2, 
 hc <- pagoda.cluster.cells(tam, varinfo)
 ```
 
-Next, we will reduce redudant aspects in two steps. First we will combine pathways that are driven by the same sets of genes:
+Next, we will reduce redundant aspects in two steps. First we will combine pathways that are driven by the same sets of genes:
 
 ```{r, loadingCollapse}
 tamr <- pagoda.reduce.loading.redundancy(tam, pwpca, clpca)
@@ -246,4 +246,4 @@ cc.pattern <- pagoda.show.pathways(c("GO:0000280 nuclear division", "GO:0007067 
 varinfo.cc <- pagoda.subtract.aspect(varinfo, cc.pattern)
 ```
 
-Now we can go through the same analysis as shown above, starting with the `pagoda.pathway.wPCA()` call, using `varinfo.cc` instead of `varinfo`, which will control for the cell cylce heterogeneity between the cells.
+Now we can go through the same analysis as shown above, starting with the `pagoda.pathway.wPCA()` call, using `varinfo.cc` instead of `varinfo`, which will control for the cell cycle heterogeneity between the cells.

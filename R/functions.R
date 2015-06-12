@@ -1,4 +1,4 @@
-##' Single-cell Differential Expression (with Pathway And Gene set OverDispersion Analysis)
+##' Single-cell Differential Expression (with Pathway And Gene set Overdispersion Analysis)
 ##'
 ##' The scde package implements a set of statistical methods for analyzing single-cell RNA-seq data.
 ##' scde fits individual error models for single-cell RNA-seq measurements. These models can then be used for
@@ -122,7 +122,7 @@ scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshol
         cat("cross-fitting cells.\n")
     }
     cfm <- calculate.crossfit.models(counts, groups, n.cores = n.cores, threshold.segmentation = threshold.segmentation, min.count.threshold = min.count.threshold, zero.lambda = zero.lambda, max.pairs = max.pairs, save.plots = save.crossfit.plots, min.pairs.per.cell = min.pairs.per.cell)
-    # error mdoel for each cell
+    # error model for each cell
     if(verbose) {
         cat("building individual error models.\n")
     }
@@ -144,7 +144,7 @@ scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshol
 ##' @param pseudo.count pseudo-count value to use (default 1)
 ##' @param bw smoothing bandwidth to use in estimating the prior (default: 0.1)
 ##' @param max.quantile determine the maximum expression magnitude based on a quantile (default : 0.999)
-##' @param max.value alternatively, specify the exact maximum expression magntiude value
+##' @param max.value alternatively, specify the exact maximum expression magnitude value
 ##'
 ##' @return a structure describing expression magnitude grid ($x, on log10 scale) and prior ($y)
 ##'
@@ -215,7 +215,7 @@ scde.expression.prior <- function(models, counts, length.out = 400, show.plot = 
 ##'  If batch correction has been performed (\code{batch} has been supplied), analogous data frames are returned in slots \code{$batch.adjusted} for batch-corrected results, and \code{$batch.effect} for the differences explained by batch effects alone.
 ##' }}
 ##' \subsection{return.posteriors = TRUE}{
-##' A list is returned, with the default results data frame given in the \code{$resutls} slot.
+##' A list is returned, with the default results data frame given in the \code{$results} slot.
 ##' \code{difference.posterior} returns a matrix of estimated expression difference posteriors (rows - genes, columns correspond to different magnitudes of fold-change - log2 values are given in the column names)
 ##' \code{joint.posteriors} a list of two joint posterior matrices (rows - genes, columns correspond to the expression levels, given by prior$x grid)
 ##' }
@@ -311,7 +311,7 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
     if(verbose) {
         cat("calculating difference posterior\n")
     }
-    # calcualte difference posterior
+    # calculate difference posterior
     bdiffp <- calculate.ratio.posterior(jpl[[1]], jpl[[2]], prior, n.cores = n.cores)
 
     if(verbose) {
@@ -533,7 +533,7 @@ scde.posteriors <- function(models, counts, prior, n.randomizations = 100, batch
         rm(xl)
         gc()
     } else {
-        # unique count lists with matching indecies
+        # unique count lists with matching indices
         ucl <- lapply(seq_len(ncol(counts)), function(i) as.vector(unique(counts[, i, drop = FALSE])))
         uci <- do.call(cbind, lapply(seq_len(ncol(counts)), function(i) match(counts[, i, drop = FALSE], ucl[[i]])-1))
         #x <- logBootPosterior(models, ucl, uci, marginals, n.randomizations, 1, postflag)
@@ -579,7 +579,7 @@ scde.posteriors <- function(models, counts, prior, n.randomizations = 100, batch
 # get estimates of expression magnitude for a given set of models
 # models - entire model matrix, or a subset of cells (i.e. select rows) of the model matrix for which the estimates should be obtained
 # counts - count data that covers the desired set of genes (rows) and all specified cells (columns)
-# return - a matrix of log(fpm) estimates with genes as rows and cells  as columns (in the model matrix order).
+# return - a matrix of log(FPM) estimates with genes as rows and cells  as columns (in the model matrix order).
 ##' Return scaled expression magnitude estimates
 ##'
 ##' Return point estimates of expression magnitudes of each gene across a set of cells, based on the regression slopes determined during the model fitting procedure.
@@ -595,7 +595,7 @@ scde.posteriors <- function(models, counts, prior, n.randomizations = 100, batch
 ##' cd <- cd[rowSums(cd) > 0, ]
 ##' cd <- cd[, colSums(cd) > 1e4]
 ##' data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
-##' # get expression magniutude estimates
+##' # get expression magnitude estimates
 ##' lfpm <- scde.expression.magnitude(o.ifm, cd)
 ##'
 ##' @export
@@ -605,13 +605,13 @@ scde.expression.magnitude <- function(models, counts) {
 }
 
 
-# calculate drop-out probability given either count data or magnitudes (log(fpm))
+# calculate drop-out probability given either count data or magnitudes (log(FPM))
 # magnitudes can either be a per-cell matrix or a single vector of values which will be evaluated for each cell
 # returns a probability of a drop out event for every gene (rows) for every cell (columns)
 ##' Calculate drop-out probabilities given a set of counts or expression magnitudes
 ##'
 ##' Returns estimated drop-out probability for each cell (row of \code{models} matrix), given either an expression magnitude
-##' @param models models determiend by \code{\link{scde.error.models}}
+##' @param models models determined by \code{\link{scde.error.models}}
 ##' @param magnitudes a vector (\code{length(counts) == nrows(models)}) or a matrix (columns correspond to cells) of expression magnitudes, given on a log scale
 ##' @param counts a vector (\code{length(counts) == nrows(models)}) or a matrix (columns correspond to cells) of read counts from which the expression magnitude should be estimated
 ##'
@@ -871,7 +871,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 ##' @param zero.count.threshold read count to use as an initial guess for the zero threshold
 ##' @param nrep number independent of mixture fit iterations to try (default = 1)
 ##' @param save.plots whether to write out a pdf file showing the model fits
-##' @param plot.filename model fit pdf fielname
+##' @param plot.filename model fit pdf filename
 ##' @param verbose verbose level
 ##'
 ##' @return matrix of scde models
@@ -1089,7 +1089,7 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
     ca <- counts
     ca[ca<min.count.threshold] <- NA # a version of counts with all "drop-out" components set to NA
     mll <- tapply(colnames(counts), groups, function(ids) {
-        # use spearman rank correlation on pairwise complete observations to establish distance relationships between cells
+        # use Spearman rank correlation on pairwise complete observations to establish distance relationships between cells
         group <- as.character(groups[ids[1]])
 
         if(verbose > 0) {
@@ -1251,8 +1251,8 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
 ##' \item{mat} {adjusted expression magnitude values}
 ##' \item{matw} { weight matrix corresponding to the expression matrix}
 ##' \item{arv} { a vector giving adjusted variance values for each gene}
-##' \item{avmodes} {a vector estimated average expression magntiudes for each gene}
-##' \item{modes} {a list of batch-specific average expression magntiudes for each gene}
+##' \item{avmodes} {a vector estimated average expression magnitudes for each gene}
+##' \item{modes} {a list of batch-specific average expression magnitudes for each gene}
 ##' \item{prior} {estimated (or supplied) expression magnitude prior}
 ##' \item{edf} { estimated effective degrees of freedom}
 ##' }
@@ -1284,7 +1284,7 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
 
     # trim counts according to the extreme fpm values
     if(trim > 0) {
-        if(verbose) { cat("winsorizing count matrix ... ") }
+        if(verbose) { cat("Winsorizing count matrix ... ") }
         fpm <- t((t(log(cd))-models$corr.b)/models$corr.a)
         #tfpm <- log(winsorize.matrix(exp(fpm), trim = trim))
         tfpm <- winsorize.matrix(fpm, trim)
@@ -1295,7 +1295,7 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
         rownames(cd) <- rn
         colnames(cd) <- cn
         rm(fpm, tfpm)
-        cd <- cd[rowSums(cd) > 0, ] # omit genes without any data after winsorization
+        cd <- cd[rowSums(cd) > 0, ] # omit genes without any data after Winsorization
         if(verbose) { cat("done\n") }
     }
 
@@ -1488,7 +1488,7 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
         #matw[, i]*edf.mat[, i]*(cd[, i]-mu)^2/(mu+mu^2/thetas)
         #x <- (cd[, i]-mu)^2/(mu+mu^2/thetas)
         #edf.mat[, i]*(cd[, i]-mu)^2/(mu+mu^2/thetas)
-        # considering poisson-nb mixture
+        # considering Poisson-nb mixture
         fail.lambda <- exp(as.numeric(v["fail.r"]))
         #edf.mat[, i]*(cd[, i]-mu)^2/(matw[, i]*(mu+mu^2/thetas) + (1-matw[, i])*((mu-fail.lambda)^2 + fail.lambda))
         edf.mat[, i]*(cd[, i]-mu)^2/(mu+mu^2/thetas +  fail.lambda)
@@ -1618,7 +1618,7 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
         #points(df$lev[vi], arv[vi], col = 2, pch = ".", cex = 2)
     }
 
-    # wilcox score upper bound
+    # Wilcox score upper bound
     wsu <- function(k, n, z = qnorm(0.975)) {
         p <- k/n
         pmin(1, (2*n*p+z^2+(z*sqrt(z^2-1/n+4*n*p*(1-p)-(4*p-2)) +1))/(2*(n+z^2)))
@@ -1725,7 +1725,7 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
 ##' @param aspect a vector giving a cell-to-cell variation pattern that should be controlled for (length should be corresponding to ncol(varinfo$mat))
 ##' @param center whether the matrix should be re-centered following pattern subtraction
 ##'
-##' @return a modified varinfo object with adjusted expression matirx (varinfo$mat)
+##' @return a modified varinfo object with adjusted expression matrix (varinfo$mat)
 ##'
 ##' @examples
 ##' \donttest{
@@ -1762,7 +1762,7 @@ pagoda.subtract.aspect <- function(varinfo, aspect, center = TRUE) {
 ##'
 ##' For each valid gene set (having appropriate number of genes) in the provided environment (setenv),
 ##' the method will run weighted PCA analysis, along with analogous analyses of random gene sets of the
-##' same size, or shuffled expression magnitudes for the same gnee set.
+##' same size, or shuffled expression magnitudes for the same gene set.
 ##'
 ##' @param varinfo adjusted variance info from pagoda.varinfo() (or pagoda.subtract.aspect())
 ##' @param setenv environment listing gene sets (contains variables with names corresponding to gene set name, and values being vectors of gene names within each gene set)
@@ -1865,14 +1865,14 @@ pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = det
 }
 
 
-##' Estimate effetive number of cells based on lambda1 of random gene sets
+##' Estimate effective number of cells based on lambda1 of random gene sets
 ##'
 ##' Examines the dependency between the amount of variance explained by the first principal component
 ##' of a gene set and the number of genes in a gene set to determine the effective number of cells
 ##' for the Tracy-Widom distribution
 ##'
 ##' @param pwpca result of the pagoda.pathway.wPCA() call with n.randomizations > 1
-##' @param start optional starting value for the optimization (if the nls breaks, trying high starting values usually fixed the local gradient problem)
+##' @param start optional starting value for the optimization (if the NLS breaks, trying high starting values usually fixed the local gradient problem)
 ##'
 ##' @return effective number of cells
 ##'
@@ -1922,7 +1922,7 @@ pagoda.effective.cells <- function(pwpca, start = NULL) {
 ##' @param n.cores number of cores to use
 ##' @param verbose verbosity level
 ##' @param plot whether a plot showing distribution of random lambda1 values should be shown (along with the extreme value distribution fit)
-##' @param show.random whether the empirical random geneset values should be shown in addition to the Tracy-Windom analytical approximation
+##' @param show.random whether the empirical random gene set values should be shown in addition to the Tracy-Widom analytical approximation
 ##' @param n.components number of PC to calculate (can be increased if the number of clusters is small and some contain strong secondary patterns - rarely the case)
 ##' @param method clustering method to be used in determining gene clusters
 ##' @param secondary.correlation whether clustering should be performed on the correlation of the correlation matrix instead
@@ -1970,7 +1970,7 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
 
 
     if(!is.null(old.results)) {
-        if(verbose) { cat ("reusing old reults for the observed clusters\n")}
+        if(verbose) { cat ("reusing old results for the observed clusters\n")}
         gcls <- old.results$clusters
         cl.goc <- old.results$cl.goc
     } else {
@@ -2144,12 +2144,12 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
 ##' @param pwpca output of pagoda.pathway.wPCA()
 ##' @param clpca output of pagoda.gene.clusters() (optional)
 ##' @param n.cells effective number of cells (if not provided, will be determined using pagoda.effective.cells())
-##' @param z.score Z score to be used as a cutoff for statistically significant pattenrs (defaults to 0.05 P-value
+##' @param z.score Z score to be used as a cutoff for statistically significant patterns (defaults to 0.05 P-value
 ##' @param return.table whether a text table showing
 ##' @param return.genes whether a set of genes driving significant aspects should be returned
 ##' @param plot whether to plot the cv/n vs. dataset size scatter showing significance models
 ##' @param adjust.scores whether the normalization of the aspect patterns should be based on the adjusted Z scores - qnorm(0.05/2, lower.tail = FALSE)
-##' @param score.alpha significance lelvel of the confidence interval for determining upper/lower bounds
+##' @param score.alpha significance level of the confidence interval for determining upper/lower bounds
 ##' @param use.oe.scale whether the variance of the returned aspect patterns should be normalized using observed/expected value instead of the default chi-squared derived variance corresponding to overdispersion Z score
 ##' @param effective.cells.start starting value for the pagoda.effective.cells() call
 ##'
@@ -2265,7 +2265,7 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
         un <- sort(unique(vdf$n))
         on <- order(vdf$n, decreasing = FALSE)
         pccol <- colorRampPalette(c("black", "grey70"), space = "Lab")(max(vdf$npc))
-        plot(vdf$n, vdf$var/vdf$n, xlab = "geneset size", ylab = "PC1 var/n", ylim = c(0, max(vdf$var/vdf$n)), col = pccol[vdf$npc])
+        plot(vdf$n, vdf$var/vdf$n, xlab = "gene set size", ylab = "PC1 var/n", ylim = c(0, max(vdf$var/vdf$n)), col = pccol[vdf$npc])
         lines(vdf$n[on], (vdf$exp/vdf$n)[on], col = 2, lty = 1)
         lines(vdf$n[on], (vdf$ub.stringent/vdf$n)[on], col = 2, lty = 2)
 
@@ -2506,7 +2506,7 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
     }
     names(cnam) <- rownames(xvl$d)
 
-    if(trim > 0) { xvl$d <- winsorize.matrix(xvl$d, trim) } # trim prior to deteriming the top sets
+    if(trim > 0) { xvl$d <- winsorize.matrix(xvl$d, trim) } # trim prior to determining the top sets
 
     rcmvar <- apply(xvl$d, 1, var)
     vi <- order(rcmvar, decreasing = TRUE)[1:min(length(rcmvar), top)]
@@ -2638,7 +2638,7 @@ pagoda.view.aspects <- function(tamr, row.clustering = hclust(dist(tamr$xv)), to
 ##' @param mat Numeric matrix
 ##' @param row.clustering Row dendrogram
 ##' @param cell.clustering Column dendrogram
-##' @param zlim Range of the normalized gene expression levels, inputted as a list: c(lower_bound, upper_bound). Values outside this range will be winsorized. Useful for increasing the contrast of the heatmap visualizations. Default, set to the 5th and 95th percentiles.
+##' @param zlim Range of the normalized gene expression levels, inputted as a list: c(lower_bound, upper_bound). Values outside this range will be Winsorized. Useful for increasing the contrast of the heatmap visualizations. Default, set to the 5th and 95th percentiles.
 ##' @param row.cols  Matrix of row colors.
 ##' @param col.cols  Matrix of column colors. Useful for visualizing cell annotations such as batch labels.
 ##' @param cols Heatmap colors
@@ -2675,11 +2675,11 @@ view.aspects <- function(mat, row.clustering = NA, cell.clustering = NA, zlim = 
 ##' @param env Gene sets as an environment variable.
 ##' @param pwpca Weighted PC magnitudes for each gene set provided in the \code{env}. Output of \code{\link{pagoda.pathway.wPCA}}
 ##' @param clpca Weighted PC magnitudes for de novo gene sets identified by clustering on expression. Output of \code{\link{pagoda.gene.clusters}}
-##' @param col.cols  Matrix of column colors. Useful for visualizing cell annotations such as batch labels. Defult NULL.
-##' @param cell.clustering Dendrogram of cell clustering. Output of \code{\link{pagoda.cluster.cells} } . Default   NRUEULL.
+##' @param col.cols  Matrix of column colors. Useful for visualizing cell annotations such as batch labels. Default NULL.
+##' @param cell.clustering Dendrogram of cell clustering. Output of \code{\link{pagoda.cluster.cells} } . Default   NULL.
 ##' @param row.clustering Dendrogram of combined pathways clustering. Default NULL.
 ##' @param title Title text to be used in the browser label for the app. Default, set as 'pathway clustering'
-##' @param zlim Range of the normalized gene expression levels, inputted as a list: c(lower_bound, upper_bound). Values outside this range will be winsorized. Useful for increasing the contrast of the heatmap visualizations. Default, set to the 5th and 95th percentiles.
+##' @param zlim Range of the normalized gene expression levels, inputted as a list: c(lower_bound, upper_bound). Values outside this range will be Winsorized. Useful for increasing the contrast of the heatmap visualizations. Default, set to the 5th and 95th percentiles.
 ##'
 ##' @return PAGODA app
 ##'
@@ -3010,7 +3010,7 @@ calculate.crossfit.models <- function(counts, groups, min.count.threshold = 4, n
                     legend(x = "bottomright", pch = c(rep(19, 3)), col = c("red", "blue", "green"), legend = paste(round(unlist(tapply(m1$clusters, factor(m1$clusters, levels = c(3, 2, 1)), length))*100/length(vi), 1), "%", sep = ""), bty = "n", cex = cex)
                 } else {
                     #message(paste("ERROR: unable to find model for i = ", i, "j = ", j))
-                    message(paste("INFO: coross-fit plots: skipping model for i = ", i, "j = ", j, " (increase max.pairs parameter if needed"))
+                    message(paste("INFO: cross-fit plots: skipping model for i = ", i, "j = ", j, " (increase max.pairs parameter if needed"))
                 }
             }
             #pdf(file = paste(group, "crossfits.pdf", sep = "."), width = 3*length(ids), height = 3*length(ids))
@@ -3114,7 +3114,7 @@ calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose =
         cl <- combn(ids, 2)
         group <- as.character(groups[ids[1]])
 
-        # incorporate cross-fit paris from cfm
+        # incorporate cross-fit pairs from cfm
         pn1 <- unlist(apply(cl, 2, function(ii) paste(ii, collapse = ".vs.")))
         pn2 <- unlist(apply(cl, 2, function(ii) paste(rev(ii), collapse = ".vs."))) ### %%% use rev() to revert element order
         vi <- (pn1 %in% names(cfm)) | (pn2 %in% names(cfm)) # check both reverse and forward pairing
@@ -3133,13 +3133,13 @@ calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose =
                 pn2 <- pn2[vi]
                 vi <- vi[vi]
             } else {
-                stop("less than 3 valid cross-fit pairs are availabile! giving up.")
+                stop("less than 3 valid cross-fit pairs are available! giving up.")
             }
         }
 
         #rl <- cfm[vi]
         vi.names<-names(cfm)[names(cfm) %in% c(pn1, pn2)] ### a similar selection was done like this in calculate.crossfit.models() function
-        rl <- cfm[vi.names]  ### with this subselection we select only sample pairs within the current group (e.g. pairs of ES)
+        rl <- cfm[vi.names]  ### with this sub-selection we select only sample pairs within the current group (e.g. pairs of ES)
 
         # determine the set genes that were not attributed to failure in any cross-comparison
         x <- lapply(rl, function(d) {
@@ -3478,7 +3478,7 @@ get.fpm.estimates <- function(m1, counts) {
             require(Rook)
             require(rjson)
             packageStartupMessage("scde: found stale web server instance with ", n.apps, " apps. restarting.")
-            rm("___scde.server", envir = globalenv()) # remove old instance (apparently saved Rook servers can't just be restarted ... we'll make a new one and readd all of the apps
+            rm("___scde.server", envir = globalenv()) # remove old instance (apparently saved Rook servers can't just be restarted ... we'll make a new one and re-add all of the apps
 
             tryCatch( {
                 server <- get.scde.server(ip = old.server$listenAddr, port = old.server$listenPort) # launch a new server
@@ -3536,7 +3536,7 @@ fit.nb2gth.mixture.model <- function(rdf, zero.count.threshold = 10, prior = as.
 
 # rdf : count/fpm data frame
 # en : experiment name for plotting
-# n.zero.windows - number of windows to vizualize failure model fit
+# n.zero.windows - number of windows to visualize failure model fit
 # m1 - fitted model
 plot.nb2.mixture.fit <- function(m1, rdf, en, do.par = TRUE, n.zero.windows = 50, compressed.models = FALSE, bandwidth = 0.05) {
     #require(Cairo) require(RColorBrewer)
@@ -3614,7 +3614,7 @@ plot.nb2.mixture.fit <- function(m1, rdf, en, do.par = TRUE, n.zero.windows = 50
             p <- exp(m1$model[["corr.a"]]*log(rdf$fpm[!vpi])+m1$model[["corr.b"]])
             alpha <- ((rdf$count[!vpi]/p-1)^2 - 1/p)
             trng <- log(range(c(m1$model[["corr.theta"]], thetas))) + 0.5*c(-1, 1)
-            # restrict the alpha to the confines of the esimated theta values
+            # restrict the alpha to the confines of the estimated theta values
             alpha[alpha > exp(-trng[1])] <- exp(-trng[1])
             alpha[alpha<exp(-trng[2])] <- exp(-trng[2])
 
@@ -3817,13 +3817,13 @@ get.concomitant.prob <- function(m1, counts = NULL, lfpm = NULL) {
 
 # copied from flexmix
 log.row.sums <- function(m) {
-    M <- m[cbind(seq_len(nrow(m)), max.col(m, ties.method = "first"))] # "random" doesnt' work!
+    M <- m[cbind(seq_len(nrow(m)), max.col(m, ties.method = "first"))] # "random" doesn't work!
     M + log(rowSums(exp(m - M)))
 }
 
 
 #######
-## from nb1gml.R
+## from nb1glm.R
 #######
 
 # nb2 glm implementation
@@ -3891,8 +3891,8 @@ FLXMRnb2glm <- function(formula = . ~ .,  offset = NULL, init.theta = NULL, thet
 # nb2 glm implementation
 setClass("FLXMRnb2glmC", representation(vci = "ANY"), contains = "FLXMRnb2glm", package = "flexmix")
 
-# components is used to specify the indecies of the components on which likelihood will be
-# evlauated. Others will return as loglik of 0
+# components is used to specify the indices of the components on which likelihood will be
+# evaluated. Others will return as loglik of 0
 FLXMRnb2glmC <- function(... , components = NULL) {
     #require(MASS)
     z <- new("FLXMRnb2glmC", FLXMRnb2glm(...), vci = components)
@@ -4065,8 +4065,8 @@ FLXMRnb2gth <- function(formula = . ~ .,  offset = NULL, full.theta.range = c(1e
 # nb2 gam implementation
 setClass("FLXMRnb2gthC", representation(vci = "ANY"), contains = "FLXMRnb2gth", package = "flexmix")
 
-# components is used to specify the indecies of the components on which likelihood will be
-# evlauated. Others will return as loglik of 0
+# components is used to specify the indices of the components on which likelihood will be
+# evaluated. Others will return as loglik of 0
 FLXMRnb2gthC <- function(... , components = NULL) {
     #require(mgcv)
     z <- new("FLXMRnb2gthC", FLXMRnb2gth(...), vci = components)
@@ -4150,8 +4150,8 @@ setMethod("FLXmstep", signature(model = "FLXMRnb2gthC"), function(model, weights
 # nb2 glm implementation
 setClass("FLXMRglmC", representation(vci = "ANY"), contains = "FLXMRglm", package = "flexmix")
 
-# components is used to specify the indecies of the components on which likelihood will be
-# evlauated. Others will return as loglik of 0
+# components is used to specify the indices of the components on which likelihood will be
+# evaluated. Others will return as loglik of 0
 FLXMRglmC <- function(... , components = NULL) {
     #require(MASS)
     z <- new("FLXMRglmC", FLXMRglm(...), vci = components)
@@ -4222,7 +4222,7 @@ setMethod("FLXmstep", signature(model = "FLXMRglmCf"), function(model, weights, 
     }), recursive = FALSE)
 })
 
-# a magnitude-weighted version of the FLXPmultinom (to downweight low-fpkm points during concomitant fit)
+# a magnitude-weighted version of the FLXPmultinom (to down-weight low-fpkm points during concomitant fit)
 # alternatively: some kind of non-decreasing function could be used
 setClass("FLXPmultinomW", contains = "FLXPmultinom")
 
@@ -4767,7 +4767,7 @@ pairs.panel.smoothScatter <- function(x, y, i = NULL, j = NULL, ...) {
     smoothScatter(x[vi], y[vi], add = TRUE, ...)
 }
 
-# a slight modification of pairs that passes i/j indecies to the panel methods
+# a slight modification of pairs that passes i/j indices to the panel methods
 pairs.extended <- function (x, labels, panel = points, ...,
                             lower.panel = panel, upper.panel = panel,
                             diag.panel = NULL, text.panel = textPanel,
@@ -4909,7 +4909,7 @@ pairs.extended <- function (x, labels, panel = points, ...,
 }
 
 
-# given a set of pdfs (columns), calculate summary statis (mle, 95% CI, Z-score deviations from 0)
+# given a set of pdfs (columns), calculate summary statistics (mle, 95% CI, Z-score deviations from 0)
 quick.distribution.summary <- function(s.bdiffp) {
     diffv <- as.numeric(colnames(s.bdiffp))
     dq <- t(apply(s.bdiffp, 1, function(p) {
@@ -5000,7 +5000,7 @@ bh.adjust <- function(x, log = FALSE) {
 pathway.pc.correlation.distance <- function(pcc, xv, n.cores = 10, target.ndf = NULL) {
     # all relevant gene names
     rotn <- unique(unlist(lapply(pcc[gsub("^#PC\\d+# ", "", rownames(xv))], function(d) rownames(d$xp$rotation))))
-    # prepare an orered (in terms of genes) and centered version of each component
+    # prepare an ordered (in terms of genes) and centered version of each component
     pl <- bplapply(rownames(xv), function(nam) {
         pnam <- gsub("^#PC\\d+# ", "", nam)
         pn <- as.integer(gsub("^#PC(\\d+)# .*", "\\1", nam))
@@ -5806,7 +5806,7 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
     return(invisible(xp))
 }
 
-# returns enriched categories for a given genelist as compared with a given universe
+# returns enriched categories for a given gene list as compared with a given universe
 # returns a list with over and under fields containing list of over and underrepresented terms
 calculate.go.enrichment <- function(genelist, universe, pvalue.cutoff = 1e-3, mingenes = 3, env = go.env, subset = NULL, list.genes = FALSE, over.only = FALSE) {
     genelist <- unique(genelist)
@@ -5894,7 +5894,7 @@ calculate.go.enrichment <- function(genelist, universe, pvalue.cutoff = 1e-3, mi
 ##' @field goenv Gene set list as an environment
 ##' @field renv Global environment
 ##' @field name Name of the application page; for display as the page title
-##' @field trim Trim quantity used for winsorization for visualization
+##' @field trim Trim quantity used for Winsorization for visualization
 ##' @field batch Any batch or other known confounders to be included in the visualization as a column color track
 ##'
 ViewPagodaApp <- setRefClass(
