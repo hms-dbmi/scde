@@ -58,7 +58,7 @@ Ift46     5.435 7.366  9.217 5.435 7.150 5.968</pre>
 
 ```
 require(devtools)
-devtools::install_github("hms-dbmi/scde")
+devtools::install_github('hms-dbmi/scde', build_vignettes = FALSE)
 ```
 
 # Tutorials
