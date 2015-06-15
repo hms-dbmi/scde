@@ -5,7 +5,7 @@ The `scde` package implements a set of statistical methods for analyzing single-
 The overall approach to the differential expression analysis is detailed in the following publication:  
 ["Bayesian approach to single-cell differential expression analysis" (Kharchenko PV, Silberstein L, Scadden DT, Nature Methods, doi:10.1038/nmeth.2967)](http://www.nature.com/nmeth/journal/v11/n7/abs/nmeth.2967.html)
 
-The overall approach to pathawys and gene set overdispersion analysis is detailed in the following publication:
+The overall approach to pathways and gene set overdispersion analysis is detailed in the following publication:
 "Characterizing transcriptional heterogeneity through pathway and gene set overdispersion analysis" (Fan J, Salathia N, Liu R, Kaeser G, Yung Y, Herman J, Kaper F, Fan JB, Zhang K, Chun J, and Kharchenko PV) COMING SOON!
 
 # Sample analyses and images
