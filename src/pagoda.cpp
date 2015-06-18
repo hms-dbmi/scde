@@ -18,14 +18,14 @@ SEXP winsorizeMatrix(SEXP Mat, SEXP Trim){
         double maxv=z(o(n-ntr-1));
         for(int j=0;j<ntr;j++) {
             z(o(j))=minv;
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
         for(int j=n-ntr;j<n;j++) {
             z(o(j))=maxv;
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
         m.row(i)=z;
-        R_CheckUserInterrupt();
+        //R_CheckUserInterrupt();
     }
     return wrap(m);
 }
@@ -57,9 +57,9 @@ SEXP matWCorr(SEXP Mat, SEXP Matw){
             double dn=dot(ic,jw);
             dn*=dot(jc,jw);
             c(j,i)=nm/sqrt(dn);
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
-        R_CheckUserInterrupt();
+        //R_CheckUserInterrupt();
     }
     return wrap(c);
 }

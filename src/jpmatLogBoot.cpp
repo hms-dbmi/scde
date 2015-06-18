@@ -28,7 +28,7 @@ SEXP jpmatLogBoot(SEXP Matl, SEXP Nboot, SEXP Seed){
                 ;
             arma::mat am(Rcpp::as<Rcpp::NumericMatrix>(matl[rj]).begin(),nrows,ncols,false,true);
             tjp +=am;
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
         arma::colvec m=max(tjp,1);
         tjp.each_col() -= m; // shift for stability
@@ -36,7 +36,7 @@ SEXP jpmatLogBoot(SEXP Matl, SEXP Nboot, SEXP Seed){
         arma::colvec s=sum(tjp,1);
         tjp.each_col() /= s;
         jp+=tjp;
-        R_CheckUserInterrupt();
+        //R_CheckUserInterrupt();
     }
     return wrap(jp);
 }
@@ -69,10 +69,10 @@ SEXP jpmatLogBatchBoot(SEXP Matll, SEXP Comp, SEXP Nboot, SEXP Seed){
                         ;
                     arma::mat am(Rcpp::as<Rcpp::NumericMatrix>(VECTOR_ELT( VECTOR_ELT(Matll,k) ,rj)).begin(),nrows,ncols,false,true);
                     tjp +=am;
-                    R_CheckUserInterrupt();
+                    //R_CheckUserInterrupt();
                 }
             }
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
         arma::colvec m=max(tjp,1);
         tjp.each_col() -= m; // shift for stability
@@ -80,7 +80,7 @@ SEXP jpmatLogBatchBoot(SEXP Matll, SEXP Comp, SEXP Nboot, SEXP Seed){
         arma::colvec s=sum(tjp,1);
         tjp.each_col() /= s;
         jp+=tjp;
-        R_CheckUserInterrupt();
+        //R_CheckUserInterrupt();
     }
     return wrap(jp);
 }
@@ -157,7 +157,7 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
             for(unsigned int k=0;k<thetas.n_elem;k++) {
                 if((!std::isfinite(thetas[k])) || (thetas[k]<MIN_THETA)) {  thetas[k]=MIN_THETA;}
                 if(thetas[k]>MAX_THETA) {  thetas[k]=MAX_THETA;}
-                R_CheckUserInterrupt();
+                //R_CheckUserInterrupt();
             }
         }
         //std::cout<<"cfp=["; std::copy(cfp.begin(),cfp.end(),std::ostream_iterator<double>(std::cout," ")); std::cout<<"]"<<std::endl<<std::flush;
@@ -172,7 +172,7 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
                     // choose maximum probability when hitting the grid with the maximum
                     if((k<(mu.n_elem-1) && x>muv && x<mu[k+1]) || (k==(mu.n_elem-1) && x>muv)) { muv=x; }
                     nbp[k]=Rf_dnbinom(x,thetas[k],thetas[k]/(thetas[k]+muv),true);
-                    R_CheckUserInterrupt();
+                    //R_CheckUserInterrupt();
                 }
             } else { // constant theta
                 double theta=models(i,CORRT_I);
@@ -181,7 +181,7 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
                     // choose maximum probability when hitting the grid with the maximum
                     if((k<(mu.n_elem-1) && x>muv && x<mu[k+1]) || (k==(mu.n_elem-1) && x>muv)) { muv=x; }
                     nbp[k]=Rf_dnbinom(x,theta,theta/(theta+muv),true);
-                    R_CheckUserInterrupt();
+                    //R_CheckUserInterrupt();
                 }
             }
             //std::cout<<"nbp1=["; copy(nbp.begin(),nbp.end(),std::ostream_iterator<double>(std::cout," ")); std::cout<<"]"<<std::endl<<std::flush;
@@ -229,9 +229,9 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
             cellucpost.each_row() /= s;
             for(int k=0;k<ngenes;k++) { // fill in kth gene posterior
                 jp.col(k)+=cellucpost.col(counti(k,j));
-                R_CheckUserInterrupt();
+                //R_CheckUserInterrupt();
             }
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
         arma::rowvec s=sum(jp,0); // pre-adjust so that jp is normalized
         jp.each_row() /= s;
@@ -257,9 +257,9 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
                         ;
                     for(int k=0;k<ngenes;k++) { // fill in kth gene posterior
                         tjp.col(k)+=(ucposteriors[rj]).col(counti(k,rj));
-                        R_CheckUserInterrupt();
+                        //R_CheckUserInterrupt();
                     }
-                    R_CheckUserInterrupt();
+                    //R_CheckUserInterrupt();
                 }
                 arma::rowvec m=max(tjp,0); // calculate max for each gene (column)
                 tjp.each_row() -= m; // shift up for stability prior to exponentiation
@@ -267,7 +267,7 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
                 arma::rowvec s=sum(tjp,0)*nboot; // pre-adjust for nboot so that jp is normalized
                 tjp.each_row() /= s;
                 jp+=tjp;
-                R_CheckUserInterrupt();
+                //R_CheckUserInterrupt();
             }
         }
     }
@@ -280,9 +280,9 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
         for(int i=0;i<ncells;i++) {
             for(int j=0;j<ngenes;j++) {
                 modes(j,i)=magnitudes[(ucmaxi[i])[counti(j,i)]];
-                R_CheckUserInterrupt();
+                //R_CheckUserInterrupt();
             }
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
         return Rcpp::List::create(Rcpp::Named("jp") = wrap(jp),
                                   Rcpp::Named("modes") = wrap(modes));
@@ -293,11 +293,11 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
             arma::mat ipost(magnitudes.n_elem,ngenes);
             for(int j=0;j<ngenes;j++) {
                 ipost.col(j)=(ucposteriors[i]).col(counti(j,i));
-                R_CheckUserInterrupt();
+                //R_CheckUserInterrupt();
             }
             ipost=ipost.t();
             pl[i]=ipost;
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
         return Rcpp::List::create(Rcpp::Named("jp") = wrap(jp),
                                   Rcpp::Named("post") = wrap(pl));
@@ -307,20 +307,20 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
         for(int i=0;i<ncells;i++) {
             for(int j=0;j<ngenes;j++) {
                 modes(j,i)=magnitudes[(ucmaxi[i])[counti(j,i)]];
-                R_CheckUserInterrupt();
+                //R_CheckUserInterrupt();
             }
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
         Rcpp::List pl(ncells);
         for(int i=0;i<ncells;i++) {
             arma::mat ipost(magnitudes.n_elem,ngenes);
             for(int j=0;j<ngenes;j++) {
                 ipost.col(j)=(ucposteriors[i]).col(counti(j,i));
-                R_CheckUserInterrupt();
+                //R_CheckUserInterrupt();
             }
             ipost=ipost.t();
             pl[i]=ipost;
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
         return Rcpp::List::create(Rcpp::Named("jp") = wrap(jp),
                                   Rcpp::Named("modes") = wrap(modes),
@@ -402,10 +402,10 @@ RcppExport SEXP logBootBatchPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP 
             for(unsigned int k=0;k<thetas.n_elem;k++) {
                 if((!std::isfinite(thetas[k])) || (thetas[k]<MIN_THETA)) {  thetas[k]=MIN_THETA;}
                 if(thetas[k]>MAX_THETA) {  thetas[k]=MAX_THETA;}
-                R_CheckUserInterrupt();
+                //R_CheckUserInterrupt();
             }
         }
-        R_CheckUserInterrupt();
+        //R_CheckUserInterrupt();
 
         for(int j=0;j<ncounts;j++) {
             // correlated prob
@@ -416,7 +416,7 @@ RcppExport SEXP logBootBatchPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP 
                     // choose maximum probability when hitting the grid with the maximum
                     if((k<(mu.n_elem-1) && x>muv && x<mu[k+1]) || (k==(mu.n_elem-1) && x>muv)) { muv=x; }
                     nbp[k]=Rf_dnbinom(x,thetas[k],thetas[k]/(thetas[k]+muv),true);
-                    R_CheckUserInterrupt();
+                    //R_CheckUserInterrupt();
                 }
             } else { // constant theta
                 double theta=models(i,CORRT_I);
@@ -446,10 +446,10 @@ RcppExport SEXP logBootBatchPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP 
             // set the lower bound to min/n.cells
             for(unsigned int k=0;k<nbp.n_elem;k++) {
                 if(nbp[k]<minlogprob) nbp[k]=minlogprob;
-                R_CheckUserInterrupt();
+                //R_CheckUserInterrupt();
             }
             pm.col(j)=nbp;
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
         ucposteriors.push_back(pm);
         if(returnpost==1) { ucmaxi.push_back(maxi);}
@@ -481,12 +481,12 @@ RcppExport SEXP logBootBatchPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP 
                         ;
                     for(int l=0;l<ngenes;l++) { // fill in l-th gene posterior
                         tjp.col(l)+=(ucposteriors[bi[rj]]).col(counti(l,bi[rj]));
-                        R_CheckUserInterrupt();
+                        //R_CheckUserInterrupt();
                     }
-                    R_CheckUserInterrupt();
+                    //R_CheckUserInterrupt();
                 }
             }
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
         arma::rowvec m=max(tjp,0);
         tjp.each_row() -= m; // shift up for stability prior to exponentiation
@@ -504,9 +504,9 @@ RcppExport SEXP logBootBatchPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP 
         for(int i=0;i<ncells;i++) {
             for(int j=0;j<ngenes;j++) {
                 modes(j,i)=magnitudes[(ucmaxi[i])[counti(j,i)]];
-                R_CheckUserInterrupt();
+                //R_CheckUserInterrupt();
             }
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
         return Rcpp::List::create(Rcpp::Named("jp") = wrap(jp),
                                   Rcpp::Named("modes") = wrap(modes));
@@ -517,11 +517,11 @@ RcppExport SEXP logBootBatchPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP 
             arma::mat ipost(magnitudes.n_elem,ngenes);
             for(int j=0;j<ngenes;j++) {
                 ipost.col(j)=(ucposteriors[i]).col(counti(j,i));
-                R_CheckUserInterrupt();
+                //R_CheckUserInterrupt();
             }
             ipost=ipost.t();
             pl[i]=ipost;
-            R_CheckUserInterrupt();
+            //R_CheckUserInterrupt();
         }
         return Rcpp::List::create(Rcpp::Named("jp") = wrap(jp),
                                   Rcpp::Named("post") = wrap(pl));
