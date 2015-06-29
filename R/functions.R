@@ -8,7 +8,7 @@
 ##' See vignette("diffexp") for a brief tutorial on differential expression analysis.
 ##' See vignette("pagoda") for a brief tutorial on pathway and gene set overdispersion analysis to identify and characterize cell subpopulations.
 ##' More extensive tutorials are available at \url{http://pklab.med.harvard.edu/scde/index.html}.
-##'
+##'  (test)
 ##' @name scde
 ##' @docType package
 ##' @author Peter Kharchenko \email{Peter_Kharchenko@@hms.harvard.edu}
