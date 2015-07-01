@@ -92,7 +92,7 @@ NULL
 ##' @param max.pairs maximum number of cross-fit comparisons that should be performed per group (default: 5000)
 ##' @param min.pairs.per.cell minimum number of pairs that each cell should be cross-compared with
 ##' @param verbose 1 for increased output
-##' @param linear.fit Boolean of whether to use a linear fit in the regression (default: FALSE)
+##' @param linear.fit Boolean of whether to use a linear fit in the regression (default: TRUE)
 ##' @param local.theta.fit Boolean of whether to fit the overdispersion parameter theta, ie. the negative binomial size parameter, based on local regression (default: TRUE)
 ##' @param theta.fit.range Range of valid values for the overdispersion parameter theta, ie. the negative binomial size parameter (default: c(1e-2, 1e2))
 ##'
@@ -112,7 +112,7 @@ NULL
 ##' }
 ##'
 ##' @export
-scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshold.segmentation = TRUE, min.count.threshold = 4, zero.count.threshold = min.count.threshold, zero.lambda = 0.1, save.crossfit.plots = FALSE, save.model.plots = TRUE, n.cores = 12, min.size.entries = 2e3, max.pairs = 5000, min.pairs.per.cell = 10, verbose = 0, linear.fit = FALSE, local.theta.fit = TRUE, theta.fit.range = c(1e-2, 1e2)) {
+scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshold.segmentation = TRUE, min.count.threshold = 4, zero.count.threshold = min.count.threshold, zero.lambda = 0.1, save.crossfit.plots = FALSE, save.model.plots = TRUE, n.cores = 12, min.size.entries = 2e3, max.pairs = 5000, min.pairs.per.cell = 10, verbose = 0, linear.fit = TRUE, local.theta.fit = TRUE, theta.fit.range = c(1e-2, 1e2)) {
     # default same group
     if(is.null(groups)) {
         groups <- as.factor(rep("cell", ncol(counts)))
@@ -1034,7 +1034,7 @@ winsorize.matrix <- function(mat, trim) {
 ##' among the measured cells. The models for each cell are based on average expression estimates
 ##' obtained from K closest cells within a given group (if groups = NULL, then within the entire
 ##' set of measured cells). The method implements fitting of both the original log-fit models
-##' (when zero.intercept = FALSE), or newer linear-fit models (zero.intercept = TRUE, default) with locally
+##' (when linear.fit = FALSE), or newer linear-fit models (linear.fit = TRUE, default) with locally
 ##' fit overdispersion coefficient (local.theta.fit = TRUE, default).
 ##'
 ##' @param counts count matrix (integer matrix, rows- genes, columns- cells)
@@ -1050,7 +1050,7 @@ winsorize.matrix <- function(mat, trim) {
 ##' @param min.fpm optional parameter to restrict model fitting to genes with group-average expression magnitude above a given value
 ##' @param verbose level of verbosity
 ##' @param fpm.estimate.trim trim fraction to be used in estimating group-average gene expression magnitude for model fitting (0.5 would be median, 0 would turn off trimming)
-##' @param zero.intercept whether newer linear model fit with zero intercept should be used (T), or the log-fit model published originally (F)
+##' @param linear.fit whether newer linear model fit with zero intercept should be used (T), or the log-fit model published originally (F)
 ##' @param local.theta.fit whether local theta fitting should be used (only available for the linear fit models)
 ##' @param theta.fit.range allowed range of the theta values
 ##' @param alpha.weight.power 1/theta weight power used in fitting theta dependency on the expression magnitude
@@ -1068,7 +1068,7 @@ winsorize.matrix <- function(mat, trim) {
 ##' }
 ##'
 ##' @export
-knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), min.nonfailed = 5, min.count.threshold = 1, save.model.plots = TRUE, max.model.plots = 50, n.cores = parallel::detectCores(), min.size.entries = 2e3, min.fpm = 0, cor.method = "pearson", verbose = 0, fpm.estimate.trim = 0.25, zero.intercept = TRUE, local.theta.fit = zero.intercept, theta.fit.range = c(1e-2, 1e2), alpha.weight.power = 1/2) {
+knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), min.nonfailed = 5, min.count.threshold = 1, save.model.plots = TRUE, max.model.plots = 50, n.cores = parallel::detectCores(), min.size.entries = 2e3, min.fpm = 0, cor.method = "pearson", verbose = 0, fpm.estimate.trim = 0.25, linear.fit = TRUE, local.theta.fit = linear.fit, theta.fit.range = c(1e-2, 1e2), alpha.weight.power = 1/2) {
     threshold.prior = 1-1e-6
 
     # TODO:
@@ -1140,7 +1140,7 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
             fp <- ifelse(df$count <=  min.count.threshold & df$fpm  >=  median(df$fpm[df$count <=  min.count.threshold]), threshold.prior, 1-threshold.prior)
             cp <- cbind(fp, 1-fp)
 
-            if(zero.intercept) {
+            if(linear.fit) {
                 # use a linear fit (nb2gth)
                 m1 <- fit.nb2gth.mixture.model(df, prior = cp, nrep = 1, verbose = verbose, zero.count.threshold = min.count.threshold, full.theta.range = theta.fit.range, theta.fit.range = theta.fit.range, use.constant.theta.fit = !local.theta.fit, alpha.weight.power = alpha.weight.power)
 
@@ -3104,7 +3104,7 @@ estimate.signal.prior <- function(fpkm, fail, length.out = 400, show.plot = FALS
 # cfm - cross-fit models (return of calculate.crossfit.models())
 # min.nonfailed - minimal number of non-failed observations required for a gene to be used in the final model fitting
 #  A minimum of either the specified value or number of experiments -1 will be used.
-calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose = 0, n.cores = 12, min.nonfailed = 2, min.size.entries = 2e3, zero.count.threshold = 10, save.plots = TRUE, linear.fit = FALSE, return.compressed.models = FALSE,  local.theta.fit = FALSE, theta.fit.range = c(1e-2, 1e2), ...) {
+calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose = 0, n.cores = 12, min.nonfailed = 2, min.size.entries = 2e3, zero.count.threshold = 10, save.plots = TRUE, linear.fit = TRUE, return.compressed.models = FALSE,  local.theta.fit = FALSE, theta.fit.range = c(1e-2, 1e2), ...) {
     names(groups) <- colnames(counts)
     # determine library size discarding non-zero entries
     ls <- estimate.library.sizes(counts, cfm, groups, min.size.entries, verbose = verbose, return.details = TRUE)
