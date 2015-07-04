@@ -20,170 +20,254 @@
 
     <section class="main-content">
       <h1>
-<a id="single-cell-differential-expression-analysis" class="anchor" href="#single-cell-differential-expression-analysis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Single-Cell Differential Expression Analysis</h1>
+<a id="pathway-and-gene-set-overdispersion-analysis" class="anchor" href="#pathway-and-gene-set-overdispersion-analysis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Pathway and Gene Set Overdispersion Analysis</h1>
 
-<p>In this vignette, we show you how perform single cell differential expression analysis using single cell RNA-seq data. </p>
+<p>In this vignette, we show you how to use <code>pagoda</code> routines to characterize aspects of transcriptional heterogeneity in populations of single cells. </p>
 
-<p>The <code>scde</code> package implements routines for fitting individual error models for single-cell RNA-seq measurements. Breifly, the read counts observed for each gene are modeled using a mixture of a negative binomial (NB) distribution (for the amplified/detected transcripts) and low-level Poisson distribution (for the unobserved or background-level signal of genes that failed to amplify or were not detected for other reasons). These models can then be used to identify robustly differentially expressed genes between groups of cells. </p>
+<p>The <code>pagoda</code> routines implemented in the <code>scde</code> resolves multiple, potentially overlapping aspects of transcriptional heterogeneity by identifying known pathways or novel gene sets that show significant excess of coordinated variability among the measured cells. Briefly, cell-specific error models derived from <code>scde</code> are used to estimate residual gene expression variance, and identify pathways and gene sets that exhibit statistically significant excess of coordinated variability (overdispersion). <code>pagoda</code> can be used to effectively recover known subpopulations and discover putative new subpopulations and their corresponding functional characteristics in single-cell samples.</p>
 
 <h2>
 <a id="preparing-data" class="anchor" href="#preparing-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Preparing data</h2>
 
-<p>The analysis starts with a matrix of read counts. Depending on the protocol, these may be raw numbers of reads mapped to each gene, or count values adjusted for potential biases (sequence dependency, splice variant coverage, etc. - the values must be integers). The <code>scde</code> package includes a subset of the ES/MEF cell dataset published by <a href="http://www.ncbi.nlm.nih.gov/pubmed/?term=24363023"><em>Islam et al.</em></a>. The subset includes first 20 ES and MEF cells. Here we load the cells and define a factor separating ES and MEF cell types:</p>
+<p>The analysis starts with a matrix of read counts. Here, we use the read count table and cell group annotations from <a href="www.ncbi.nlm.nih.gov/pubmed/25086649"><em>Pollen et al.</em></a> can be loaded using the <code>data("pollen")</code> call. Some additional filters are also applied.</p>
 
-<div class="highlight highlight-r"><pre><span class="pl-c"># load example dataset</span>
-data(<span class="pl-smi">es.mef.small</span>)
-<span class="pl-c"># factor determining cell types</span>
-<span class="pl-smi">sg</span> <span class="pl-k">&lt;-</span> <span class="pl-k">factor</span>(gsub(<span class="pl-s"><span class="pl-pds">"</span>(MEF|ESC).*<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\\</span>1<span class="pl-pds">"</span></span>, colnames(<span class="pl-smi">es.mef.small</span>)), <span class="pl-v">levels</span> <span class="pl-k">=</span> c(<span class="pl-s"><span class="pl-pds">"</span>ESC<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>MEF<span class="pl-pds">"</span></span>))
-<span class="pl-c"># the group factor should be named accordingly</span>
-names(<span class="pl-smi">sg</span>) <span class="pl-k">&lt;-</span> colnames(<span class="pl-smi">es.mef.small</span>)  
-table(<span class="pl-smi">sg</span>)</pre></div>
+<div class="highlight highlight-r"><pre>  <span class="pl-c"># read in the expression matrix</span>
+  data(<span class="pl-smi">pollen</span>)
+  <span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">pollen</span>
+  <span class="pl-c"># filter data</span>
+  <span class="pl-c"># filter out low-gene cells</span>
+  <span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">cd</span>[, colSums(<span class="pl-smi">cd</span><span class="pl-k">&gt;</span><span class="pl-c1">0</span>)<span class="pl-k">&gt;</span><span class="pl-c1">1.8e3</span>]
+  <span class="pl-c"># remove genes that don't have many reads</span>
+  <span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">cd</span>[rowSums(<span class="pl-smi">cd</span>)<span class="pl-k">&gt;</span><span class="pl-c1">10</span>, ]
+  <span class="pl-c"># remove genes that are not seen in a sufficient number of cells</span>
+  <span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">cd</span>[rowSums(<span class="pl-smi">cd</span><span class="pl-k">&gt;</span><span class="pl-c1">0</span>)<span class="pl-k">&gt;</span><span class="pl-c1">5</span>, ]
+  <span class="pl-c"># check the final dimensions of the read count matrix</span>
+  dim(<span class="pl-smi">cd</span>)</pre></div>
 
-<pre><code>## sg
-## ESC MEF 
-##  20  20
+<pre><code>## [1] 11310    64
 </code></pre>
 
-<div class="highlight highlight-r"><pre><span class="pl-c"># clean up the dataset</span>
-<span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">es.mef.small</span>
-<span class="pl-c"># omit genes that are never detected</span>
-<span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">cd</span>[rowSums(<span class="pl-smi">cd</span>)<span class="pl-k">&gt;</span><span class="pl-c1">0</span>, ]
-<span class="pl-c"># omit cells with very poor coverage</span>
-<span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">cd</span>[, colSums(<span class="pl-smi">cd</span>)<span class="pl-k">&gt;</span><span class="pl-c1">1e4</span>]</pre></div>
+<p>Next, we'll translate group and sample source data from <a href="www.ncbi.nlm.nih.gov/pubmed/25086649"><em>Pollen et al.</em></a> into color codes. These will be used later to compare <a href="www.ncbi.nlm.nih.gov/pubmed/25086649"><em>Pollen et al.</em></a>'s derived annotation with subpopulations identified by <code>pagoda</code>:</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># sample sources</span>
+<span class="pl-smi">x</span> <span class="pl-k">&lt;-</span> gsub(<span class="pl-s"><span class="pl-pds">"</span>^Hi_(.*)_.*<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\\</span>1<span class="pl-pds">"</span></span>, colnames(<span class="pl-smi">cd</span>))
+<span class="pl-smi">l2cols</span> <span class="pl-k">&lt;-</span> c(<span class="pl-s"><span class="pl-pds">"</span>coral4<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>olivedrab3<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>skyblue2<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>slateblue3<span class="pl-pds">"</span></span>)[as.integer(<span class="pl-k">factor</span>(<span class="pl-smi">x</span>, <span class="pl-v">levels</span> <span class="pl-k">=</span> c(<span class="pl-s"><span class="pl-pds">"</span>NPC<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>GW16<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>GW21<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>GW21+3<span class="pl-pds">"</span></span>)))]</pre></div>
 
 <h2>
 <a id="fitting-error-models" class="anchor" href="#fitting-error-models" aria-hidden="true"><span class="octicon octicon-link"></span></a>Fitting error models</h2>
 
-<p>As a next step we fit the error models on which all subsequent calculations will rely. The fitting process relies on a subset of robust genes that are detected in multiple cross-cell comparisons. Here we supply the <code>groups = sg</code> argument, so that the error models for the two cell types are fit independently (using two different sets of "robust" genes). If the <code>groups</code> argument is omitted, the models will be fit using a common set. </p>
+<p>Next, we'll construct error models for individual cells. Here, we use k-nearest neighbour model fitting procedure implemented by <code>knn.error.models()</code> method. This is a relatively noisy dataset (non-UMI), so we raise the <code>min.count.threshold</code> to 2 (minimum number of reads for the gene to be initially classified as a non-failed measurement), requiring at least 5 non-failed measurements per gene. We're providing a rough guess to the complexity of the population, by fitting the error models based on 1/4 of most similar cells (i.e. gussing there might be ~4 subpopulations). </p>
 
 <p>Note this step takes a considerable amount of time unless multiple cores are used. </p>
 
 <div class="highlight highlight-r"><pre><span class="pl-c"># EVALUATION NOT NEEDED</span>
-<span class="pl-c"># calculate models</span>
-<span class="pl-smi">o.ifm</span> <span class="pl-k">&lt;-</span> scde.error.models(<span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">groups</span> <span class="pl-k">=</span> <span class="pl-smi">sg</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">threshold.segmentation</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">save.crossfit.plots</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>, <span class="pl-v">save.model.plots</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>, <span class="pl-v">verbose</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>)
-<span class="pl-e">devtools</span><span class="pl-k">::</span>use_data(<span class="pl-smi">o.ifm</span>)  <span class="pl-c"># save for later since this step takes a long time</span></pre></div>
+<span class="pl-smi">knn</span> <span class="pl-k">&lt;-</span> knn.error.models(<span class="pl-smi">cd</span>, <span class="pl-v">k</span> <span class="pl-k">=</span> ncol(<span class="pl-smi">cd</span>)<span class="pl-k">/</span><span class="pl-c1">4</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">min.count.threshold</span> <span class="pl-k">=</span> <span class="pl-c1">2</span>, <span class="pl-v">min.nonfailed</span> <span class="pl-k">=</span> <span class="pl-c1">5</span>, <span class="pl-v">max.model.plots</span> <span class="pl-k">=</span> <span class="pl-c1">10</span>)
+<span class="pl-e">devtools</span><span class="pl-k">::</span>use_data(<span class="pl-smi">knn</span>)  <span class="pl-c"># save for later since this step takes a long time</span></pre></div>
 
 <p>For the purposes of this vignette, the model has been precomputed and can simply be loaded.</p>
 
-<div class="highlight highlight-r"><pre>data(<span class="pl-smi">o.ifm</span>)</pre></div>
+<div class="highlight highlight-r"><pre>data(<span class="pl-smi">knn</span>)</pre></div>
 
-<p>The <code>o.ifm</code> is a dataframe with error model coefficients for each cell (rows):</p>
+<p>The fitting process above wrote out <code>cell.models.pdf</code> file in the current directory showing model fits for the first 10 cells (see <code>max.model.plots</code> argument). Here's an example of such plot:</p>
 
-<div class="highlight highlight-r"><pre>head(<span class="pl-smi">o.ifm</span>)</pre></div>
+<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/pagoda-cell.model.fits-0.png" alt="cell 3 model"></p>
 
-<p>Here, <code>corr.a</code> and <code>corr.b</code> are slope and intersept of the correlated component fit, <code>conc.*</code> refer to the concomitant fit, <code>corr.theta</code> is the NB over-dispersion, and <code>fail.r</code> is the background Poisson rate (fixed).</p>
-
-<p>Particularly poor cells may result in abnormal fits, most commonly showing negtive <code>corr.a</code>, and should be removed:</p>
-
-<div class="highlight highlight-r"><pre><span class="pl-c"># filter out cells that don't show positive correlation with</span>
-<span class="pl-c"># the expected expression magnitudes (very poor fits)</span>
-<span class="pl-smi">valid.cells</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">o.ifm</span><span class="pl-k">$</span><span class="pl-smi">corr.a</span> <span class="pl-k">&gt;</span> <span class="pl-c1">0</span>
-table(<span class="pl-smi">valid.cells</span>)</pre></div>
-
-<pre><code>## valid.cells
-## TRUE 
-##   40
-</code></pre>
-
-<div class="highlight highlight-r"><pre><span class="pl-smi">o.ifm</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">o.ifm</span>[<span class="pl-smi">valid.cells</span>, ]</pre></div>
-
-<p>Here, all the fits were valid.</p>
-
-<p>Finally, we need to define an expression magnitude prior for the genes. Its main function, however, is to define a grid of expression magnitude values on which the numerical calculations will be carried out:</p>
-
-<div class="highlight highlight-r"><pre><span class="pl-c"># estimate gene expression prior</span>
-<span class="pl-smi">o.prior</span> <span class="pl-k">&lt;-</span> scde.expression.prior(<span class="pl-v">models</span> <span class="pl-k">=</span> <span class="pl-smi">o.ifm</span>, <span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">length.out</span> <span class="pl-k">=</span> <span class="pl-c1">400</span>, <span class="pl-v">show.plot</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>)</pre></div>
-
-<p>Here we used a grid of 400 points, and let the maxmimum expression magnitude be determined by the default 0.999 quantile (use <code>max.value</code> parameter to specify the maximum expression magntiude explicitly - on log10 scale).</p>
+<p>The two scatter plots on the left show observed (in a given cell) vs. expected (from k similar cells) expression magnitudes for each gene that is being used for model fitting. The second (from the left) scatter plot shows genes belonging to the drop-out component in red. The black dashed lines show 95% confidence band for the amplified genes (the grey dashed lines show confidence band for an alternative constant-theta model). The third plot shows drop-out probability as a function of magnitude, and the fourth plot shows negative binomial theta local regression fit as a function of magnitude (for the amplified component). </p>
 
 <h2>
-<a id="testing-for-differential-expression" class="anchor" href="#testing-for-differential-expression" aria-hidden="true"><span class="octicon octicon-link"></span></a>Testing for differential expression</h2>
+<a id="normalizing-variance" class="anchor" href="#normalizing-variance" aria-hidden="true"><span class="octicon octicon-link"></span></a>Normalizing variance</h2>
 
-<p>To test for differential expression, we first define a factor that specifies which two groups of cells are to be compared. The factor elements correspond to the rows of the model matrix (<code>o.ifm</code>), and can contain <code>NA</code> values (i.e. cells that won't be included in either group). Here we key off the the ES and MEF names.</p>
+<p>In order to accurately quantify excess variance or overdispersion, we must normalize out expected levels of technical and intrinsic biological noise. Briefly, variance of the NB/Poisson mixture processes derived from the error modeling step are modeled as a chi-squared distribution using adjusted degrees of freedom and observation weights based on the drop-out probability of a given gene. Here, we normalize variance, trimming 3 most extreme cells and limiting maximum adjusted variance to 5.</p>
 
-<div class="highlight highlight-r"><pre><span class="pl-c"># define two groups of cells</span>
-<span class="pl-smi">groups</span> <span class="pl-k">&lt;-</span> <span class="pl-k">factor</span>(gsub(<span class="pl-s"><span class="pl-pds">"</span>(MEF|ESC).*<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\\</span>1<span class="pl-pds">"</span></span>, rownames(<span class="pl-smi">o.ifm</span>)), <span class="pl-v">levels</span>  <span class="pl-k">=</span>  c(<span class="pl-s"><span class="pl-pds">"</span>ESC<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>MEF<span class="pl-pds">"</span></span>))
-names(<span class="pl-smi">groups</span>) <span class="pl-k">&lt;-</span> row.names(<span class="pl-smi">o.ifm</span>)
-<span class="pl-c"># run differential expression tests on all genes.</span>
-<span class="pl-smi">ediff</span> <span class="pl-k">&lt;-</span> scde.expression.difference(<span class="pl-smi">o.ifm</span>, <span class="pl-smi">cd</span>, <span class="pl-smi">o.prior</span>, <span class="pl-v">groups</span>  <span class="pl-k">=</span>  <span class="pl-smi">groups</span>, <span class="pl-v">n.randomizations</span>  <span class="pl-k">=</span>  <span class="pl-c1">100</span>, <span class="pl-v">n.cores</span>  <span class="pl-k">=</span>  <span class="pl-c1">1</span>, <span class="pl-v">verbose</span>  <span class="pl-k">=</span>  <span class="pl-c1">1</span>)</pre></div>
+<div class="highlight highlight-r"><pre><span class="pl-smi">varinfo</span> <span class="pl-k">&lt;-</span> pagoda.varnorm(<span class="pl-smi">knn</span>, <span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">trim</span> <span class="pl-k">=</span> <span class="pl-c1">3</span><span class="pl-k">/</span>ncol(<span class="pl-smi">cd</span>), <span class="pl-v">max.adj.var</span> <span class="pl-k">=</span> <span class="pl-c1">5</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">plot</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)</pre></div>
 
-<pre><code>## comparing groups:
-## 
-## ESC MEF 
-##  20  20 
-## calculating difference posterior
-## summarizing differences
+<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/pagoda-varnorm-1.png" alt="plot of chunk varnorm"> </p>
+
+<p>The plot on the left shows coefficient of variance squared (on log10 scale) as a function of expression magntidue (log10 FPM). The red line shows local regression model for the genome-wide average dependency. The plot on the right shows adjusted variance (derived based on chi-squared probability of observed/genomewide expected ratio for each gene, with degrees of freedom adjusted for each gene). The adjusted variance of 1 means that a given gene exchibits as much variance as expected for a gene of such population average expression magnitude. Genes with high adjusted variance are overdispersed within the measured population and most likely show subpopulation-specific expression:</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># list top overdispersed genes</span>
+sort(<span class="pl-smi">varinfo</span><span class="pl-k">$</span><span class="pl-smi">arv</span>, <span class="pl-v">decreasing</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)[<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-c1">10</span>]</pre></div>
+
+<pre><code>##      DCX     EGR1      FOS  IGFBPL1   MALAT1    MEF2C    STMN2    TOP2A 
+## 5.000000 5.000000 5.000000 5.000000 5.000000 5.000000 5.000000 5.000000 
+##   BCL11A     SOX4 
+## 4.755811 4.522795
 </code></pre>
-
-<div class="highlight highlight-r"><pre><span class="pl-c"># top upregulated genes (tail would show top downregulated ones)</span>
-head(<span class="pl-smi">ediff</span>[order(<span class="pl-smi">ediff</span><span class="pl-k">$</span><span class="pl-smi">Z</span>, <span class="pl-v">decreasing</span>  <span class="pl-k">=</span>  <span class="pl-c1">TRUE</span>), ])</pre></div>
-
-<pre><code>##                     lb      mle        ub       ce        Z       cZ
-## Dppa5a        8.075160 9.965929 11.541570 8.075160 7.160813 5.968921
-## Pou5f1        5.357179 7.208557  9.178109 5.357179 7.160333 5.968921
-## Gm13242       5.672307 7.681250  9.768974 5.672307 7.159987 5.968921
-## Tdh           5.829872 8.075160 10.281057 5.829872 7.159599 5.968921
-## Ift46         5.435961 7.366121  9.217500 5.435961 7.150271 5.968921
-## 4930509G22Rik 5.435961 7.484295  9.808365 5.435961 7.115804 5.957784
-</code></pre>
-
-<div class="highlight highlight-r"><pre><span class="pl-c"># write out a table with all the results, showing most significantly different genes (in both directions) on top</span>
-write.table(<span class="pl-smi">ediff</span>[order(abs(<span class="pl-smi">ediff</span><span class="pl-k">$</span><span class="pl-smi">Z</span>), <span class="pl-v">decreasing</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>), ], <span class="pl-v">file</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>results.txt<span class="pl-pds">"</span></span>, <span class="pl-v">row.names</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">col.names</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">sep</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\t</span><span class="pl-pds">"</span></span>, <span class="pl-v">quote</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>)</pre></div>
-
-<p>Alternatively we can run the differential expression on a single gene, and visualize the results:</p>
-
-<div class="highlight highlight-r"><pre>scde.test.gene.expression.difference(<span class="pl-s"><span class="pl-pds">"</span>Tdh<span class="pl-pds">"</span></span>, <span class="pl-v">models</span> <span class="pl-k">=</span> <span class="pl-smi">o.ifm</span>, <span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">prior</span> <span class="pl-k">=</span> <span class="pl-smi">o.prior</span>)</pre></div>
-
-<pre><code>##           lb      mle       ub       ce        Z       cZ
-## Tdh 5.711698 8.035769 10.32045 5.711698 7.151497 7.151497
-</code></pre>
-
-<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/scde-diffexp3-1.png" alt="plot of chunk diffexp3"> </p>
-
-<p>The top and the bottom plots show expression posteriors derived from individual cells (colored lines) and joint posteriors (black lines). The middle plot shows posterior of the expression fold difference between the two cell groups, highlighting the 95% credible interval by the red shading.</p>
 
 <h2>
-<a id="correcting-for-batch-effects" class="anchor" href="#correcting-for-batch-effects" aria-hidden="true"><span class="octicon octicon-link"></span></a>Correcting for batch effects</h2>
+<a id="controling-for-sequencing-depth" class="anchor" href="#controling-for-sequencing-depth" aria-hidden="true"><span class="octicon octicon-link"></span></a>Controling for sequencing depth</h2>
 
-<p>When the data combines cells that were measured in different batches, it is sometimes necessary to explicitly account for the expression differences that could be explained by the batch composition of the cell groups being compared. The example below makes up a random batch composition for the ES/MEF cells, and re-test the expression difference.</p>
+<p>Even with all the corrections, sequencing depth or gene coverage is typically still a major aspects of variability. In most studies, we would want to control for that as a technical artifact (exceptions are cell mixtures where subtypes significantly differ in the amount of total mRNA). Below we will control for the gene coverage (estimated as a number of genes with non-zero magnitude per cell) and normalize out that aspect of cell heterogeneity: </p>
 
-<div class="highlight highlight-r"><pre><span class="pl-smi">batch</span> <span class="pl-k">&lt;-</span> as.factor(ifelse(rbinom(nrow(<span class="pl-smi">o.ifm</span>), <span class="pl-c1">1</span>, <span class="pl-c1">0.5</span>) <span class="pl-k">==</span> <span class="pl-c1">1</span>, <span class="pl-s"><span class="pl-pds">"</span>batch1<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>batch2<span class="pl-pds">"</span></span>))
-<span class="pl-c"># check the interaction between batches and cell types (shouldn't be any)</span>
-table(<span class="pl-smi">groups</span>, <span class="pl-smi">batch</span>)</pre></div>
+<div class="highlight highlight-r"><pre><span class="pl-smi">varinfo</span> <span class="pl-k">&lt;-</span> pagoda.subtract.aspect(<span class="pl-smi">varinfo</span>, colSums(<span class="pl-smi">cd</span>[, rownames(<span class="pl-smi">knn</span>)]<span class="pl-k">&gt;</span><span class="pl-c1">0</span>))</pre></div>
 
-<pre><code>##       batch
-## groups batch1 batch2
-##    ESC     11      9
-##    MEF      8     12
+<h2>
+<a id="evaluate-overdispersion-of-pre-defined-gene-sets" class="anchor" href="#evaluate-overdispersion-of-pre-defined-gene-sets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Evaluate overdispersion of pre-defined gene sets</h2>
+
+<p>In order to detect significant aspects of heterogeneity across the population of single cells, 'pagoda' identifies pathways and gene sets that exhibit statistically significant excess of coordinated variability. Specifically, for each gene set, we tested whether the amount of variance explained by the first principal component significantly exceed the background expectation. We can test both pre-defined gene sets as well as 'de novo' gene sets whose expression profiles are well-correlated within the given dataset. </p>
+
+<p>For pre-defined gene sets, we'll use GO annotations. </p>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># EVALUATION NOT NEEDED. </span>
+library(<span class="pl-smi">org.Hs.eg.db</span>)
+<span class="pl-c"># translate gene names to ids</span>
+<span class="pl-smi">ids</span> <span class="pl-k">&lt;-</span> unlist(lapply(mget(rownames(<span class="pl-smi">cd</span>), <span class="pl-smi">org.Hs.egALIAS2EG</span>, <span class="pl-v">ifnotfound</span> <span class="pl-k">=</span> <span class="pl-c1">NA</span>), <span class="pl-k">function</span>(<span class="pl-smi">x</span>) <span class="pl-smi">x</span>[<span class="pl-c1">1</span>]))
+<span class="pl-c"># reverse map</span>
+<span class="pl-smi">rids</span> <span class="pl-k">&lt;-</span> names(<span class="pl-smi">ids</span>)
+names(<span class="pl-smi">rids</span>) <span class="pl-k">&lt;-</span> <span class="pl-smi">ids</span>
+<span class="pl-c"># list all the ids per GO category</span>
+<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> eapply(<span class="pl-smi">org.Hs.egGO2ALLEGS</span>, <span class="pl-k">function</span>(<span class="pl-smi">x</span>) as.character(na.omit(<span class="pl-smi">rids</span>[<span class="pl-smi">x</span>])))
+ <span class="pl-c"># omit categories with too few genes</span>
+<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">go.env</span>[unlist(lapply(<span class="pl-smi">go.env</span>, <span class="pl-smi">length</span>))<span class="pl-k">&gt;</span><span class="pl-c1">5</span>]
+
+<span class="pl-c"># append descriptions to the GO names</span>
+library(<span class="pl-smi">GO.db</span>)
+<span class="pl-smi">desc</span> <span class="pl-k">&lt;-</span> unlist(lapply(mget(names(<span class="pl-smi">go.env</span>), <span class="pl-smi">GOTERM</span>, <span class="pl-v">ifnotfound</span> <span class="pl-k">=</span> <span class="pl-c1">NA</span>), <span class="pl-k">function</span>(<span class="pl-smi">x</span>) <span class="pl-k">if</span>(is.logical(<span class="pl-smi">x</span>)) { <span class="pl-k">return</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>) } <span class="pl-k">else</span> { slot(<span class="pl-smi">x</span>, <span class="pl-s"><span class="pl-pds">"</span>Term<span class="pl-pds">"</span></span>)}))
+names(<span class="pl-smi">go.env</span>) <span class="pl-k">&lt;-</span> paste(names(<span class="pl-smi">go.env</span>), <span class="pl-smi">desc</span>)  <span class="pl-c"># append description to the names</span>
+
+<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> list2env(<span class="pl-smi">go.env</span>)  <span class="pl-c"># convert to an environment</span>
+
+<span class="pl-e">devtools</span><span class="pl-k">::</span>use_data(<span class="pl-smi">go.env</span>)  <span class="pl-c"># save for later</span></pre></div>
+
+<p>An environment mapping GO terms to the set of genes contained in it has been pre-computed.</p>
+
+<div class="highlight highlight-r"><pre>data(<span class="pl-smi">go.env</span>)</pre></div>
+
+<p>Now, we can calculate weighted first prinicpal component magnitudes for each GO gene set in the provided environment.</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-smi">pwpca</span> <span class="pl-k">&lt;-</span> pagoda.pathway.wPCA(<span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-v">n.components</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">n.internal.shuffles</span> <span class="pl-k">=</span> <span class="pl-c1">0</span>)</pre></div>
+
+<p>We can now evaluate the statistical significance of the observed overdispersion for each GO gene set.</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-smi">df</span> <span class="pl-k">&lt;-</span> pagoda.top.aspects(<span class="pl-smi">pwpca</span>, <span class="pl-k">return</span><span class="pl-v">.table</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">plot</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">z.score</span> <span class="pl-k">=</span> <span class="pl-c1">1.96</span>)</pre></div>
+
+<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/pagoda-topPathways-1.png" alt="plot of chunk topPathways"> </p>
+
+<p>Each point on the plot shows the PC1 variance (lambda1) magtnidue (normalized by set size) as a function of set size. The red lines show expected (solid) and 95% upper bound (dashed) magnitudes based on the Tracey-Widom model.</p>
+
+<div class="highlight highlight-r"><pre>head(<span class="pl-smi">df</span>)</pre></div>
+
+<pre><code>##                                                                          name
+## 421                                        GO:0003170 heart valve development
+## 422                                      GO:0003179 heart valve morphogenesis
+## 426                                GO:0003208 cardiac ventricle morphogenesis
+## 123  GO:0000979 RNA polymerase II core promoter sequence-specific DNA binding
+## 4408                          GO:0060563 neuroepithelial cell differentiation
+## 4329      GO:0060045 positive regulation of cardiac muscle cell proliferation
+##      npc  n    score         z     adj.z sh.z adj.sh.z
+## 421    1 13 3.049964 10.125464  9.786492   NA       NA
+## 422    1 13 3.049964 10.125464  9.786492   NA       NA
+## 426    1 25 2.978694 11.961732 11.627068   NA       NA
+## 123    1 22 2.803050 10.666884 10.328873   NA       NA
+## 4408   1 23 2.782324 10.710213 10.372253   NA       NA
+## 4329   1 10 2.713999  8.053025  7.721521   NA       NA
 </code></pre>
 
-<div class="highlight highlight-r"><pre><span class="pl-c"># test the Tdh gene again</span>
-scde.test.gene.expression.difference(<span class="pl-s"><span class="pl-pds">"</span>Tdh<span class="pl-pds">"</span></span>, <span class="pl-v">models</span> <span class="pl-k">=</span> <span class="pl-smi">o.ifm</span>, <span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">prior</span> <span class="pl-k">=</span> <span class="pl-smi">o.prior</span>, <span class="pl-v">batch</span> <span class="pl-k">=</span> <span class="pl-smi">batch</span>)</pre></div>
+<ul>
+<li>The z column gives the Z-score of pathway over-dispersion realtive to the genome-wide model (Z-score of 1.96 corresponds to P-value of 5%, etc.). </li>
+<li>"z.adj" column shows the Z-score adjusted for multiple hypothesis (using Benjamini-Hochberg correction). </li>
+<li>"score" gives observed/expected variance ratio</li>
+<li>"sh.z" and "adj.sh.z" columns give the raw and adjusted Z-scores of "pathway cohesion", which compares the observed PC1 magnitude to the magnitudes obtained when the observations for each gene are randomized with respect to cells. When such Z-score is high (e.g. for GO:0008009) then multiple genes within the pathway contribute to the coordinated pattern.</li>
+</ul>
 
-<pre><code>##           lb      mle       ub       ce        Z       cZ
-## Tdh 3.663365 7.799423 12.01426 3.663365 3.782533 3.782533
+<h2>
+<a id="evaluate-overdispersion-of-de-novo-gene-sets" class="anchor" href="#evaluate-overdispersion-of-de-novo-gene-sets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Evaluate overdispersion of 'de novo' gene sets</h2>
+
+<p>We can also test 'de novo' gene sets whose expression profiles are well-correlated within the given dataset. The following procedure will determine 'de novo' gene clusters in the data, and build a background model for the expectation of the gene cluster weighted principal component magnitudes. Note the higher trim values for the clusters, as we want to avoid clusters that are formed by outlier cells.</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-smi">clpca</span> <span class="pl-k">&lt;-</span> pagoda.gene.clusters(<span class="pl-smi">varinfo</span>, <span class="pl-v">trim</span> <span class="pl-k">=</span> <span class="pl-c1">7.1</span><span class="pl-k">/</span>ncol(<span class="pl-smi">varinfo</span><span class="pl-k">$</span><span class="pl-smi">mat</span>), <span class="pl-v">n.clusters</span> <span class="pl-k">=</span> <span class="pl-c1">150</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">plot</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)</pre></div>
+
+<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/pagoda-clusterPCA-1.png" alt="plot of chunk clusterPCA"> </p>
+
+<p>The plot above shows background distribution of the first principal component (<code>PC1</code>) variance (<code>lambda1</code>) magnitude. The blue scatterplot on the left shows <code>lambda1</code> magnitude vs. cluster size for clusters determined based on randomly-generated matrices of the same size. The black circles show top cluster in each simulation. The red lines show expected magnitude and 95% confidence interval based on Tracy-Widom distribution. The right plot shows extreme value distribution fit of residual cluster <code>PC1</code> variance magnitude relative to the Tracy-Widom F1 distribution.</p>
+
+<p>Now the set of top aspects can be recalculated taking these <code>de novo</code> gene clusters into account:</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-smi">df</span> <span class="pl-k">&lt;-</span> pagoda.top.aspects(<span class="pl-smi">pwpca</span>, <span class="pl-smi">clpca</span>, <span class="pl-k">return</span><span class="pl-v">.table</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">plot</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">z.score</span> <span class="pl-k">=</span> <span class="pl-c1">1.96</span>)
+head(<span class="pl-smi">df</span>)</pre></div>
+
+<pre><code>##                                                                          name
+## 421                                        GO:0003170 heart valve development
+## 422                                      GO:0003179 heart valve morphogenesis
+## 426                                GO:0003208 cardiac ventricle morphogenesis
+## 123  GO:0000979 RNA polymerase II core promoter sequence-specific DNA binding
+## 4408                          GO:0060563 neuroepithelial cell differentiation
+## 4329      GO:0060045 positive regulation of cardiac muscle cell proliferation
+##      npc  n    score         z     adj.z sh.z adj.sh.z
+## 421    1 13 3.049964 10.125464  9.786492   NA       NA
+## 422    1 13 3.049964 10.125464  9.786492   NA       NA
+## 426    1 25 2.978694 11.961732 11.627068   NA       NA
+## 123    1 22 2.803050 10.666884 10.328873   NA       NA
+## 4408   1 23 2.782324 10.710213 10.372253   NA       NA
+## 4329   1 10 2.713999  8.053025  7.721521   NA       NA
 </code></pre>
 
-<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/scde-batch-1.png" alt="plot of chunk batch"> </p>
+<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/pagoda-topPathways2-1.png" alt="plot of chunk topPathways2"> </p>
 
-<p>In the plot above, the grey lines are used to show posterior distributions based on the batch composition alone. The expression magnitude posteriors (top and botom plots) look very similar, and as a result the log2 expression ratio posterior is close to 0. The thin black line shows log2 expression ratio posterior before correction. The batch correction doesn't shift the location, but increases uncertainty in the ratio estimate (since we're controlling for another factor).</p>
+<p>The gene clusters and their corresponding model expected value and 95% upper bound are shown in green.</p>
 
-<p>Similarly, batch correction can be performed when calculating expression differences for the entire dataset:</p>
+<h2>
+<a id="visualize-significant-aspects-of-heterogeneity" class="anchor" href="#visualize-significant-aspects-of-heterogeneity" aria-hidden="true"><span class="octicon octicon-link"></span></a>Visualize significant aspects of heterogeneity</h2>
 
-<div class="highlight highlight-r"><pre><span class="pl-c"># test for all of the genes</span>
-<span class="pl-smi">ediff.batch</span> <span class="pl-k">&lt;-</span> scde.expression.difference(<span class="pl-smi">o.ifm</span>, <span class="pl-smi">cd</span>, <span class="pl-smi">o.prior</span>, <span class="pl-v">groups</span> <span class="pl-k">=</span> <span class="pl-smi">groups</span>, <span class="pl-v">batch</span> <span class="pl-k">=</span> <span class="pl-smi">batch</span>, <span class="pl-v">n.randomizations</span> <span class="pl-k">=</span> <span class="pl-c1">100</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-k">return</span><span class="pl-v">.posteriors</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">verbose</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>)</pre></div>
+<p>To view top heterogeneity aspects, we will first obtain information on all the significant aspects of transcriptional heterogeneity. We will also determine the overall cell clustering based on this full information:</p>
 
-<pre><code>## controlling for batch effects. interaction:
-##       batch
-## groups batch1 batch2
-##    ESC     11      9
-##    MEF      8     12
-## calculating batch posteriors
-## calculating batch differences
-## calculating difference posterior
-## summarizing differences
-## adjusting for batch effects
-</code></pre>
+<div class="highlight highlight-r"><pre><span class="pl-c"># get full info on the top aspects</span>
+<span class="pl-smi">tam</span> <span class="pl-k">&lt;-</span> pagoda.top.aspects(<span class="pl-smi">pwpca</span>, <span class="pl-smi">clpca</span>, <span class="pl-v">n.cells</span> <span class="pl-k">=</span> <span class="pl-c1">NULL</span>, <span class="pl-v">z.score</span> <span class="pl-k">=</span> qnorm(<span class="pl-c1">0.01</span><span class="pl-k">/</span><span class="pl-c1">2</span>, <span class="pl-v">lower.tail</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>))
+<span class="pl-c"># determine overall cell clustering</span>
+<span class="pl-smi">hc</span> <span class="pl-k">&lt;-</span> pagoda.cluster.cells(<span class="pl-smi">tam</span>, <span class="pl-smi">varinfo</span>)</pre></div>
+
+<p>Next, we will reduce redudant aspects in two steps. First we will combine pathways that are driven by the same sets of genes:</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-smi">tamr</span> <span class="pl-k">&lt;-</span> pagoda.reduce.loading.redundancy(<span class="pl-smi">tam</span>, <span class="pl-smi">pwpca</span>, <span class="pl-smi">clpca</span>)</pre></div>
+
+<p>In the second step we will combine aspects that show similar patterns (i.e. separate the same sets of cells). Here we will plot the cells using the overall cell clustering determined above:</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-smi">tamr2</span> <span class="pl-k">&lt;-</span> pagoda.reduce.redundancy(<span class="pl-smi">tamr</span>, <span class="pl-v">distance.threshold</span> <span class="pl-k">=</span> <span class="pl-c1">0.9</span>, <span class="pl-v">plot</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">labRow</span> <span class="pl-k">=</span> <span class="pl-c1">NA</span>, <span class="pl-v">labCol</span> <span class="pl-k">=</span> <span class="pl-c1">NA</span>, <span class="pl-v">box</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">margins</span> <span class="pl-k">=</span> c(<span class="pl-c1">0.5</span>, <span class="pl-c1">0.5</span>), <span class="pl-v">trim</span> <span class="pl-k">=</span> <span class="pl-c1">0</span>)</pre></div>
+
+<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/pagoda-correlatedCollapse-1.png" alt="plot of chunk correlatedCollapse"> </p>
+
+<p>In the plot above, the columns are cells, rows are different significant aspects, clustered by their similarity pattern.The green-to-orange color scheme shows low-to-high weighted PCA scores (aspect patterns), where generally orange indicates higher expression. Blocks of color on the left margin show which aspects have been combined by the command above. Here the number of resulting aspects is relatively small. "top" argument (i.e. top = 10) can be used to limit further analysis to top N aspects.</p>
+
+<p>We will view the top aspects, clustering them by pattern similarity (note, to view aspects in the order of increasing <code>lambda1</code> magnitude, use <code>row.clustering = NA</code>). </p>
+
+<div class="highlight highlight-r"><pre><span class="pl-smi">col.cols</span> <span class="pl-k">&lt;-</span> rbind(<span class="pl-v">groups</span> <span class="pl-k">=</span> cutree(<span class="pl-smi">hc</span>, <span class="pl-c1">3</span>))
+pagoda.view.aspects(<span class="pl-smi">tamr2</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">box</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">labCol</span> <span class="pl-k">=</span> <span class="pl-c1">NA</span>, <span class="pl-v">margins</span> <span class="pl-k">=</span> c(<span class="pl-c1">0.5</span>, <span class="pl-c1">20</span>), <span class="pl-v">col.cols</span> <span class="pl-k">=</span> rbind(<span class="pl-smi">l1cols</span>))</pre></div>
+
+<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/pagoda-viewAspects-1.png" alt="plot of chunk viewAspects"> </p>
+
+<p>While each row here represents a cluster of pathways, the row names are assigned to be the top overdispersed aspect in each cluster.</p>
+
+<p>To interactively browse and explore the output, we can create a <code>pagoda</code> app:</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># compile a browsable app, showing top three clusters with the top color bar</span>
+<span class="pl-smi">app</span> <span class="pl-k">&lt;-</span> make.pagoda.app(<span class="pl-smi">tamr2</span>, <span class="pl-smi">tam</span>, <span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-smi">pwpca</span>, <span class="pl-smi">clpca</span>, <span class="pl-v">col.cols</span> <span class="pl-k">=</span> <span class="pl-smi">col.cols</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">title</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>NPCs<span class="pl-pds">"</span></span>)
+<span class="pl-c"># show app in the browser (port 1468)</span>
+show.app(<span class="pl-smi">app</span>, <span class="pl-s"><span class="pl-pds">"</span>pollen<span class="pl-pds">"</span></span>, <span class="pl-v">browse</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">port</span> <span class="pl-k">=</span> <span class="pl-c1">1468</span>)  
+saveRDS(<span class="pl-smi">app</span>, <span class="pl-v">file</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>pollen.app.rds<span class="pl-pds">"</span></span>)</pre></div>
+
+<p>The <code>pagoda</code> app allows you to view the gene sets grouped within each aspect (row), as well as genes underlying the detected heterogeneity patterns. A screenshot of the app is provided below:</p>
+
+<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/pagoda-Screen_Shot_2015-06-07_at_4.53.46_PM.png" alt="pagoda app"></p>
+
+<p>Similar views can be obtained in the R session itself. For instance, here we'll view top 10 genes associated with the top two pathways in the neurogenesis cluster: "neurogenesis" (GO:0022008) and "generation of neurons" (GO:0048699)</p>
+
+<div class="highlight highlight-r"><pre>pagoda.show.pathways(c(<span class="pl-s"><span class="pl-pds">"</span>GO:0022008 neurogenesis<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>GO:0048699 generation of neurons<span class="pl-pds">"</span></span>), <span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">margins</span> <span class="pl-k">=</span> c(<span class="pl-c1">1</span>,<span class="pl-c1">5</span>), <span class="pl-v">show.cell.dendrogram</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">showRowLabels</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">showPC</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)</pre></div>
+
+<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/pagoda-showTopPathwayGenes-1.png" alt="plot of chunk showTopPathwayGenes"> </p>
+
+<h2>
+<a id="controlling-for-undesired-aspects-of-heterogeneity" class="anchor" href="#controlling-for-undesired-aspects-of-heterogeneity" aria-hidden="true"><span class="octicon octicon-link"></span></a>Controlling for undesired aspects of heterogeneity</h2>
+
+<p>Depending on the biological setting, certain dominant aspects of transcriptional heterogeneity may not be of interest. To explicitly control for these aspects of heterogeneity that are not of interest, we will use <code>pagoda.subtract.aspect</code> method that we've previously used to control for residual patterns associated with sequencing depth differences. Here, we illustrate how to control for the mitotic cell cycle pattern which showed up as one of the four significant aspects in the analysis above.</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># get cell cycle signature and view the top genes</span>
+<span class="pl-smi">cc.pattern</span> <span class="pl-k">&lt;-</span> pagoda.show.pathways(c(<span class="pl-s"><span class="pl-pds">"</span>GO:0000280 nuclear division<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>GO:0007067 mitotic nuclear division<span class="pl-pds">"</span></span>), <span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-v">show.cell.dendrogram</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">showRowLabels</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)
+<span class="pl-c"># subtract the pattern</span>
+<span class="pl-smi">varinfo.cc</span> <span class="pl-k">&lt;-</span> pagoda.subtract.aspect(<span class="pl-smi">varinfo</span>, <span class="pl-smi">cc.pattern</span>)</pre></div>
+
+<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/pagoda-controlForCellCycle-1.png" alt="plot of chunk controlForCellCycle"> </p>
+
+<p>Now we can go through the same analysis as shown above, starting with the <code>pagoda.pathway.wPCA()</code> call, using <code>varinfo.cc</code> instead of <code>varinfo</code>, which will control for the cell cylce heterogeneity between the cells.</p>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/hms-dbmi/scde">SCDE</a> is maintained by <a href="https://github.com/hms-dbmi">hms-dbmi</a>.</span>
