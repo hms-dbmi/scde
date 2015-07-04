@@ -20,88 +20,170 @@
 
     <section class="main-content">
       <h1>
-<a id="scde" class="anchor" href="#scde" aria-hidden="true"><span class="octicon octicon-link"></span></a>SCDE</h1>
+<a id="single-cell-differential-expression-analysis" class="anchor" href="#single-cell-differential-expression-analysis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Single-Cell Differential Expression Analysis</h1>
 
-<p>The <code>scde</code> package implements a set of statistical methods for analyzing single-cell RNA-seq data. <code>scde</code> fits individual error models for single-cell RNA-seq measurements. These models can then be used for assessment of differential expression between groups of cells, as well as other types of analysis. The <code>scde</code> package also contains the <code>pagoda</code> framework which applies pathway and gene set overdispersion analysis to identify aspects of transcriptional heterogeneity among single cells. </p>
+<p>In this vignette, we show you how perform single cell differential expression analysis using single cell RNA-seq data. </p>
 
-<p>The overall approach to the differential expression analysis is detailed in the following publication:<br>
-<a href="http://www.nature.com/nmeth/journal/v11/n7/abs/nmeth.2967.html">"Bayesian approach to single-cell differential expression analysis" (Kharchenko PV, Silberstein L, Scadden DT, Nature Methods, doi:10.1038/nmeth.2967)</a></p>
-
-<p>The overall approach to pathways and gene set overdispersion analysis is detailed in the following publication:
-"Characterizing transcriptional heterogeneity through pathway and gene set overdispersion analysis" (Fan J, Salathia N, Liu R, Kaeser G, Yung Y, Herman J, Kaper F, Fan JB, Zhang K, Chun J, and Kharchenko PV) COMING SOON!</p>
-
-<h1>
-<a id="sample-analyses-and-images" class="anchor" href="#sample-analyses-and-images" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sample analyses and images</h1>
+<p>The <code>scde</code> package implements routines for fitting individual error models for single-cell RNA-seq measurements. Breifly, the read counts observed for each gene are modeled using a mixture of a negative binomial (NB) distribution (for the amplified/detected transcripts) and low-level Poisson distribution (for the unobserved or background-level signal of genes that failed to amplify or were not detected for other reasons). These models can then be used to identify robustly differentially expressed genes between groups of cells. </p>
 
 <h2>
-<a id="single-cell-error-modeling" class="anchor" href="#single-cell-error-modeling" aria-hidden="true"><span class="octicon octicon-link"></span></a>Single cell error modeling</h2>
+<a id="preparing-data" class="anchor" href="#preparing-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Preparing data</h2>
 
-<table>
-  <tr>
-    <td width="400px">
-      <img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-cell.model.fits-0.png" width="400px">
-    </td>
-    <td>
-      <code>scde</code> fits individual error models for single cells using counts derived from single-cell RNA-seq data to estimate drop-out and amplification biases on gene expression magnitude.
-    </td>
-  </tr>
-</table>
+<p>The analysis starts with a matrix of read counts. Depending on the protocol, these may be raw numbers of reads mapped to each gene, or count values adjusted for potential biases (sequence dependency, splice variant coverage, etc. - the values must be integers). The <code>scde</code> package includes a subset of the ES/MEF cell dataset published by <a href="http://www.ncbi.nlm.nih.gov/pubmed/?term=24363023"><em>Islam et al.</em></a>. The subset includes first 20 ES and MEF cells. Here we load the cells and define a factor separating ES and MEF cell types:</p>
 
-<h2>
-<a id="differential-expression-analysis" class="anchor" href="#differential-expression-analysis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Differential expression analysis</h2>
+<div class="highlight highlight-r"><pre><span class="pl-c"># load example dataset</span>
+data(<span class="pl-smi">es.mef.small</span>)
+<span class="pl-c"># factor determining cell types</span>
+<span class="pl-smi">sg</span> <span class="pl-k">&lt;-</span> <span class="pl-k">factor</span>(gsub(<span class="pl-s"><span class="pl-pds">"</span>(MEF|ESC).*<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\\</span>1<span class="pl-pds">"</span></span>, colnames(<span class="pl-smi">es.mef.small</span>)), <span class="pl-v">levels</span> <span class="pl-k">=</span> c(<span class="pl-s"><span class="pl-pds">"</span>ESC<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>MEF<span class="pl-pds">"</span></span>))
+<span class="pl-c"># the group factor should be named accordingly</span>
+names(<span class="pl-smi">sg</span>) <span class="pl-k">&lt;-</span> colnames(<span class="pl-smi">es.mef.small</span>)  
+table(<span class="pl-smi">sg</span>)</pre></div>
 
-<table>
-  <tr>
-    <td width="250px">
-      <img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/scde-diffexp3-1.png" width="250px">
-    </td>
-    <td>
-      <pre>
-             lb   mle     ub    ce     Z    cZ
-Dppa5a    8.075 9.965 11.541 8.075 7.160 5.968
-Pou5f1    5.357 7.208  9.178 5.357 7.160 5.968
-Gm13242   5.672 7.681  9.768 5.672 7.159 5.968
-Tdh       5.829 8.075 10.281 5.829 7.159 5.968
-Ift46     5.435 7.366  9.217 5.435 7.150 5.968</pre>
-      <br>
-      <code>scde</code> compares groups of single cells and tests for differential expression, taking into account variability in the single cell RNA-seq data due to drop-out and amplification biases in order to identify more robustly differentially expressed genes. 
-    </td>
-  </tr>
-</table>
-
-<h2>
-<a id="pathway-and-gene-set-overdispersion-analysis" class="anchor" href="#pathway-and-gene-set-overdispersion-analysis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Pathway and gene set overdispersion analysis</h2>
-
-<table>
-  <tr>
-    <td width="400px">
-      <img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-Screen_Shot_2015-06-07_at_4.53.46_PM.png" width="400px"> 
-    </td>
-    <td>
-      <code>scde</code> contains <code>pagoda</code> routines that characterize aspects of transcriptional heterogeneity in populations of single cells using pre-defined gene sets as well as 'de novo' gene sets derived from the data. Significant aspects are used to cluster cells into subpopulations. A graphical user interface can be deployed to interactively explore results. 
-    </td>
-  </tr>
-</table>
-    
-
-<h1>
-<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h1>
-
-<pre><code>require(devtools)
-devtools::install_github('hms-dbmi/scde', build_vignettes = FALSE)
+<pre><code>## sg
+## ESC MEF 
+##  20  20
 </code></pre>
 
-<h1>
-<a id="tutorials" class="anchor" href="#tutorials" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tutorials</h1>
+<div class="highlight highlight-r"><pre><span class="pl-c"># clean up the dataset</span>
+<span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">es.mef.small</span>
+<span class="pl-c"># omit genes that are never detected</span>
+<span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">cd</span>[rowSums(<span class="pl-smi">cd</span>)<span class="pl-k">&gt;</span><span class="pl-c1">0</span>, ]
+<span class="pl-c"># omit cells with very poor coverage</span>
+<span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">cd</span>[, colSums(<span class="pl-smi">cd</span>)<span class="pl-k">&gt;</span><span class="pl-c1">1e4</span>]</pre></div>
 
-<p>Please refer to the following vignettes to help you get started with using <code>scde</code>:</p>
+<h2>
+<a id="fitting-error-models" class="anchor" href="#fitting-error-models" aria-hidden="true"><span class="octicon octicon-link"></span></a>Fitting error models</h2>
 
-<ul>
-<li><a href="https://github.com/hms-dbmi/scde/tree/master/vignettes/diffexp.md">Single cell differential expression analysis</a></li>
-<li><a href="https://github.com/hms-dbmi/scde/tree/master/vignettes/pagoda.md">Characterizing single cell transcriptional heterogeneity using pathway and gene set overdispersion analysis</a></li>
-</ul>
+<p>As a next step we fit the error models on which all subsequent calculations will rely. The fitting process relies on a subset of robust genes that are detected in multiple cross-cell comparisons. Here we supply the <code>groups = sg</code> argument, so that the error models for the two cell types are fit independently (using two different sets of "robust" genes). If the <code>groups</code> argument is omitted, the models will be fit using a common set. </p>
 
-<p>Additional tutorials are available on the <a href="http://pklab.med.harvard.edu/scde/index.html">Kharchenko Lab website</a>. </p>
+<p>Note this step takes a considerable amount of time unless multiple cores are used. </p>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># EVALUATION NOT NEEDED</span>
+<span class="pl-c"># calculate models</span>
+<span class="pl-smi">o.ifm</span> <span class="pl-k">&lt;-</span> scde.error.models(<span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">groups</span> <span class="pl-k">=</span> <span class="pl-smi">sg</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">threshold.segmentation</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">save.crossfit.plots</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>, <span class="pl-v">save.model.plots</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>, <span class="pl-v">verbose</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>)
+<span class="pl-e">devtools</span><span class="pl-k">::</span>use_data(<span class="pl-smi">o.ifm</span>)  <span class="pl-c"># save for later since this step takes a long time</span></pre></div>
+
+<p>For the purposes of this vignette, the model has been precomputed and can simply be loaded.</p>
+
+<div class="highlight highlight-r"><pre>data(<span class="pl-smi">o.ifm</span>)</pre></div>
+
+<p>The <code>o.ifm</code> is a dataframe with error model coefficients for each cell (rows):</p>
+
+<div class="highlight highlight-r"><pre>head(<span class="pl-smi">o.ifm</span>)</pre></div>
+
+<p>Here, <code>corr.a</code> and <code>corr.b</code> are slope and intersept of the correlated component fit, <code>conc.*</code> refer to the concomitant fit, <code>corr.theta</code> is the NB over-dispersion, and <code>fail.r</code> is the background Poisson rate (fixed).</p>
+
+<p>Particularly poor cells may result in abnormal fits, most commonly showing negtive <code>corr.a</code>, and should be removed:</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># filter out cells that don't show positive correlation with</span>
+<span class="pl-c"># the expected expression magnitudes (very poor fits)</span>
+<span class="pl-smi">valid.cells</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">o.ifm</span><span class="pl-k">$</span><span class="pl-smi">corr.a</span> <span class="pl-k">&gt;</span> <span class="pl-c1">0</span>
+table(<span class="pl-smi">valid.cells</span>)</pre></div>
+
+<pre><code>## valid.cells
+## TRUE 
+##   40
+</code></pre>
+
+<div class="highlight highlight-r"><pre><span class="pl-smi">o.ifm</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">o.ifm</span>[<span class="pl-smi">valid.cells</span>, ]</pre></div>
+
+<p>Here, all the fits were valid.</p>
+
+<p>Finally, we need to define an expression magnitude prior for the genes. Its main function, however, is to define a grid of expression magnitude values on which the numerical calculations will be carried out:</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># estimate gene expression prior</span>
+<span class="pl-smi">o.prior</span> <span class="pl-k">&lt;-</span> scde.expression.prior(<span class="pl-v">models</span> <span class="pl-k">=</span> <span class="pl-smi">o.ifm</span>, <span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">length.out</span> <span class="pl-k">=</span> <span class="pl-c1">400</span>, <span class="pl-v">show.plot</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>)</pre></div>
+
+<p>Here we used a grid of 400 points, and let the maxmimum expression magnitude be determined by the default 0.999 quantile (use <code>max.value</code> parameter to specify the maximum expression magntiude explicitly - on log10 scale).</p>
+
+<h2>
+<a id="testing-for-differential-expression" class="anchor" href="#testing-for-differential-expression" aria-hidden="true"><span class="octicon octicon-link"></span></a>Testing for differential expression</h2>
+
+<p>To test for differential expression, we first define a factor that specifies which two groups of cells are to be compared. The factor elements correspond to the rows of the model matrix (<code>o.ifm</code>), and can contain <code>NA</code> values (i.e. cells that won't be included in either group). Here we key off the the ES and MEF names.</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># define two groups of cells</span>
+<span class="pl-smi">groups</span> <span class="pl-k">&lt;-</span> <span class="pl-k">factor</span>(gsub(<span class="pl-s"><span class="pl-pds">"</span>(MEF|ESC).*<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\\</span>1<span class="pl-pds">"</span></span>, rownames(<span class="pl-smi">o.ifm</span>)), <span class="pl-v">levels</span>  <span class="pl-k">=</span>  c(<span class="pl-s"><span class="pl-pds">"</span>ESC<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>MEF<span class="pl-pds">"</span></span>))
+names(<span class="pl-smi">groups</span>) <span class="pl-k">&lt;-</span> row.names(<span class="pl-smi">o.ifm</span>)
+<span class="pl-c"># run differential expression tests on all genes.</span>
+<span class="pl-smi">ediff</span> <span class="pl-k">&lt;-</span> scde.expression.difference(<span class="pl-smi">o.ifm</span>, <span class="pl-smi">cd</span>, <span class="pl-smi">o.prior</span>, <span class="pl-v">groups</span>  <span class="pl-k">=</span>  <span class="pl-smi">groups</span>, <span class="pl-v">n.randomizations</span>  <span class="pl-k">=</span>  <span class="pl-c1">100</span>, <span class="pl-v">n.cores</span>  <span class="pl-k">=</span>  <span class="pl-c1">1</span>, <span class="pl-v">verbose</span>  <span class="pl-k">=</span>  <span class="pl-c1">1</span>)</pre></div>
+
+<pre><code>## comparing groups:
+## 
+## ESC MEF 
+##  20  20 
+## calculating difference posterior
+## summarizing differences
+</code></pre>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># top upregulated genes (tail would show top downregulated ones)</span>
+head(<span class="pl-smi">ediff</span>[order(<span class="pl-smi">ediff</span><span class="pl-k">$</span><span class="pl-smi">Z</span>, <span class="pl-v">decreasing</span>  <span class="pl-k">=</span>  <span class="pl-c1">TRUE</span>), ])</pre></div>
+
+<pre><code>##                     lb      mle        ub       ce        Z       cZ
+## Dppa5a        8.075160 9.965929 11.541570 8.075160 7.160813 5.968921
+## Pou5f1        5.357179 7.208557  9.178109 5.357179 7.160333 5.968921
+## Gm13242       5.672307 7.681250  9.768974 5.672307 7.159987 5.968921
+## Tdh           5.829872 8.075160 10.281057 5.829872 7.159599 5.968921
+## Ift46         5.435961 7.366121  9.217500 5.435961 7.150271 5.968921
+## 4930509G22Rik 5.435961 7.484295  9.808365 5.435961 7.115804 5.957784
+</code></pre>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># write out a table with all the results, showing most significantly different genes (in both directions) on top</span>
+write.table(<span class="pl-smi">ediff</span>[order(abs(<span class="pl-smi">ediff</span><span class="pl-k">$</span><span class="pl-smi">Z</span>), <span class="pl-v">decreasing</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>), ], <span class="pl-v">file</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>results.txt<span class="pl-pds">"</span></span>, <span class="pl-v">row.names</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">col.names</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">sep</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\t</span><span class="pl-pds">"</span></span>, <span class="pl-v">quote</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>)</pre></div>
+
+<p>Alternatively we can run the differential expression on a single gene, and visualize the results:</p>
+
+<div class="highlight highlight-r"><pre>scde.test.gene.expression.difference(<span class="pl-s"><span class="pl-pds">"</span>Tdh<span class="pl-pds">"</span></span>, <span class="pl-v">models</span> <span class="pl-k">=</span> <span class="pl-smi">o.ifm</span>, <span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">prior</span> <span class="pl-k">=</span> <span class="pl-smi">o.prior</span>)</pre></div>
+
+<pre><code>##           lb      mle       ub       ce        Z       cZ
+## Tdh 5.711698 8.035769 10.32045 5.711698 7.151497 7.151497
+</code></pre>
+
+<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/scde-diffexp3-1.png" alt="plot of chunk diffexp3"> </p>
+
+<p>The top and the bottom plots show expression posteriors derived from individual cells (colored lines) and joint posteriors (black lines). The middle plot shows posterior of the expression fold difference between the two cell groups, highlighting the 95% credible interval by the red shading.</p>
+
+<h2>
+<a id="correcting-for-batch-effects" class="anchor" href="#correcting-for-batch-effects" aria-hidden="true"><span class="octicon octicon-link"></span></a>Correcting for batch effects</h2>
+
+<p>When the data combines cells that were measured in different batches, it is sometimes necessary to explicitly account for the expression differences that could be explained by the batch composition of the cell groups being compared. The example below makes up a random batch composition for the ES/MEF cells, and re-test the expression difference.</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-smi">batch</span> <span class="pl-k">&lt;-</span> as.factor(ifelse(rbinom(nrow(<span class="pl-smi">o.ifm</span>), <span class="pl-c1">1</span>, <span class="pl-c1">0.5</span>) <span class="pl-k">==</span> <span class="pl-c1">1</span>, <span class="pl-s"><span class="pl-pds">"</span>batch1<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>batch2<span class="pl-pds">"</span></span>))
+<span class="pl-c"># check the interaction between batches and cell types (shouldn't be any)</span>
+table(<span class="pl-smi">groups</span>, <span class="pl-smi">batch</span>)</pre></div>
+
+<pre><code>##       batch
+## groups batch1 batch2
+##    ESC     11      9
+##    MEF      8     12
+</code></pre>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># test the Tdh gene again</span>
+scde.test.gene.expression.difference(<span class="pl-s"><span class="pl-pds">"</span>Tdh<span class="pl-pds">"</span></span>, <span class="pl-v">models</span> <span class="pl-k">=</span> <span class="pl-smi">o.ifm</span>, <span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">prior</span> <span class="pl-k">=</span> <span class="pl-smi">o.prior</span>, <span class="pl-v">batch</span> <span class="pl-k">=</span> <span class="pl-smi">batch</span>)</pre></div>
+
+<pre><code>##           lb      mle       ub       ce        Z       cZ
+## Tdh 3.663365 7.799423 12.01426 3.663365 3.782533 3.782533
+</code></pre>
+
+<p><img src="https://raw.githubusercontent.com/hms-dbmi/scde/master/vignettes/figures/scde-batch-1.png" alt="plot of chunk batch"> </p>
+
+<p>In the plot above, the grey lines are used to show posterior distributions based on the batch composition alone. The expression magnitude posteriors (top and botom plots) look very similar, and as a result the log2 expression ratio posterior is close to 0. The thin black line shows log2 expression ratio posterior before correction. The batch correction doesn't shift the location, but increases uncertainty in the ratio estimate (since we're controlling for another factor).</p>
+
+<p>Similarly, batch correction can be performed when calculating expression differences for the entire dataset:</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># test for all of the genes</span>
+<span class="pl-smi">ediff.batch</span> <span class="pl-k">&lt;-</span> scde.expression.difference(<span class="pl-smi">o.ifm</span>, <span class="pl-smi">cd</span>, <span class="pl-smi">o.prior</span>, <span class="pl-v">groups</span> <span class="pl-k">=</span> <span class="pl-smi">groups</span>, <span class="pl-v">batch</span> <span class="pl-k">=</span> <span class="pl-smi">batch</span>, <span class="pl-v">n.randomizations</span> <span class="pl-k">=</span> <span class="pl-c1">100</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-k">return</span><span class="pl-v">.posteriors</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">verbose</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>)</pre></div>
+
+<pre><code>## controlling for batch effects. interaction:
+##       batch
+## groups batch1 batch2
+##    ESC     11      9
+##    MEF      8     12
+## calculating batch posteriors
+## calculating batch differences
+## calculating difference posterior
+## summarizing differences
+## adjusting for batch effects
+</code></pre>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/hms-dbmi/scde">SCDE</a> is maintained by <a href="https://github.com/hms-dbmi">hms-dbmi</a>.</span>
