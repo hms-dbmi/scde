@@ -43,7 +43,6 @@ Next, we'll translate group and sample source data from [_Pollen et al._](www.nc
 
 
 ```r
-l1cols <- c("red", "orange", "blue", "green")[as.integer(as.factor(pollen.groups[colnames(cd)]))]
 # sample sources
 x <- gsub("^Hi_(.*)_.*", "\\1", colnames(cd))
 l2cols <- c("coral4", "olivedrab3", "skyblue2", "slateblue3")[as.integer(factor(x, levels = c("NPC", "GW16", "GW21", "GW21+3")))]

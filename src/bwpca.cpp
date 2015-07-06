@@ -22,7 +22,7 @@ void set_random_matrix(arma::mat& target,arma::mat& source) {
     std::vector<int> ind(target.n_rows);
     for(int j=0;j<target.n_rows;j++) {
         ind[j]=j;
-        //R_CheckUserInterrupt();
+        R_CheckUserInterrupt();
     } // set up initial index (1,2,3)
 
     for(int i=0;i<target.n_cols;i++) {
@@ -32,7 +32,7 @@ void set_random_matrix(arma::mat& target,arma::mat& source) {
             target(j,i)=source(ind[j],i);
             //R_CheckUserInterrupt();
         }
-        //R_CheckUserInterrupt();
+        R_CheckUserInterrupt();
     }
 }
 
@@ -41,7 +41,7 @@ void set_random_matrices(arma::mat& target1,arma::mat& source1,arma::mat& target
     std::vector<int> ind(target1.n_rows);
     for(int j=0;j<target1.n_rows;j++) {
         ind[j]=j;
-        //R_CheckUserInterrupt();
+        R_CheckUserInterrupt();
     } // set up initial index (1,2,3)
 
     for(int i=0;i<target1.n_cols;i++) {
@@ -52,7 +52,7 @@ void set_random_matrices(arma::mat& target1,arma::mat& source1,arma::mat& target
             target2(j,i)=source2(ind[j],i);
             //R_CheckUserInterrupt();
         }
-        //R_CheckUserInterrupt();
+        R_CheckUserInterrupt();
     }
 }
 
@@ -131,6 +131,8 @@ SEXP baileyWPCA(SEXP Mat, SEXP Matw, SEXP Npcs, SEXP Nstarts, SEXP Smooth, SEXP 
 #endif
         varexp[k]=totvar-npres-tvarexp;
         tvarexp=totvar-npres;
+
+        R_CheckUserInterrupt();
     }
 
     arma::mat pcw=mw * abs(besteigenv);
@@ -314,5 +316,7 @@ void baileyWPCAround(arma::mat& m,arma::mat& mw,int nstarts,int npcs,int seed,in
             besteigenv=beigenv;
         }
     }
+
+    R_CheckUserInterrupt();
 
 }

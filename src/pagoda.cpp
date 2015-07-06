@@ -25,7 +25,7 @@ SEXP winsorizeMatrix(SEXP Mat, SEXP Trim){
             //R_CheckUserInterrupt();
         }
         m.row(i)=z;
-        //R_CheckUserInterrupt();
+        R_CheckUserInterrupt();
     }
     return wrap(m);
 }
@@ -59,7 +59,7 @@ SEXP matWCorr(SEXP Mat, SEXP Matw){
             c(j,i)=nm/sqrt(dn);
             //R_CheckUserInterrupt();
         }
-        //R_CheckUserInterrupt();
+        R_CheckUserInterrupt();
     }
     return wrap(c);
 }
@@ -110,6 +110,7 @@ SEXP plSemicompleteCor2(SEXP Pl) {
             sgc=v1s+v2s-sgc;
             cn(i,j)=sgc; cn(j,i)=sgc;
         }
+        R_CheckUserInterrupt();
     };
     return List::create(Named("r") = wrap(cm),
                         Named("n") = wrap(cn));
