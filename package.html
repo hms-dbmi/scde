@@ -1,0 +1,84 @@
+---
+layout: default
+---
+
+<h1>Download</h1>
+
+<h2>Latest Release</h2>
+<a href="https://github.com/hms-dbmi/scde/archive/1.99.0.tar.gz" class="btnDownload">
+  <span class="glyphicon glyphicon-download"></span>
+  Version 1.99.0
+</a>
+<hr>
+
+<h2>Development Version</h2>
+<p>Available on <a href="https://github.com/hms-dbmi/scde">Github</a></p>
+<hr>
+
+<h2>Old Releases</h2>
+<p>The old release of <code>scde</code> contains functionalities for error modeling and differential expression analysis detailed in <a href="http://www.nature.com/nmeth/journal/v11/n7/abs/nmeth.2967.html">"Bayesian approach to single-cell differential expression analysis" (Kharchenko PV, Silberstein L, Scadden DT, Nature Methods, doi:10.1038/nmeth.2967).</a></p>
+
+<hr>
+
+<a href="http://pklab.med.harvard.edu/scde/scde_1.2.1.tar.gz" class="btnDownload">
+  <span class="glyphicon glyphicon-download"></span>
+  Version 1.2.1
+</a>
+<ul>
+  <li>fixed error in posterior mode calculations in scde.posteriors()</li>
+  <li>cleaned up package dependencies, removed deprecated multicore dependency</li>
+  <li>fixed a bug in scde.browse.diffexp() where it used a global variable</li>
+  <li>optimized memory usage during error model construction</li>
+</ul>  
+
+<hr>
+
+<a href="http://pklab.med.harvard.edu/scde/scde_1.1.tar.gz" class="btnDownload">
+  <span class="glyphicon glyphicon-download"></span>
+  Version 1.1
+</a>
+<ul>
+  <li>added support for batch bias correction. See scde.expression.difference() and scde.test.gene.expression.difference() help for details</li>
+  <li>added a local web browser interface to view differential expression results. See scde.browse.diffexp() help for details.</li>
+  <li>added ability to fit models to a reference transcriptome (usually a bulk measurement). See scde.fit.models.to.reference() method for details</li>
+</ul>
+
+<hr>
+
+<a href="http://pklab.med.harvard.edu/scde/scde_1.0.tar.gz" class="btnDownload">
+  <span class="glyphicon glyphicon-download"></span>
+  Version 1.0
+</a>
+<ul>
+  <li>The initial release implements simplified methods for the basic workflow and significantly speeds up differential expression testing.</li>
+</ul>
+
+<hr>
+
+<a href="http://pklab.med.harvard.edu/scde/scde_0.9.tar.gz" class="btnDownload">
+  <span class="glyphicon glyphicon-download"></span>
+  Version 0.9
+</a>
+<ul>
+  <li>
+    This release implements all the basic functionality that is described in the original publication. It uses explicit handling of posterior distributions to test differential expression.
+  </li>
+</ul>  
+
+
+<hr>
+
+
+<h1>
+  Installation 
+</h1>
+
+<p>To install the downloaded package, use:</p>
+<pre><code>R CMD INSTALL scde_X.Y.Z.tar.gz</code></pre>
+
+<p>To install the development version from Github, use:</p>
+<pre><code>require(devtools)
+devtools::install_github('hms-dbmi/scde', build_vignettes = FALSE)
+</code></pre>
+
+<p>Use current versions for all dependency packages.</p>
