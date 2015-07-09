@@ -1,4 +1,4 @@
-# SCDE
+# Overview of SCDE
 
 The `scde` package implements a set of statistical methods for analyzing single-cell RNA-seq data. `scde` fits individual error models for single-cell RNA-seq measurements. These models can then be used for assessment of differential expression between groups of cells, as well as other types of analysis. The `scde` package also contains the `pagoda` framework which applies pathway and gene set overdispersion analysis to identify aspects of transcriptional heterogeneity among single cells. 
   
@@ -54,17 +54,9 @@ Ift46     5.435 7.366  9.217 5.435 7.150 5.968</pre>
   </tr>
 </table>
     
-# Installation 
+---
+    
+**For more information, please visit [the SCDE website ☞](http://hms-dbmi.github.io/scde/)**
 
-```
-require(devtools)
-devtools::install_github('hms-dbmi/scde', build_vignettes = FALSE)
-```
+`scde` is maintained by [Jean Fan](https://github.com/jefworks) of the [Kharchenko Lab](http://pklab.med.harvard.edu/) at the [Department of Biomedical Informatics at Harvard Medical School](https://github.com/hms-dbmi).
 
-# Tutorials
-
-Please refer to the following vignettes to help you get started with using `scde`:
-- [Single cell differential expression analysis](vignettes/diffexp.md)
-- [Characterizing single cell transcriptional heterogeneity using pathway and gene set overdispersion analysis](vignettes/pagoda.md)
-
-Additional tutorials are available on the [Kharchenko Lab website](http://pklab.med.harvard.edu/scde/index.html). 
