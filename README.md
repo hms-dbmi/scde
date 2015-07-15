@@ -60,3 +60,8 @@ Ift46     5.435 7.366  9.217 5.435 7.150 5.968</pre>
 
 `scde` is maintained by [Jean Fan](https://github.com/jefworks) of the [Kharchenko Lab](http://pklab.med.harvard.edu/) at the [Department of Biomedical Informatics at Harvard Medical School](https://github.com/hms-dbmi).
 
+---
+
+# Contributing
+
+We welcome any bug reports, enhancement requests, and other contributions. To submit a bug report or enhancement request, please use the [`scde` GitHub issues tracker](https://github.com/hms-dbmi/scde/issues). For more substantial contributions, please fork this repo, push your changes to your fork, and submit a pull request with a good commit message. For more general discussions or troubleshooting, please consult the [`scde` Google Group](http://hms-dbmi.github.io/scde/help.html).  
