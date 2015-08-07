@@ -29,7 +29,7 @@ Depends:
     flexmix
 Imports:
     Rcpp (>= 0.10.4),
-    RcppArmadillo (>= 0.3.900.0),
+    RcppArmadillo (== 0.4.650.1.1),
     mgcv,
     Rook,
     rjson,

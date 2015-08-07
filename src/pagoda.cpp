@@ -12,7 +12,7 @@ SEXP winsorizeMatrix(SEXP Mat, SEXP Trim){
         arma::rowvec z= m.row(i);
         // determine outliers
         // arma::urowvec o=sort_index(abs(z-median(z)),1);
-        arma::urowvec o=sort_index(z).t(); // ascending order
+        arma::urowvec o=sort_index(z); // ascending order
         // determine range
         double minv=z(o(ntr));
         double maxv=z(o(n-ntr-1));
