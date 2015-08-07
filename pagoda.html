@@ -125,7 +125,7 @@ library(<span class="pl-smi">GO.db</span>)
 <span class="pl-smi">ensembl</span> <span class="pl-k">=</span> useMart(<span class="pl-s"><span class="pl-pds">"</span>ensembl<span class="pl-pds">"</span></span>, <span class="pl-v">dataset </span><span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>hsapiens_gene_ensembl<span class="pl-pds">"</span></span>)
 
 <span class="pl-c"># Constructs a dataframe with two columns: hgnc_symbol and go_id
-# If rownames are Ensembl IDs, use ensembl_gene_id as filter value
+# If rownames are Ensembl IDs, use ensembl_gene_id as filter value</span>
 <span class="pl-smi">go</span> <span class="pl-k">=</span> getBM(<span class="pl-v">attributes</span> <span class="pl-k">=</span> c(<span class="pl-s"><span class="pl-pds">"</span>hgnc_symbol<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>go_id<span class="pl-pds">"</span></span>), <span class="pl-v">filters</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>hgnc_symbol<span class="pl-pds">"</span></span>, <span class="pl-v">values</span> <span class="pl-k">=</span> rownames(<span class="pl-smi">cd</span>), <span class="pl-v">mart</span> <span class="pl-k">=</span> <span class="pl-smi">ensembl</span>)
 
 <span class="pl-c"># Use the GO.db library to add a column with the GO-term to the dataframe
