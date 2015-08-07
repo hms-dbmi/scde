@@ -4,28 +4,7 @@
 sudo: required
 
 # Use R
-language: r
-warnings_are_errors: true
-
-notifications:
-  email:
-    on_success: change
-    on_failure: change
-
-before_install:
-  - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
-  - chmod 755 ./travis-tool.sh
-  - ./travis-tool.sh bootstrap
-
-install:
-  ## For installing all CRAN dependencies using DESCRIPTION
-  - ./travis-tool.sh install_deps
-
-  ## For installing all Bioconductor dependencies using DESCRIPTION
-  - ./travis-tool.sh install_bioc_deps
-
-#  ## Install Github packages
-#  - ./travis-tool.sh install_github jimhester/covr
+language: c
 
 env:
   global:
@@ -33,6 +12,21 @@ env:
     - R_BUILD_ARGS="--no-build-vignettes --no-manual"
     - R_CHECK_ARGS="--no-build-vignettes --no-manual --timings"  ## do not build vignettes or manual
     - _R_CHECK_TIMINGS_="0"  ## get the timing information for the examples for all of your functions
+    - WARNINGS_ARE_ERRORS=1
+
+before_install:
+  - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
+  - chmod 755 ./travis-tool.sh
+  - ./travis-tool.sh bootstrap
+
+install:
+  ## For installing all Bioconductor dependencies using DESCRIPTION
+  - ./travis-tool.sh install_bioc_deps
+  ## Install a fixed version of RcppArmadillo
+  - Rscript -e 'remove.packages("RcppArmadillo")'
+  - wget http://cran.rstudio.com/src/contrib/Archive/RcppArmadillo/RcppArmadillo_0.4.650.1.1.tar.gz
+  - R CMD INSTALL RcppArmadillo_0.4.650.1.1.tar.gz
+  - rm -f RcppArmadillo_0.4.650.1.1.tar.gz
 
 script:
   - travis_wait ./travis-tool.sh run_tests
@@ -47,4 +41,11 @@ after_script:
 
 ## CodeCov
 #after_success:
+#  - ./travis-tool.sh install_github jimhester/covr
 #  - Rscript -e 'library(covr); codecov()'
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change
+
