@@ -1,7 +1,7 @@
 # Sample .travis.yml for R projects
 
 # Migrate from legacy to container-based infrastructure
-sudo: false
+sudo: required
 
 # Use R
 language: r
