@@ -128,10 +128,10 @@ library(<span class="pl-smi">GO.db</span>)
 # If rownames are Ensembl IDs, use ensembl_gene_id as filter value</span>
 <span class="pl-smi">go</span> <span class="pl-k">=</span> getBM(<span class="pl-v">attributes</span> <span class="pl-k">=</span> c(<span class="pl-s"><span class="pl-pds">"</span>hgnc_symbol<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>go_id<span class="pl-pds">"</span></span>), <span class="pl-v">filters</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>hgnc_symbol<span class="pl-pds">"</span></span>, <span class="pl-v">values</span> <span class="pl-k">=</span> rownames(<span class="pl-smi">cd</span>), <span class="pl-v">mart</span> <span class="pl-k">=</span> <span class="pl-smi">ensembl</span>)
 
-<span class="pl-c"># Use the GO.db library to add a column with the GO-term to the dataframe
+<span class="pl-c"># Use the GO.db library to add a column with the GO-term to the dataframe</span>
 <span class="pl-smi">go<span class="pl-k">$</span>term</span> <span class="pl-k">=</span> Term(<span class="pl-smi">go<span class="pl-k">$</span>go_id</span>)
 
-<span class="pl-c"># Create a named list of character vectors out of the df
+<span class="pl-c"># Create a named list of character vectors out of the df</span>
 <span class="pl-smi">s</span> <span class="pl-k">=</span> split(<span class="pl-smi">go<span class="pl-k">$</span>hgnc_symbol</span>, paste(<span class="pl-smi">go<span class="pl-k">$</span>go_id</span>,<span class="pl-smi">go<span class="pl-k">$</span>term</span>))
 
 <span class="pl-c"># Saves the list as a R environment</span>
