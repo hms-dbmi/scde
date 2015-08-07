@@ -112,6 +112,32 @@ names(<span class="pl-smi">go.env</span>) <span class="pl-k">&lt;-</span> paste(
 
 <span class="pl-e">devtools</span><span class="pl-k">::</span>use_data(<span class="pl-smi">go.env</span>)  <span class="pl-c"># save for later</span></pre></div>
 
+<p>Alternatively, we can use Ensembls BioMart service to get the GO annotations.</p>
+
+<div class="highlight highlight-r"><pre>
+library(<span class="pl-smi">biomaRt</span>)
+library(<span class="pl-smi">GO.db</span>)
+
+<span class="pl-c"># Initialize the connection to the Ensembl BioMart Service
+# Available datasets can be listed with 
+# listDatasets(useMart("ensembl"))
+# Use mmusculus_gene_ensembl for mouse</span>
+<span class="pl-smi">ensembl</span> <span class="pl-k">=</span> useMart(<span class="pl-s"><span class="pl-pds">"</span>ensembl<span class="pl-pds">"</span></span>, <span class="pl-v">dataset </span><span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>hsapiens_gene_ensembl<span class="pl-pds">"</span></span>)
+
+<span class="pl-c"># Constructs a dataframe with two columns: hgnc_symbol and go_id
+# If rownames are Ensembl IDs, use ensembl_gene_id as filter value</span>
+<span class="pl-smi">go</span> <span class="pl-k">=</span> getBM(<span class="pl-v">attributes</span> <span class="pl-k">=</span> c(<span class="pl-s"><span class="pl-pds">"</span>hgnc_symbol<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>go_id<span class="pl-pds">"</span></span>), <span class="pl-v">filters</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>hgnc_symbol<span class="pl-pds">"</span></span>, <span class="pl-v">values</span> <span class="pl-k">=</span> rownames(<span class="pl-smi">cd</span>), <span class="pl-v">mart</span> <span class="pl-k">=</span> <span class="pl-smi">ensembl</span>)
+
+<span class="pl-c"># Use the GO.db library to add a column with the GO-term to the dataframe</span>
+<span class="pl-smi">go<span class="pl-k">$</span>term</span> <span class="pl-k">=</span> Term(<span class="pl-smi">go<span class="pl-k">$</span>go_id</span>)
+
+<span class="pl-c"># Create a named list of character vectors out of the df</span>
+<span class="pl-smi">s</span> <span class="pl-k">=</span> split(<span class="pl-smi">go<span class="pl-k">$</span>hgnc_symbol</span>, paste(<span class="pl-smi">go<span class="pl-k">$</span>go_id</span>,<span class="pl-smi">go<span class="pl-k">$</span>term</span>))
+
+<span class="pl-c"># Saves the list as a R environment</span>
+<span class="pl-smi">go.env</span> <span class="pl-k">=</span> list2env(<span class="pl-smi">s</span>)
+</pre></div>
+
 <p>An environment mapping GO terms to the set of genes contained in it has been pre-computed.</p>
 
 <div class="highlight highlight-r"><pre>data(<span class="pl-smi">go.env</span>)</pre></div>
