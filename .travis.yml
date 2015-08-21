@@ -20,6 +20,8 @@ before_install:
   - ./travis-tool.sh bootstrap
 
 install:
+  ## For installing all CRAN dependencies using DESCRIPTION
+  - ./travis-tool.sh install_deps
   ## For installing all Bioconductor dependencies using DESCRIPTION
   - ./travis-tool.sh install_bioc_deps
   ## Install a fixed version of RcppArmadillo
