@@ -5644,8 +5644,8 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
         x <- rep(FALSE, length(pathways))
     }
     if(sum(x) > 0) { # some pathways matched
-        if(!all(x)) {
-            message("WARNING: partial match to pathway names. The following entries did not match: ", paste(pathways[!x], collapse = " "))
+      if(!all(x)) {
+        message("WARNING: partial match to pathway names. The following entries did not match: ", paste(pathways[!x], collapse = " "))
         }
         # look up genes for each pathway
         pathways <- pathways[x]
@@ -5656,8 +5656,8 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
             if(!all(x)) {
                 message("WARNING: partial match to gene names. The following entries did not match: ", paste(pathways[!x], collapse = " "))
             }
-            pathways <- pathways[x]
-            p.genes <- list("genes" = pathways)
+            p.genes <- list("genes" = pathways[x])
+            pathways <- c("genes");
         } else { # neither genes nor pathways are passed
             stop("ERROR: provided names do not match either gene nor pathway names (if the pathway environment was provided)")
         }
@@ -5695,11 +5695,12 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
         }
 
         # consensus pattern
-        lab <- match(names(selected.genes), rownames(mat))
+        #lab <- match(names(selected.genes), rownames(mat))
+        lab <- names(selected.genes);
 
         if(length(lab) == 0)
             return(NULL)
-        if(sum(lab)<3) { return(NULL) }
+        if(length(lab)<3) { return(NULL) }
         if(trim > 0) {
             rn <- rownames(mat)
             cn <- colnames(mat)
@@ -5768,9 +5769,9 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
     }
 
     aval <- colorRampPalette(c("blue", "white", "red"), space = "Lab")(100)[round(aval/max(abs(aval))*49)+50]
-    z <- colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(100)[round(oc/max(abs(oc))*49)+50]
+    z <- rbind(colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(100)[round(oc/max(abs(oc))*49)+50])
 
-    ld <- xp$rotation[row.order, consensus.npc]
+    ld <- xp$rotation[lab[row.order], consensus.npc]
     ld <- colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(100)[round(ld/max(abs(ld))*49)+50]
 
     # oc2 <- xp$scores[, 2]
@@ -5784,13 +5785,20 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
         z <- NULL
     }
     col <- colorRampPalette(c("blue", "white", "red"), space = "Lab")(256)
-    if(!is.null(colcols)) { z <- rbind(colcols, z) }
+
+    if(!is.null(colcols)) {
+      if(is.null(z)) {
+        z <- colcols;
+      } else {
+        z <- rbind(colcols, z)
+      }
+    }
 
     if(plot) {
         if(show.Colv) {
             my.heatmap2(vmap[row.order, , drop = FALSE], Rowv = NA, Colv = as.dendrogram(vhc), zlim = zlim, col = col, scale = "none", RowSideColors = ld, ColSideColors = z, labRow = labRow, cexCol = cexCol, cexRow = cexRow, ...)
         } else {
-            my.heatmap2(vmap[row.order, vhc$order, drop = FALSE], Rowv = NA, Colv = NA, zlim = zlim, col = col, scale = "none", RowSideColors = ld, ColSideColors = z[vhc$order], labRow = labRow, cexCol = cexCol, cexRow = cexRow, ...)
+            my.heatmap2(vmap[row.order, vhc$order, drop = FALSE], Rowv = NA, Colv = NA, zlim = zlim, col = col, scale = "none", RowSideColors = ld, ColSideColors = z[,vhc$order], labRow = labRow, cexCol = cexCol, cexRow = cexRow, ...)
         }
 
     }
@@ -5842,7 +5850,7 @@ calculate.go.enrichment <- function(genelist, universe, pvalue.cutoff = 1e-3, mi
         lpr <- ifelse(pv<0.5, phyper(cv$s-1, cv$u, us-cv$u, ns, lower.tail = FALSE, log.p = TRUE), phyper(cv$s+1, cv$u, us-cv$u, ns, lower.tail = TRUE, log.p = TRUE))
     }
     lpr <- phyper(cv$s-1, cv$u, us-cv$u, ns, lower.tail = FALSE, log.p = TRUE)
-    lpra <- bh.adjust(lpr, log.p = TRUE)
+    lpra <- bh.adjust(lpr, log = TRUE)
     z <- qnorm(lpr, lower.tail = FALSE, log.p = TRUE)
     za <- qnorm(lpra, lower.tail = FALSE, log.p = TRUE)
     # correct for multiple hypothesis
