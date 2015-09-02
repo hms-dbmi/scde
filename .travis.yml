@@ -23,10 +23,10 @@ install:
   ## For installing all Bioconductor dependencies using DESCRIPTION
   - ./travis-tool.sh install_bioc_deps
   ## Install a fixed version of RcppArmadillo
-  - Rscript -e 'remove.packages("RcppArmadillo")'
-  - wget http://cran.rstudio.com/src/contrib/Archive/RcppArmadillo/RcppArmadillo_0.4.650.1.1.tar.gz
-  - R CMD INSTALL RcppArmadillo_0.4.650.1.1.tar.gz
-  - rm -f RcppArmadillo_0.4.650.1.1.tar.gz
+  #- Rscript -e 'remove.packages("RcppArmadillo")'
+  #- wget http://cran.rstudio.com/src/contrib/Archive/RcppArmadillo/RcppArmadillo_0.4.650.1.1.tar.gz
+  #- R CMD INSTALL RcppArmadillo_0.4.650.1.1.tar.gz
+  #- rm -f RcppArmadillo_0.4.650.1.1.tar.gz
 
 script:
   - travis_wait ./travis-tool.sh run_tests

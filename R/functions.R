@@ -121,7 +121,7 @@ scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshol
     if(verbose) {
         cat("cross-fitting cells.\n")
     }
-    cfm <- calculate.crossfit.models(counts, groups, n.cores = n.cores, threshold.segmentation = threshold.segmentation, min.count.threshold = min.count.threshold, zero.lambda = zero.lambda, max.pairs = max.pairs, save.plots = save.crossfit.plots, min.pairs.per.cell = min.pairs.per.cell)
+    cfm <- calculate.crossfit.models(counts, groups, n.cores = n.cores, threshold.segmentation = threshold.segmentation, min.count.threshold = min.count.threshold, zero.lambda = zero.lambda, max.pairs = max.pairs, save.plots = save.crossfit.plots, min.pairs.per.cell = min.pairs.per.cell, verbose = verbose)
     # error model for each cell
     if(verbose) {
         cat("building individual error models.\n")
