@@ -982,6 +982,12 @@ scde.fit.models.to.reference <- function(counts, reference, n.cores = 10, zero.c
 ##' @export
 bwpca <- function(mat, matw = NULL, npcs = 2, nstarts = 1, smooth = 0, em.tol = 1e-6, em.maxiter = 25, seed = 1, center = TRUE, n.shuffles = 0) {
     if(smooth<4) { smooth <- 0 }
+    if(any(is.nan(matw))) {
+      stop("bwpca: weight matrix contains NaN values")
+    }
+    if(any(is.nan(mat))) {
+      stop("bwpca: value matrix contains NaN values")
+    }
     if(is.null(matw)) {
         matw <- matrix(1, nrow(mat), ncol(mat))
         nstarts <- 1
