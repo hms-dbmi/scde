@@ -197,7 +197,7 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
             // find max point
             if(returnpost==1 || returnpost==3) {
                 arma::uword maxij;
-                // double maxv=nbp.max(maxij);
+                double maxv=nbp.max(maxij);
                 maxi.push_back(maxij);
             }
             // set the lower bound to min/n.cells
@@ -440,7 +440,7 @@ RcppExport SEXP logBootBatchPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP 
             // find max point
             if(returnpost==1) {
                 arma::uword maxij;
-                //double maxv=nbp.max(maxij);
+		double maxv=nbp.max(maxij);
                 maxi.push_back(maxij);
             }
             // set the lower bound to min/n.cells
