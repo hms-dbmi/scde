@@ -1229,6 +1229,7 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
 ##' @param batch measurement batch (optional)
 ##' @param trim trim value for Winsorization (optional, can be set to 1-3 to reduce the impact of outliers, can be as large as 5 or 10 for datasets with several thousand cells)
 ##' @param prior expression magnitude prior
+##' @param fit.genes a vector of gene names which should be used to establish the variance fit (default is NULL: use all genes). This can be used to specify, for instance, a set spike-in control transcripts such as ERCC.
 ##' @param plot whether to plot the results
 ##' @param minimize.underdispersion whether underdispersion should be minimized (can increase sensitivity in datasets with high complexity of population, however cannot be effectively used in datasets where multiple batches are present)
 ##' @param n.cores number of cores to use
@@ -1261,10 +1262,11 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
 ##' \item{modes} {a list of batch-specific average expression magnitudes for each gene}
 ##' \item{prior} {estimated (or supplied) expression magnitude prior}
 ##' \item{edf} { estimated effective degrees of freedom}
+##' \item{fit.genes} { fit.genes parameter }
 ##' }
 ##'
 ##' @export
-pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL, plot = TRUE, minimize.underdispersion = FALSE, n.cores = detectCores(), n.randomizations = 100, weight.k = 0.9, verbose = 0, weight.df.power = 1, smooth.df = -1, max.adj.var = 10, theta.range = c(1e-2, 1e2), gene.length = NULL) {
+pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL, fit.genes=NULL, plot = TRUE, minimize.underdispersion = FALSE, n.cores = detectCores(), n.randomizations = 100, weight.k = 0.9, verbose = 0, weight.df.power = 1, smooth.df = -1, max.adj.var = 10, theta.range = c(1e-2, 1e2), gene.length = NULL) {
 
     cd <- counts
 
@@ -1536,18 +1538,21 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
         wvar <- bwvar # replace wvar now that we have the ratio of
         matw <- bmatw # replace matw with the batch-specific one that will be used from here on
         # ALTERNATIVE: could adjust wvar for the bwvar.ratio here, before fitting expression dependency
-    }
-    vi <- rowSums(matw) > 0 & is.finite(wvar) & wvar > 0
+      }
+    fvi <- vi <- rowSums(matw) > 0 & is.finite(wvar) & wvar > 0
+    if(!is.null(fit.genes)) { fvi <- fvi & rownames(mat) %in% fit.genes }
+    if(!any(fvi)) { stop("unable to find a set of valid genes to establish the variance fit") }
+    
     # s = mgcv:::s
     s = mgcv::s
     if(cv.fit) {
         #x <- gam(as.formula("cv2 ~ s(lev)"), data = df[vi, ], weights = rowSums(matw[vi, ]))
         if(is.null(gene.length)) {
             df <- data.frame(lev = log10(avmodes), cv2 = log10(wvar/avmodes^2))
-            x <- mgcv::gam(cv2 ~ s(lev, k = smooth.df), data = df[vi, ], weights = rowSums(matw[vi, ]))
+            x <- mgcv::gam(cv2 ~ s(lev, k = smooth.df), data = df[fvi, ], weights = rowSums(matw[fvi, ]))
         } else {
             df <- data.frame(lev = log10(avmodes), cv2 = log10(wvar/avmodes^2), len = gene.length[rownames(cd)])
-            x <- mgcv::gam(cv2 ~ s(lev, k = smooth.df) + s(len, k = smooth.df), data = df[vi, ], weights = rowSums(matw[vi, ]))
+            x <- mgcv::gam(cv2 ~ s(lev, k = smooth.df) + s(len, k = smooth.df), data = df[fvi, ], weights = rowSums(matw[fvi, ]))
         }
         #x <- lm(cv2~lev, data = df[vi, ], weights = rowSums(matw[vi, ]))
 
@@ -1560,6 +1565,9 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
 
             smoothScatter(df$lev[vi], df$cv2[vi], nbin = 256, xlab = "expression magnitude (log10)", ylab = "cv^2 (log10)")
             lines(sort(df$lev[vi]), predict(x, newdata = df[vi, ])[order(df$lev[vi])], col = 2, pch = ".", cex = 1)
+            if(!is.null(fit.genes)) { # show genes used for the fit
+              points(df$lev[fvi],df$cv2[fvi],pch=".",col="green",cex=1)
+            }
 
             #points(df[paste("g", diff.exp.gene.ids, sep = ""), "lev"], df[paste("g", diff.exp.gene.ids, sep = ""), "cv2"], col = 2)
         }
@@ -1570,22 +1578,25 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
             pv[edf[vi]<= min.edf] <- 0
             pv <- p.adjust(pv)
             #x <- gam(as.formula("cv2 ~ s(lev)"), data = df[vi, ], weights = (pmin(10, -log(pv))+1)*rowSums(matw[vi, ]))
-            x <- mgcv::gam(cv2 ~ s(lev, k = smooth.df), data = df[vi, ], weights = (pmin(10, -log(pv))+1)*rowSums(matw[vi, ]))
-            zval.m <- 10^(df$cv2[vi]-x$fitted.values)
+            x <- mgcv::gam(cv2 ~ s(lev, k = smooth.df), data = df[fvi, ], weights = (pmin(10, -log(pv))+1)*rowSums(matw[fvi, ]))
+            zval.m <- 10^(df$cv2[vi]-predict(x,newdata=df[vi,]))
             if(plot) {
-                points(df$lev[vi], x$fitted.values, col = 4, pch = ".", cex = 1)
+              lines(sort(df$lev[vi]), predict(x, newdata = df[vi, ])[order(df$lev[vi])], col = 4, pch = ".", cex = 1)
             }
         }
     } else {
         df <- data.frame(lev = log10(avmodes), sd = sqrt(wvar))
         #x <- gam(as.formula("sd ~ s(lev)"), data = df[vi, ], weights = rowSums(matw[vi, ]))
-        x <- mgcv::gam(sd ~ s(lev, k = smooth.df), data = df[vi, ], weights = rowSums(matw[vi, ]))
-        zval.m <- (as.numeric((df$sd[vi])/pmax(min.sd, x$fitted.values)))^2
+        x <- mgcv::gam(sd ~ s(lev, k = smooth.df), data = df[fvi, ], weights = rowSums(matw[fvi, ]))
+        zval.m <- (as.numeric((df$sd[vi])/pmax(min.sd, predict(x,newdata=df[vi,]))))^2
 
         if(plot) {
             par(mfrow = c(1, 2), mar = c(3.5, 3.5, 1.0, 1.0), mgp = c(2, 0.65, 0))
             smoothScatter(df$lev[vi], df$sd[vi], nbin = 256, xlab = "expression magnitude", ylab = "weighted sdiv")
-            points(df$lev[vi], x$fitted.values, col = 2, pch = ".", cex = 1)
+            lines(sort(df$lev[vi]), predict(x, newdata = df[vi, ])[order(df$lev[vi])], col = 2, pch = ".", cex = 1)
+            if(!is.null(fit.genes)) { # show genes used for the fit
+              points(df$lev[fvi],df$sd[fvi],pch=".",col="green",cex=1)
+            }
         }
 
         # optional : re-weight to minimize the underdispersed points
@@ -1594,10 +1605,10 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
             pv[edf[vi]<= min.edf] <- 0
             pv <- p.adjust(pv)
             #x <- gam(as.formula("sd ~ s(lev)"), data = df[vi, ], weights = (pmin(20, -log(pv))+1)*rowSums(matw[vi, ]))
-            x <- mgcv::gam(sd ~ s(lev, k = smooth.df), data = df[vi, ], weights = (pmin(20, -log(pv))+1)*rowSums(matw[vi, ]))
+            x <- mgcv::gam(sd ~ s(lev, k = smooth.df), data = df[fvi, ], weights = (pmin(20, -log(pv))+1)*rowSums(matw[fvi, ]))
             zval.m <- (as.numeric((df$sd[vi])/pmax(x$fitted.values, min.sd)))^2
             if(plot) {
-                points(df$lev[vi], x$fitted.values, col = 4, pch = ".", cex = 1)
+              lines(sort(df$lev[vi]), predict(x, newdata = df[vi, ])[order(df$lev[vi])], col = 4, pch = ".", cex = 1)
             }
         }
     }
@@ -1620,6 +1631,9 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
         smoothScatter(df$lev[vi], arv[vi], xlab = "expression magnitude (log10)", ylab = "adjusted variance (log10)", nbin = 256)
         abline(h = 1, lty = 2, col = 8)
         abline(h = max.adj.var, lty = 3, col = 2)
+        if(!is.null(fit.genes)) {
+          points(df$lev[fvi],arv[fvi],pch=".",col="green",cex=1)
+        }
         #points(df[paste("g", diff.exp.gene.ids, sep = ""), "lev"], arv[paste("g", diff.exp.gene.ids, sep = "")], col = 2)
         #points(df$lev[vi], arv[vi], col = 2, pch = ".", cex = 2)
     }
