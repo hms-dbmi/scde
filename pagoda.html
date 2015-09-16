@@ -91,8 +91,7 @@ sort(<span class="pl-smi">varinfo</span><span class="pl-k">$</span><span class="
 
 <p>For pre-defined gene sets, we'll use GO annotations. </p>
 
-<div class="highlight highlight-r"><pre><span class="pl-c"># EVALUATION NOT NEEDED. </span>
-library(<span class="pl-smi">org.Hs.eg.db</span>)
+<div class="highlight highlight-r"><pre>library(<span class="pl-smi">org.Hs.eg.db</span>)
 <span class="pl-c"># translate gene names to ids</span>
 <span class="pl-smi">ids</span> <span class="pl-k">&lt;-</span> unlist(lapply(mget(rownames(<span class="pl-smi">cd</span>), <span class="pl-smi">org.Hs.egALIAS2EG</span>, <span class="pl-v">ifnotfound</span> <span class="pl-k">=</span> <span class="pl-c1">NA</span>), <span class="pl-k">function</span>(<span class="pl-smi">x</span>) <span class="pl-smi">x</span>[<span class="pl-c1">1</span>]))
 <span class="pl-c"># reverse map</span>
@@ -109,8 +108,6 @@ library(<span class="pl-smi">GO.db</span>)
 names(<span class="pl-smi">go.env</span>) <span class="pl-k">&lt;-</span> paste(names(<span class="pl-smi">go.env</span>), <span class="pl-smi">desc</span>)  <span class="pl-c"># append description to the names</span>
 
 <span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> list2env(<span class="pl-smi">go.env</span>)  <span class="pl-c"># convert to an environment</span>
-
-<span class="pl-e">devtools</span><span class="pl-k">::</span>use_data(<span class="pl-smi">go.env</span>)  <span class="pl-c"># save for later</span></pre></div>
 
 <p>Alternatively, we can use Ensembls BioMart service to get the GO annotations.</p>
 
