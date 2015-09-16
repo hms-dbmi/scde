@@ -108,6 +108,7 @@ library(<span class="pl-smi">GO.db</span>)
 names(<span class="pl-smi">go.env</span>) <span class="pl-k">&lt;-</span> paste(names(<span class="pl-smi">go.env</span>), <span class="pl-smi">desc</span>)  <span class="pl-c"># append description to the names</span>
 
 <span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> list2env(<span class="pl-smi">go.env</span>)  <span class="pl-c"># convert to an environment</span>
+</pre></div>
 
 <p>Alternatively, we can use Ensembls BioMart service to get the GO annotations.</p>
 
@@ -135,10 +136,6 @@ library(<span class="pl-smi">GO.db</span>)
 <span class="pl-c"># Saves the list as a R environment</span>
 <span class="pl-smi">go.env</span> <span class="pl-k">=</span> list2env(<span class="pl-smi">s</span>)
 </pre></div>
-
-<p>An environment mapping GO terms to the set of genes contained in it has been pre-computed.</p>
-
-<div class="highlight highlight-r"><pre>data(<span class="pl-smi">go.env</span>)</pre></div>
 
 <p>Now, we can calculate weighted first prinicpal component magnitudes for each GO gene set in the provided environment.</p>
 
