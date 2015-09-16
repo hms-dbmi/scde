@@ -9,10 +9,20 @@ layout: default
   <span class="glyphicon glyphicon-download"></span>
   Version 1.99.0
 </a>
+
+<p>To install the downloaded package, use:</p>
+<pre><code>R CMD INSTALL scde_X.Y.Z.tar.gz</code></pre>
+
 <hr>
 
 <h2>Development Version</h2>
 <p>Available on <a href="https://github.com/hms-dbmi/scde">Github</a></p>
+
+<p>To install the development version from Github, use:</p>
+<pre><code>require(devtools)
+devtools::install_github('hms-dbmi/scde', build_vignettes = FALSE)
+</code></pre>
+
 <hr>
 
 <h2>Old Releases</h2>
@@ -64,21 +74,3 @@ layout: default
     This release implements all the basic functionality that is described in the original publication. It uses explicit handling of posterior distributions to test differential expression.
   </li>
 </ul>  
-
-
-<hr>
-
-
-<h1>
-  Installation 
-</h1>
-
-<p>To install the downloaded package, use:</p>
-<pre><code>R CMD INSTALL scde_X.Y.Z.tar.gz</code></pre>
-
-<p>To install the development version from Github, use:</p>
-<pre><code>require(devtools)
-devtools::install_github('hms-dbmi/scde', build_vignettes = FALSE)
-</code></pre>
-
-<p>Use current versions for all dependency packages.</p>
