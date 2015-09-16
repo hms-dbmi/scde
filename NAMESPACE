@@ -3,7 +3,6 @@
 export(bwpca)
 export(knn.error.models)
 export(make.pagoda.app)
-export(o.ifm)
 export(pagoda.cluster.cells)
 export(pagoda.effective.cells)
 export(pagoda.gene.clusters)
