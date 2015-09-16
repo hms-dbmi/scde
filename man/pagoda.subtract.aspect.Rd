@@ -14,7 +14,7 @@ pagoda.subtract.aspect(varinfo, aspect, center = TRUE)
 \item{center}{whether the matrix should be re-centered following pattern subtraction}
 }
 \value{
-a modified varinfo object with adjusted expression matirx (varinfo$mat)
+a modified varinfo object with adjusted expression matrix (varinfo$mat)
 }
 \description{
 Similar to subtracting n-th principal component, the current procedure determines
@@ -26,15 +26,25 @@ for in the subsequent weighted PCA analysis.
 \examples{
 \donttest{
 data(pollen)
-cd <- pollen.counts
+cd <- pollen
 cd <- cd[,colSums(cd>0)>1.8e3]
 cd <- cd[rowSums(cd)>10,]
 cd <- cd[rowSums(cd>0)>5,]
 knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
-data(go.env)  # Load GO annotations as an environment
-cc.pattern <- pagoda.show.pathways(ls(go.env)[1:2], varinfo, go.env, show.cell.dendrogram = TRUE, showRowLabels = TRUE)  # Look at pattern from 2 GO annotations
+# create go environment
+library(org.Hs.eg.db)
+ids <- unlist(lapply(mget(rownames(cd), org.Hs.egALIAS2EG, ifnotfound = NA), function(x) x[1]))
+rids <- names(ids)
+names(rids) <- ids
+go.env <- eapply(org.Hs.egGO2ALLEGS, function(x) as.character(na.omit(rids[x])))
+go.env <- go.env[unlist(lapply(go.env, length))>5]
+library(GO.db)
+desc <- unlist(lapply(mget(names(go.env), GOTERM, ifnotfound = NA), function(x) if(is.logical(x)) { return("") } else { slot(x, "Term")}))
+names(go.env) <- paste(names(go.env), desc)  # append description to the names
+go.env <- list2env(go.env)  # convert to an environment
 # subtract the pattern
+cc.pattern <- pagoda.show.pathways(ls(go.env)[1:2], varinfo, go.env, show.cell.dendrogram = TRUE, showRowLabels = TRUE)  # Look at pattern from 2 GO annotations
 varinfo.cc <- pagoda.subtract.aspect(varinfo, cc.pattern)
 }
 }

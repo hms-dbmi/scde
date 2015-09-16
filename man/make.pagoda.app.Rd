@@ -22,15 +22,15 @@ make.pagoda.app(tamr, tam, varinfo, env, pwpca, clpca = NULL,
 
 \item{clpca}{Weighted PC magnitudes for de novo gene sets identified by clustering on expression. Output of \code{\link{pagoda.gene.clusters}}}
 
-\item{col.cols}{Matrix of column colors. Useful for visualizing cell annotations such as batch labels. Defult NULL.}
+\item{col.cols}{Matrix of column colors. Useful for visualizing cell annotations such as batch labels. Default NULL.}
 
-\item{cell.clustering}{Dendrogram of cell clustering. Output of \code{\link{pagoda.cluster.cells} } . Default   NRUEULL.}
+\item{cell.clustering}{Dendrogram of cell clustering. Output of \code{\link{pagoda.cluster.cells} } . Default   NULL.}
 
 \item{row.clustering}{Dendrogram of combined pathways clustering. Default NULL.}
 
 \item{title}{Title text to be used in the browser label for the app. Default, set as 'pathway clustering'}
 
-\item{zlim}{Range of the normalized gene expression levels, inputted as a list: c(lower_bound, upper_bound). Values outside this range will be winsorized. Useful for increasing the contrast of the heatmap visualizations. Default, set to the 5th and 95th percentiles.}
+\item{zlim}{Range of the normalized gene expression levels, inputted as a list: c(lower_bound, upper_bound). Values outside this range will be Winsorized. Useful for increasing the contrast of the heatmap visualizations. Default, set to the 5th and 95th percentiles.}
 }
 \value{
 PAGODA app

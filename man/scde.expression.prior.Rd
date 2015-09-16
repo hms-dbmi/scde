@@ -23,7 +23,7 @@ scde.expression.prior(models, counts, length.out = 400, show.plot = FALSE,
 
 \item{max.quantile}{determine the maximum expression magnitude based on a quantile (default : 0.999)}
 
-\item{max.value}{alternatively, specify the exact maximum expression magntiude value}
+\item{max.value}{alternatively, specify the exact maximum expression magnitude value}
 }
 \value{
 a structure describing expression magnitude grid ($x, on log10 scale) and prior ($y)

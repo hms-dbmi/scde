@@ -23,7 +23,7 @@ cd <- es.mef.small
 cd <- cd[rowSums(cd) > 0, ]
 cd <- cd[, colSums(cd) > 1e4]
 data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
-# get expression magniutude estimates
+# get expression magnitude estimates
 lfpm <- scde.expression.magnitude(o.ifm, cd)
 }
 

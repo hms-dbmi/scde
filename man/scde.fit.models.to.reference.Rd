@@ -21,7 +21,7 @@ scde.fit.models.to.reference(counts, reference, n.cores = 10,
 
 \item{save.plots}{whether to write out a pdf file showing the model fits}
 
-\item{plot.filename}{model fit pdf fielname}
+\item{plot.filename}{model fit pdf filename}
 
 \item{verbose}{verbose level}
 

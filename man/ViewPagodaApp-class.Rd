@@ -28,7 +28,7 @@ Refer to the code in \code{\link{make.pagoda.app}} for usage example
 
 \item{\code{name}}{Name of the application page; for display as the page title}
 
-\item{\code{trim}}{Trim quantity used for winsorization for visualization}
+\item{\code{trim}}{Trim quantity used for Winsorization for visualization}
 
 \item{\code{batch}}{Any batch or other known confounders to be included in the visualization as a column color track}
 }}

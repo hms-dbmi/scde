@@ -22,7 +22,7 @@ pagoda.gene.clusters(varinfo, trim = 3.1/ncol(varinfo$mat),
 
 \item{cor.method}{correlation method ("pearson", "spearman") to be used as a distance measure for clustering}
 
-\item{n.internal.shuffles}{number of internal shuffles to perform (only if interested in set coherence, which is quite high for clusters by definition)}
+\item{n.internal.shuffles}{number of internal shuffles to perform (only if interested in set coherence, which is quite high for clusters by definition, disabled by default; set to 10-30 shuffles to estimate)}
 
 \item{n.starts}{number of wPCA EM algorithm starts at each iteration}
 
@@ -32,7 +32,7 @@ pagoda.gene.clusters(varinfo, trim = 3.1/ncol(varinfo$mat),
 
 \item{plot}{whether a plot showing distribution of random lambda1 values should be shown (along with the extreme value distribution fit)}
 
-\item{show.random}{whether the empirical random geneset values should be shown in addition to the Tracy-Windom analytical approximation}
+\item{show.random}{whether the empirical random gene set values should be shown in addition to the Tracy-Widom analytical approximation}
 
 \item{n.components}{number of PC to calculate (can be increased if the number of clusters is small and some contain strong secondary patterns - rarely the case)}
 
@@ -61,13 +61,12 @@ Determine de-novo gene clusters, their weighted PCA lambda1 values, and random m
 \examples{
 \donttest{
 data(pollen)
-cd <- pollen.counts
+cd <- pollen
 cd <- cd[,colSums(cd>0)>1.8e3]
 cd <- cd[rowSums(cd)>10,]
 cd <- cd[rowSums(cd>0)>5,]
 knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
-data(go.env)  # Load GO annotations as an environment
 clpca <- pagoda.gene.clusters(varinfo, trim=7.1/ncol(varinfo$mat), n.clusters=150, n.cores=10, plot=FALSE)
 }
 }

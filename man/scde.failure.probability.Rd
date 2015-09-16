@@ -7,7 +7,7 @@
 scde.failure.probability(models, magnitudes = NULL, counts = NULL)
 }
 \arguments{
-\item{models}{models determiend by \code{\link{scde.error.models}}}
+\item{models}{models determined by \code{\link{scde.error.models}}}
 
 \item{magnitudes}{a vector (\code{length(counts) == nrows(models)}) or a matrix (columns correspond to cells) of expression magnitudes, given on a log scale}
 

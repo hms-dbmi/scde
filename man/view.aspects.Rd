@@ -16,7 +16,7 @@ view.aspects(mat, row.clustering = NA, cell.clustering = NA, zlim = c(-1,
 
 \item{cell.clustering}{Column dendrogram}
 
-\item{zlim}{Range of the normalized gene expression levels, inputted as a list: c(lower_bound, upper_bound). Values outside this range will be winsorized. Useful for increasing the contrast of the heatmap visualizations. Default, set to the 5th and 95th percentiles.}
+\item{zlim}{Range of the normalized gene expression levels, inputted as a list: c(lower_bound, upper_bound). Values outside this range will be Winsorized. Useful for increasing the contrast of the heatmap visualizations. Default, set to the 5th and 95th percentiles.}
 
 \item{row.cols}{Matrix of row colors.}
 

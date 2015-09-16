@@ -2,14 +2,14 @@
 % Please edit documentation in R/functions.R
 \name{pagoda.effective.cells}
 \alias{pagoda.effective.cells}
-\title{Estimate effetive number of cells based on lambda1 of random gene sets}
+\title{Estimate effective number of cells based on lambda1 of random gene sets}
 \usage{
 pagoda.effective.cells(pwpca, start = NULL)
 }
 \arguments{
 \item{pwpca}{result of the pagoda.pathway.wPCA() call with n.randomizations > 1}
 
-\item{start}{optional starting value for the optimization (if the nls breaks, trying high starting values usually fixed the local gradient problem)}
+\item{start}{optional starting value for the optimization (if the NLS breaks, trying high starting values usually fixed the local gradient problem)}
 }
 \value{
 effective number of cells
@@ -22,13 +22,12 @@ for the Tracy-Widom distribution
 \examples{
 \donttest{
 data(pollen)
-cd <- pollen.counts
+cd <- pollen
 cd <- cd[,colSums(cd>0)>1.8e3]
 cd <- cd[rowSums(cd)>10,]
 cd <- cd[rowSums(cd>0)>5,]
 knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
-data(go.env)  # Load GO annotations as an environment
 pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
 pagoda.effective.cells(pwpca)
 }

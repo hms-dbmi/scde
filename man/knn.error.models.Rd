@@ -8,8 +8,8 @@ knn.error.models(counts, groups = NULL, k = round(ncol(counts)/2),
   min.nonfailed = 5, min.count.threshold = 1, save.model.plots = TRUE,
   max.model.plots = 50, n.cores = parallel::detectCores(),
   min.size.entries = 2000, min.fpm = 0, cor.method = "pearson",
-  verbose = 0, fpm.estimate.trim = 0.25, zero.intercept = TRUE,
-  local.theta.fit = zero.intercept, theta.fit.range = c(0.01, 100),
+  verbose = 0, fpm.estimate.trim = 0.25, linear.fit = TRUE,
+  local.theta.fit = linear.fit, theta.fit.range = c(0.01, 100),
   alpha.weight.power = 1/2)
 }
 \arguments{
@@ -39,7 +39,7 @@ knn.error.models(counts, groups = NULL, k = round(ncol(counts)/2),
 
 \item{fpm.estimate.trim}{trim fraction to be used in estimating group-average gene expression magnitude for model fitting (0.5 would be median, 0 would turn off trimming)}
 
-\item{zero.intercept}{whether newer linear model fit with zero intercept should be used (T), or the log-fit model published originally (F)}
+\item{linear.fit}{whether newer linear model fit with zero intercept should be used (T), or the log-fit model published originally (F)}
 
 \item{local.theta.fit}{whether local theta fitting should be used (only available for the linear fit models)}
 
@@ -55,13 +55,13 @@ Builds cell-specific error models assuming that there are multiple subpopulation
 among the measured cells. The models for each cell are based on average expression estimates
 obtained from K closest cells within a given group (if groups = NULL, then within the entire
 set of measured cells). The method implements fitting of both the original log-fit models
-(when zero.intercept = FALSE), or newer linear-fit models (zero.intercept = TRUE, default) with locally
+(when linear.fit = FALSE), or newer linear-fit models (linear.fit = TRUE, default) with locally
 fit overdispersion coefficient (local.theta.fit = TRUE, default).
 }
 \examples{
 \donttest{
 data(pollen)
-cd <- pollen.counts
+cd <- pollen
 cd <- cd[,colSums(cd>0)>1.8e3]
 cd <- cd[rowSums(cd)>10,]
 cd <- cd[rowSums(cd>0)>5,]

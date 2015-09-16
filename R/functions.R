@@ -57,15 +57,6 @@ NULL
 ##' @export
 NULL
 
-##' GO annotation
-##'
-##' GO gene sets as an environment
-##'
-##' @name go.env
-##' @docType data
-##' @export
-NULL
-
 # Internal model data
 #
 # Numerically-derived correction for NB->chi squared approximation stored as an local regression model
@@ -1756,9 +1747,19 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
 ##' cd <- cd[rowSums(cd>0)>5,]
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
-##' data(go.env)  # Load GO annotations as an environment
-##' cc.pattern <- pagoda.show.pathways(ls(go.env)[1:2], varinfo, go.env, show.cell.dendrogram = TRUE, showRowLabels = TRUE)  # Look at pattern from 2 GO annotations
+##' # create go environment
+##' library(org.Hs.eg.db)
+##' ids <- unlist(lapply(mget(rownames(cd), org.Hs.egALIAS2EG, ifnotfound = NA), function(x) x[1]))
+##' rids <- names(ids)
+##' names(rids) <- ids
+##' go.env <- eapply(org.Hs.egGO2ALLEGS, function(x) as.character(na.omit(rids[x])))
+##' go.env <- go.env[unlist(lapply(go.env, length))>5]
+##' library(GO.db)
+##' desc <- unlist(lapply(mget(names(go.env), GOTERM, ifnotfound = NA), function(x) if(is.logical(x)) { return("") } else { slot(x, "Term")}))
+##' names(go.env) <- paste(names(go.env), desc)  # append description to the names
+##' go.env <- list2env(go.env)  # convert to an environment
 ##' # subtract the pattern
+##' cc.pattern <- pagoda.show.pathways(ls(go.env)[1:2], varinfo, go.env, show.cell.dendrogram = TRUE, showRowLabels = TRUE)  # Look at pattern from 2 GO annotations
 ##' varinfo.cc <- pagoda.subtract.aspect(varinfo, cc.pattern)
 ##' }
 ##'
@@ -1809,7 +1810,17 @@ pagoda.subtract.aspect <- function(varinfo, aspect, center = TRUE) {
 ##' cd <- cd[rowSums(cd>0)>5,]
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
-##' data(go.env)  # Load GO annotations as an environment
+##' # create go environment
+##' library(org.Hs.eg.db)
+##' ids <- unlist(lapply(mget(rownames(cd), org.Hs.egALIAS2EG, ifnotfound = NA), function(x) x[1]))
+##' rids <- names(ids)
+##' names(rids) <- ids
+##' go.env <- eapply(org.Hs.egGO2ALLEGS, function(x) as.character(na.omit(rids[x])))
+##' go.env <- go.env[unlist(lapply(go.env, length))>5]
+##' library(GO.db)
+##' desc <- unlist(lapply(mget(names(go.env), GOTERM, ifnotfound = NA), function(x) if(is.logical(x)) { return("") } else { slot(x, "Term")}))
+##' names(go.env) <- paste(names(go.env), desc)  # append description to the names
+##' go.env <- list2env(go.env)  # convert to an environment
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
 ##' }
 ##'
@@ -1905,7 +1916,6 @@ pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = det
 ##' cd <- cd[rowSums(cd>0)>5,]
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
-##' data(go.env)  # Load GO annotations as an environment
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
 ##' pagoda.effective.cells(pwpca)
 ##' }
@@ -1968,7 +1978,6 @@ pagoda.effective.cells <- function(pwpca, start = NULL) {
 ##' cd <- cd[rowSums(cd>0)>5,]
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
-##' data(go.env)  # Load GO annotations as an environment
 ##' clpca <- pagoda.gene.clusters(varinfo, trim=7.1/ncol(varinfo$mat), n.clusters=150, n.cores=10, plot=FALSE)
 ##' }
 ##'
@@ -2190,7 +2199,6 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
 ##' cd <- cd[rowSums(cd>0)>5,]
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
-##' data(go.env)  # Load GO annotations as an environment
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
 ##' tam <- pagoda.top.aspects(pwpca, return.table = TRUE, plot=FALSE, z.score=1.96)  # top aspects based on GO only
 ##' }
@@ -2405,7 +2413,6 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
 ##' cd <- cd[rowSums(cd>0)>5,]
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
-##' data(go.env)  # Load GO annotations as an environment
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
 ##' tam <- pagoda.top.aspects(pwpca, return.table = TRUE, plot=FALSE, z.score=1.96)  # top aspects based on GO only
 ##' tamr <- pagoda.reduce.loading.redundancy(tam, pwpca)
@@ -2477,7 +2484,6 @@ pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = FA
 ##' cd <- cd[rowSums(cd>0)>5,]
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
-##' data(go.env)  # Load GO annotations as an environment
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
 ##' tam <- pagoda.top.aspects(pwpca, return.table = TRUE, plot=FALSE, z.score=1.96)  # top aspects based on GO only
 ##' tamr <- pagoda.reduce.loading.redundancy(tam, pwpca)
@@ -2563,7 +2569,6 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
 ##' cd <- cd[rowSums(cd>0)>5,]
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
-##' data(go.env)  # Load GO annotations as an environment
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
 ##' tam <- pagoda.top.aspects(pwpca, return.table = TRUE, plot=FALSE, z.score=1.96)  # top aspects based on GO only
 ##' hc <- pagoda.cluster.cells(tam, varinfo)
@@ -2631,7 +2636,6 @@ pagoda.cluster.cells <- function(tam, varinfo, method = "ward", include.aspects 
 ##' cd <- cd[rowSums(cd>0)>5,]
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
-##' data(go.env)  # Load GO annotations as an environment
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
 ##' tam <- pagoda.top.aspects(pwpca, return.table = TRUE, plot=FALSE, z.score=1.96)  # top aspects based on GO only
 ##' pagoda.view.aspects(tam)

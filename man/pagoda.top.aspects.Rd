@@ -16,7 +16,7 @@ pagoda.top.aspects(pwpca, clpca = NULL, n.cells = NULL,
 
 \item{n.cells}{effective number of cells (if not provided, will be determined using pagoda.effective.cells())}
 
-\item{z.score}{Z score to be used as a cutoff for statistically significant pattenrs (defaults to 0.05 P-value}
+\item{z.score}{Z score to be used as a cutoff for statistically significant patterns (defaults to 0.05 P-value}
 
 \item{return.table}{whether a text table showing}
 
@@ -26,7 +26,7 @@ pagoda.top.aspects(pwpca, clpca = NULL, n.cells = NULL,
 
 \item{adjust.scores}{whether the normalization of the aspect patterns should be based on the adjusted Z scores - qnorm(0.05/2, lower.tail = FALSE)}
 
-\item{score.alpha}{significance lelvel of the confidence interval for determining upper/lower bounds}
+\item{score.alpha}{significance level of the confidence interval for determining upper/lower bounds}
 
 \item{use.oe.scale}{whether the variance of the returned aspect patterns should be normalized using observed/expected value instead of the default chi-squared derived variance corresponding to overdispersion Z score}
 
@@ -49,13 +49,12 @@ aspects, or a set of genes underlying the significant aspects.
 \examples{
 \donttest{
 data(pollen)
-cd <- pollen.counts
+cd <- pollen
 cd <- cd[,colSums(cd>0)>1.8e3]
 cd <- cd[rowSums(cd)>10,]
 cd <- cd[rowSums(cd>0)>5,]
 knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
-data(go.env)  # Load GO annotations as an environment
 pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
 tam <- pagoda.top.aspects(pwpca, return.table = TRUE, plot=FALSE, z.score=1.96)  # top aspects based on GO only
 }

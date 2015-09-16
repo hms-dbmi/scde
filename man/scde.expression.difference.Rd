@@ -41,7 +41,7 @@ a data frame with the following fields:
  If batch correction has been performed (\code{batch} has been supplied), analogous data frames are returned in slots \code{$batch.adjusted} for batch-corrected results, and \code{$batch.effect} for the differences explained by batch effects alone.
 }}
 \subsection{return.posteriors = TRUE}{
-A list is returned, with the default results data frame given in the \code{$resutls} slot.
+A list is returned, with the default results data frame given in the \code{$results} slot.
 \code{difference.posterior} returns a matrix of estimated expression difference posteriors (rows - genes, columns correspond to different magnitudes of fold-change - log2 values are given in the column names)
 \code{joint.posteriors} a list of two joint posterior matrices (rows - genes, columns correspond to the expression levels, given by prior$x grid)
 }

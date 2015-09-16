@@ -5,9 +5,9 @@
 \title{Normalize gene expression variance relative to transcriptome-wide expectations}
 \usage{
 pagoda.varnorm(models, counts, batch = NULL, trim = 0, prior = NULL,
-  plot = TRUE, minimize.underdispersion = FALSE, n.cores = detectCores(),
-  n.randomizations = 100, weight.k = 0.9, verbose = 0,
-  weight.df.power = 1, smooth.df = -1, max.adj.var = 10,
+  fit.genes = NULL, plot = TRUE, minimize.underdispersion = FALSE,
+  n.cores = detectCores(), n.randomizations = 100, weight.k = 0.9,
+  verbose = 0, weight.df.power = 1, smooth.df = -1, max.adj.var = 10,
   theta.range = c(0.01, 100), gene.length = NULL)
 }
 \arguments{
@@ -20,6 +20,8 @@ pagoda.varnorm(models, counts, batch = NULL, trim = 0, prior = NULL,
 \item{trim}{trim value for Winsorization (optional, can be set to 1-3 to reduce the impact of outliers, can be as large as 5 or 10 for datasets with several thousand cells)}
 
 \item{prior}{expression magnitude prior}
+
+\item{fit.genes}{a vector of gene names which should be used to establish the variance fit (default is NULL: use all genes). This can be used to specify, for instance, a set spike-in control transcripts such as ERCC.}
 
 \item{plot}{whether to plot the results}
 
@@ -49,10 +51,11 @@ a list containing the following fields:
 \item{mat} {adjusted expression magnitude values}
 \item{matw} { weight matrix corresponding to the expression matrix}
 \item{arv} { a vector giving adjusted variance values for each gene}
-\item{avmodes} {a vector estimated average expression magntiudes for each gene}
-\item{modes} {a list of batch-specific average expression magntiudes for each gene}
+\item{avmodes} {a vector estimated average expression magnitudes for each gene}
+\item{modes} {a list of batch-specific average expression magnitudes for each gene}
 \item{prior} {estimated (or supplied) expression magnitude prior}
 \item{edf} { estimated effective degrees of freedom}
+\item{fit.genes} { fit.genes parameter }
 }
 }
 \description{
@@ -63,7 +66,7 @@ on expression magnitude (and optionally gene length). Corrects for batch effects
 \examples{
 \donttest{
 data(pollen)
-cd <- pollen.counts
+cd <- pollen
 cd <- cd[,colSums(cd>0)>1.8e3]
 cd <- cd[rowSums(cd)>10,]
 cd <- cd[rowSums(cd>0)>5,]

@@ -9,7 +9,7 @@ scde.error.models(counts, groups = NULL, min.nonfailed = 3,
   zero.count.threshold = min.count.threshold, zero.lambda = 0.1,
   save.crossfit.plots = FALSE, save.model.plots = TRUE, n.cores = 12,
   min.size.entries = 2000, max.pairs = 5000, min.pairs.per.cell = 10,
-  verbose = 0, linear.fit = FALSE, local.theta.fit = TRUE,
+  verbose = 0, linear.fit = TRUE, local.theta.fit = TRUE,
   theta.fit.range = c(0.01, 100))
 }
 \arguments{
@@ -41,7 +41,7 @@ scde.error.models(counts, groups = NULL, min.nonfailed = 3,
 
 \item{verbose}{1 for increased output}
 
-\item{linear.fit}{Boolean of whether to use a linear fit in the regression (default: FALSE)}
+\item{linear.fit}{Boolean of whether to use a linear fit in the regression (default: TRUE)}
 
 \item{local.theta.fit}{Boolean of whether to fit the overdispersion parameter theta, ie. the negative binomial size parameter, based on local regression (default: TRUE)}
 
