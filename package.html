@@ -30,6 +30,15 @@ devtools::install_github('hms-dbmi/scde', build_vignettes = FALSE)
 
 <hr>
 
+<h2>Troubleshooting</h2>
+<p></p>Installation on Mac OS X may <a href="http://thecoatlessprofessor.com/programming/rcpp-rcpparmadillo-and-os-x-mavericks-lgfortran-and-lquadmath-error/">this additional gfortran library</a>.</p>
+<pre><code>
+curl -O http://r.research.att.com/libs/gfortran-4.8.2-darwin13.tar.bz2
+sudo tar fvxz gfortran-4.8.2-darwin13.tar.bz2 -C /
+</code></pre>
+
+<hr>
+
 <a href="http://pklab.med.harvard.edu/scde/scde_1.2.1.tar.gz" class="btnDownload">
   <span class="glyphicon glyphicon-download"></span>
   Version 1.2.1
