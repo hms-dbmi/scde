@@ -168,3 +168,111 @@ scde.test.gene.expression.difference(<span class="pl-s"><span class="pl-pds">"</
 ## adjusting for batch effects
 </code></pre>
 
+<p>The test methods will report if the batch composition between groups is statistically unbalanced. In such cases, the bias may be difficult, or impossible to adjust. For instance, if all cells of one type came from one batch, and of the cells of the other type came from a second batch, the bias cannot be recovered.</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c"># browse results</span>
+scde.browse.diffexp(<span class="pl-smi">ediff.batch</span>,<span class="pl-smi">o.ifm</span>,<span class="pl-smi">cd</span>,<span class="pl-smi">o.prior</span>,<span class="pl-smi">groups</span>,<span class="pl-v">batch</span><span class="pl-k">=</span><span class="pl-smi">batch</span>,<span class="pl-v">geneLookupURL</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>http://www.informatics.jax.org/searchtool/Search.do?query={0}<span class="pl-pds">"</span></span>)</pre></div>
+
+<h2>
+<a id="more-detailed-functions" class="anchor" href="#more-detailed-functions" aria-hidden="true"><span class="octicon octicon-link"></span></a>More detailed functions</h2>
+
+<p>The <code>scde.expression.difference</code> method can return a more extensive set of results, including joint posteriors and the expression fold difference posteriors for all of the examined genes:</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c"># recalculate difference and return with joint posteriors and difference posterior</span>
+<span class="pl-smi">ediff.details</span> <span class="pl-k">&lt;-</span> scde.expression.difference(<span class="pl-smi">o.ifm</span>,<span class="pl-smi">cd</span>,<span class="pl-smi">o.prior</span>,<span class="pl-v">n.randomizations</span><span class="pl-k">=</span><span class="pl-c1">100</span>,<span class="pl-v">n.cores</span><span class="pl-k">=</span><span class="pl-smi">n.cores</span>,<span class="pl-v">verbose</span><span class="pl-k">=</span><span class="pl-c1">1</span>,<span class="pl-k">return</span><span class="pl-v">.posteriors</span><span class="pl-k">=</span><span class="pl-c1">T</span>)</pre></div>
+
+<p>The joint posteriors can also be obtained explicitly for a particular set of cells:</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c"># calcualte joint posterior for ESCs (set return.individual.posterior.modes=T if you need p.modes)</span>
+<span class="pl-smi">jp</span> <span class="pl-k">&lt;-</span> scde.posteriors(<span class="pl-v">models</span><span class="pl-k">=</span><span class="pl-smi">o.ifm</span>[grep(<span class="pl-s"><span class="pl-pds">"</span>ESC<span class="pl-pds">"</span></span>,rownames(<span class="pl-smi">o.ifm</span>)),],<span class="pl-smi">cd</span>,<span class="pl-smi">o.prior</span>,<span class="pl-v">n.cores</span><span class="pl-k">=</span><span class="pl-smi">n.cores</span>)</pre></div>
+
+<p>The error models fit the intercept and the slope of the NB "correlated" component, providing more consistent expression magnitude estimates among the cells. These can be obtained with a quick helper function:</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c"># get expression magntiude estimates</span>
+<span class="pl-smi">o.fpm</span> <span class="pl-k">&lt;-</span> scde.expression.magnitude(<span class="pl-smi">o.ifm</span>,<span class="pl-v">counts</span><span class="pl-k">=</span><span class="pl-smi">cd</span>);</pre></div>
+
+<p>Drop-out probabilities (as a function of expression magnitudes) for different cells are useful for assessing the quality of the measurements: </p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c"># get failure probabilities on the expresison range</span>
+<span class="pl-smi">o.fail.curves</span> <span class="pl-k">&lt;-</span> scde.failure.probability(<span class="pl-smi">o.ifm</span>,<span class="pl-v">magnitudes</span><span class="pl-k">=</span>log((<span class="pl-c1">10</span><span class="pl-k">^</span><span class="pl-smi">o.prior</span><span class="pl-k">$</span><span class="pl-smi">x</span>)<span class="pl-k">-</span><span class="pl-c1">1</span>))
+par(<span class="pl-v">mfrow</span><span class="pl-k">=</span>c(<span class="pl-c1">1</span>,<span class="pl-c1">1</span>),<span class="pl-v">mar</span> <span class="pl-k">=</span> c(<span class="pl-c1">3.5</span>,<span class="pl-c1">3.5</span>,<span class="pl-c1">0.5</span>,<span class="pl-c1">0.5</span>), <span class="pl-v">mgp</span> <span class="pl-k">=</span> c(<span class="pl-c1">2.0</span>,<span class="pl-c1">0.65</span>,<span class="pl-c1">0</span>), <span class="pl-v">cex</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>);
+plot(c(),c(),<span class="pl-v">xlim</span><span class="pl-k">=</span>range(<span class="pl-smi">o.prior</span><span class="pl-k">$</span><span class="pl-smi">x</span>),<span class="pl-v">ylim</span><span class="pl-k">=</span>c(<span class="pl-c1">0</span>,<span class="pl-c1">1</span>),<span class="pl-v">xlab</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>expression magnitude (log10)<span class="pl-pds">"</span></span>,<span class="pl-v">ylab</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>drop-out probability<span class="pl-pds">"</span></span>)
+<span class="pl-k">invisible</span>(apply(<span class="pl-smi">o.fail.curves</span>[,grep(<span class="pl-s"><span class="pl-pds">"</span>ES<span class="pl-pds">"</span></span>,colnames(<span class="pl-smi">o.fail.curves</span>))],<span class="pl-c1">2</span>,<span class="pl-k">function</span>(<span class="pl-smi">y</span>) lines(<span class="pl-v">x</span><span class="pl-k">=</span><span class="pl-smi">o.prior</span><span class="pl-k">$</span><span class="pl-smi">x</span>,<span class="pl-v">y</span><span class="pl-k">=</span><span class="pl-smi">y</span>,<span class="pl-v">col</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>orange<span class="pl-pds">"</span></span>)))
+<span class="pl-k">invisible</span>(apply(<span class="pl-smi">o.fail.curves</span>[,grep(<span class="pl-s"><span class="pl-pds">"</span>MEF<span class="pl-pds">"</span></span>,colnames(<span class="pl-smi">o.fail.curves</span>))],<span class="pl-c1">2</span>,<span class="pl-k">function</span>(<span class="pl-smi">y</span>) lines(<span class="pl-v">x</span><span class="pl-k">=</span><span class="pl-smi">o.prior</span><span class="pl-k">$</span><span class="pl-smi">x</span>,<span class="pl-v">y</span><span class="pl-k">=</span><span class="pl-smi">y</span>,<span class="pl-v">col</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>dodgerblue<span class="pl-pds">"</span></span>)))</pre></div>
+
+<p>The drop-out probabilities (at a given expression magnitude, or at an observed count) can be useful in subsequent analysis</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c"># get failure probabilities on the expresison range</span>
+<span class="pl-smi">o.fail.curves</span> <span class="pl-k">&lt;-</span> scde.failure.probability(<span class="pl-smi">o.ifm</span>,<span class="pl-v">magnitudes</span><span class="pl-k">=</span>log((<span class="pl-c1">10</span><span class="pl-k">^</span><span class="pl-smi">o.prior</span><span class="pl-k">$</span><span class="pl-smi">x</span>)<span class="pl-k">-</span><span class="pl-c1">1</span>))
+<span class="pl-c"># get self-fail probabilities (at a given observed count)</span>
+<span class="pl-smi">p.self.fail</span> <span class="pl-k">&lt;-</span> scde.failure.probability(<span class="pl-v">models</span><span class="pl-k">=</span><span class="pl-smi">o.ifm</span>,<span class="pl-v">counts</span><span class="pl-k">=</span><span class="pl-smi">cd</span>)</pre></div>
+
+<h2>
+<a id="adjusted-distance-meaures" class="anchor" href="#adjusted-distance-meaures" aria-hidden="true"><span class="octicon octicon-link"></span></a>Adjusted distance meaures</h2>
+
+<p>The dpendency of drop-out probability on the average expression magntiude captured by the cell-speicifc models can be used to adjust cell-to-cell similarity measures, for instance in the context of cell clustering. Several such measures are explored below.</p>
+
+<h2>
+<a id="direct-drop-out" class="anchor" href="#direct-drop-out" aria-hidden="true"><span class="octicon octicon-link"></span></a>Direct drop-out</h2>
+
+<p>Direct weighting downweights the contribution of a given gene to the cell-to-cell distance based on the probability that the given measurement is a drop-out event (i.e. belongs to the drop-out component) - the "self-fail" probability shown in the previous section. To estimate the adjusted distance, we will simulate the drop-out events, replacing them with <code>NA</code> values, and calculating correlation using the remaining points: </p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-smi">p.self.fail</span> <span class="pl-k">&lt;-</span> scde.failure.probability(<span class="pl-v">models</span><span class="pl-k">=</span><span class="pl-smi">o.ifm</span>,<span class="pl-v">counts</span><span class="pl-k">=</span><span class="pl-smi">cd</span>)
+<span class="pl-c"># simulate drop-outs</span>
+<span class="pl-c"># note: using 10 sampling rounds for illustration here. ~500 or more should be used.</span>
+<span class="pl-smi">n.simulations</span> <span class="pl-k">&lt;-</span> <span class="pl-c1">10</span>; <span class="pl-smi">k</span> <span class="pl-k">&lt;-</span> <span class="pl-c1">0.9</span>;
+<span class="pl-smi">cell.names</span> <span class="pl-k">&lt;-</span> colnames(<span class="pl-smi">cd</span>); names(<span class="pl-smi">cell.names</span>) <span class="pl-k">&lt;-</span> <span class="pl-smi">cell.names</span>;
+<span class="pl-smi">dl</span> <span class="pl-k">&lt;-</span> mclapply(<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">n.simulations</span>,<span class="pl-k">function</span>(<span class="pl-smi">i</span>) {
+  <span class="pl-smi">scd1</span> <span class="pl-k">&lt;-</span> do.call(<span class="pl-smi">cbind</span>,lapply(<span class="pl-smi">cell.names</span>,<span class="pl-k">function</span>(<span class="pl-smi">nam</span>) {
+    <span class="pl-smi">x</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">cd</span>[,<span class="pl-smi">nam</span>];
+    <span class="pl-c"># replace predicted drop outs with NAs</span>
+    <span class="pl-smi">x</span>[<span class="pl-k">!</span>as.logical(rbinom(length(<span class="pl-smi">x</span>),<span class="pl-c1">1</span>,<span class="pl-c1">1</span><span class="pl-k">-</span><span class="pl-smi">p.self.fail</span>[,<span class="pl-smi">nam</span>]<span class="pl-k">*</span><span class="pl-smi">k</span>))] <span class="pl-k">&lt;-</span> <span class="pl-c1">NA</span>;
+    <span class="pl-smi">x</span>;
+    }))
+  rownames(<span class="pl-smi">scd1</span>) <span class="pl-k">&lt;-</span> rownames(<span class="pl-smi">cd</span>); 
+  <span class="pl-c"># calculate correlation on the complete observation pairs</span>
+  cor(log10(<span class="pl-smi">scd1</span><span class="pl-k">+</span><span class="pl-c1">1</span>),<span class="pl-v">use</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>pairwise.complete.obs<span class="pl-pds">"</span></span>);
+},<span class="pl-v">mc.cores</span><span class="pl-k">=</span><span class="pl-smi">n.cores</span>)
+<span class="pl-c"># calculate average distance across sampling rounds</span>
+<span class="pl-smi">direct.dist</span> <span class="pl-k">&lt;-</span> as.dist(<span class="pl-c1">1</span><span class="pl-k">-</span>Reduce(<span class="pl-s"><span class="pl-pds">"</span>+<span class="pl-pds">"</span></span>,<span class="pl-smi">dl</span>)<span class="pl-k">/</span>length(<span class="pl-smi">dl</span>))</pre></div>
+
+<h2>
+<a id="reciprocal-weighting" class="anchor" href="#reciprocal-weighting" aria-hidden="true"><span class="octicon octicon-link"></span></a>Reciprocal weighting</h2>
+
+<p>The reciprocal weighting of the Pearson correlation will give increased weight to pairs of observations where a gene expressed (on average) at a level x1 observed in a cell c1 would not be likely to fail in a cell c2, and vice versa:</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c"># load boot package for the weighted correlation implementation</span>
+require(<span class="pl-smi">boot</span>)
+<span class="pl-smi">k</span> <span class="pl-k">&lt;-</span> <span class="pl-c1">0.95</span>;
+<span class="pl-smi">reciprocal.dist</span> <span class="pl-k">&lt;-</span> as.dist(<span class="pl-c1">1</span><span class="pl-k">-</span>do.call(<span class="pl-smi">rbind</span>,mclapply(<span class="pl-smi">cell.names</span>,<span class="pl-k">function</span>(<span class="pl-smi">nam1</span>) {
+  unlist(lapply(<span class="pl-smi">cell.names</span>,<span class="pl-k">function</span>(<span class="pl-smi">nam2</span>) {
+    <span class="pl-c"># reciprocal probabilities</span>
+    <span class="pl-smi">f1</span> <span class="pl-k">&lt;-</span> scde.failure.probability(<span class="pl-v">models</span><span class="pl-k">=</span><span class="pl-smi">o.ifm</span>[<span class="pl-smi">nam1</span>,,<span class="pl-v">drop</span><span class="pl-k">=</span><span class="pl-c1">F</span>],<span class="pl-v">magnitudes</span><span class="pl-k">=</span><span class="pl-smi">o.fpm</span>[,<span class="pl-smi">nam2</span>])
+    <span class="pl-smi">f2</span> <span class="pl-k">&lt;-</span> scde.failure.probability(<span class="pl-v">models</span><span class="pl-k">=</span><span class="pl-smi">o.ifm</span>[<span class="pl-smi">nam2</span>,,<span class="pl-v">drop</span><span class="pl-k">=</span><span class="pl-c1">F</span>],<span class="pl-v">magnitudes</span><span class="pl-k">=</span><span class="pl-smi">o.fpm</span>[,<span class="pl-smi">nam1</span>])
+    <span class="pl-c"># weight factor</span>
+    <span class="pl-smi">pnf</span> <span class="pl-k">&lt;-</span> sqrt((<span class="pl-c1">1</span><span class="pl-k">-</span><span class="pl-smi">f1</span>)<span class="pl-k">*</span>(<span class="pl-c1">1</span><span class="pl-k">-</span><span class="pl-smi">f2</span>))<span class="pl-k">*</span><span class="pl-smi">k</span> <span class="pl-k">+</span>(<span class="pl-c1">1</span><span class="pl-k">-</span><span class="pl-smi">k</span>); 
+    <span class="pl-e">boot</span><span class="pl-k">::</span>corr(log10(cbind(<span class="pl-smi">cd</span>[,<span class="pl-smi">nam1</span>],<span class="pl-smi">cd</span>[,<span class="pl-smi">nam2</span>])<span class="pl-k">+</span><span class="pl-c1">1</span>),<span class="pl-v">w</span><span class="pl-k">=</span><span class="pl-smi">pnf</span>)
+    }))
+},<span class="pl-v">mc.cores</span><span class="pl-k">=</span><span class="pl-smi">n.cores</span>)),<span class="pl-v">upper</span><span class="pl-k">=</span><span class="pl-c1">F</span>)</pre></div>
+
+<h2>
+<a id="mode-relative-weighting" class="anchor" href="#mode-relative-weighting" aria-hidden="true"><span class="octicon octicon-link"></span></a>Mode-relative weighting</h2>
+
+<p>A more reliable reference magnitude against which drop-out likelihood could be assessed would be an estimate of the average expression magnitude, such as joint posterior mode. Below we estimate <code>p.mode.fail</code>, a probability that a drop-out event could be observed at the level of average expression magntiude in a given cell. For each measurement we then reduce it weight if it indeed dropped out in a cell where we expect it to drop-out given its average expression magnitude <code>(p.self.fail*p.mode.fail)</code>. However we do want to give high weight to measurements where the drop-out was not observed, even though it was exected based on the average expression magnitude, so the overall weight expression is <code>(1-p.self.fail*sqrt(p.self.fail*p.mode.fail))</code> (other formulations are clearly possible here).</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c"># reclculate posteriors with the individual posterior modes </span>
+<span class="pl-smi">jp</span> <span class="pl-k">&lt;-</span> scde.posteriors(<span class="pl-v">models</span><span class="pl-k">=</span><span class="pl-smi">o.ifm</span>,<span class="pl-smi">cd</span>,<span class="pl-smi">o.prior</span>,<span class="pl-k">return</span><span class="pl-v">.individual.posterior.modes</span><span class="pl-k">=</span><span class="pl-c1">T</span>,<span class="pl-v">n.cores</span><span class="pl-k">=</span><span class="pl-smi">n.cores</span>)
+<span class="pl-c"># find joint posterior modes for each gene - a measure of MLE of group-average expression</span>
+<span class="pl-smi">jp</span><span class="pl-k">$</span><span class="pl-smi">jp.modes</span> <span class="pl-k">&lt;-</span> log(as.numeric(colnames(<span class="pl-smi">jp</span><span class="pl-k">$</span><span class="pl-smi">jp</span>)))[max.col(<span class="pl-smi">jp</span><span class="pl-k">$</span><span class="pl-smi">jp</span>)]
+<span class="pl-smi">p.mode.fail</span> <span class="pl-k">&lt;-</span> scde.failure.probability(<span class="pl-v">models</span><span class="pl-k">=</span><span class="pl-smi">o.ifm</span>,<span class="pl-v">magnitudes</span><span class="pl-k">=</span><span class="pl-smi">jp</span><span class="pl-k">$</span><span class="pl-smi">jp.modes</span>)
+<span class="pl-c"># weight matrix</span>
+<span class="pl-smi">matw</span> <span class="pl-k">&lt;-</span> <span class="pl-c1">1</span><span class="pl-k">-</span>sqrt(<span class="pl-smi">p.self.fail</span><span class="pl-k">*</span>sqrt(<span class="pl-smi">p.self.fail</span><span class="pl-k">*</span><span class="pl-smi">p.mode.fail</span>))
+<span class="pl-c"># magnitude matrix (using individual posterior modes here)</span>
+<span class="pl-smi">mat</span> <span class="pl-k">&lt;-</span> log10(exp(<span class="pl-smi">jp</span><span class="pl-k">$</span><span class="pl-smi">modes</span>)<span class="pl-k">+</span><span class="pl-c1">1</span>);
+<span class="pl-c"># weighted distance</span>
+<span class="pl-smi">mode.fail.dist</span> <span class="pl-k">&lt;-</span> as.dist(<span class="pl-c1">1</span><span class="pl-k">-</span>do.call(<span class="pl-smi">rbind</span>,mclapply(<span class="pl-smi">cell.names</span>,<span class="pl-k">function</span>(<span class="pl-smi">nam1</span>) {
+  unlist(lapply(<span class="pl-smi">cell.names</span>,<span class="pl-k">function</span>(<span class="pl-smi">nam2</span>) {
+    corr(cbind(<span class="pl-smi">mat</span>[,<span class="pl-smi">nam1</span>],<span class="pl-smi">mat</span>[,<span class="pl-smi">nam2</span>]),<span class="pl-v">w</span><span class="pl-k">=</span>sqrt(sqrt(<span class="pl-smi">matw</span>[,<span class="pl-smi">nam1</span>]<span class="pl-k">*</span><span class="pl-smi">matw</span>[,<span class="pl-smi">nam2</span>])))
+  }))
+},<span class="pl-v">mc.cores</span><span class="pl-k">=</span><span class="pl-smi">n.cores</span>)),<span class="pl-v">upper</span><span class="pl-k">=</span><span class="pl-c1">F</span>);</pre></div>
+
