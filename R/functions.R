@@ -85,7 +85,7 @@ NULL
 ##' @param max.pairs maximum number of cross-fit comparisons that should be performed per group (default: 5000)
 ##' @param min.pairs.per.cell minimum number of pairs that each cell should be cross-compared with
 ##' @param verbose 1 for increased output
-##' @param linear.fit Boolean of whether to use a linear fit in the regression (default: TRUE). 
+##' @param linear.fit Boolean of whether to use a linear fit in the regression (default: TRUE).
 ##' @param local.theta.fit Boolean of whether to fit the overdispersion parameter theta, ie. the negative binomial size parameter, based on local regression (default: set to be equal to the linear.fit parameter)
 ##' @param theta.fit.range Range of valid values for the overdispersion parameter theta, ie. the negative binomial size parameter (default: c(1e-2, 1e2))
 ##'
@@ -114,7 +114,7 @@ scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshol
     if(any(!unlist(lapply(counts,is.integer)))) {
       stop("Some of the supplied counts are not integer values (or stored as non-integer types). Aborting!\nThe method is designed to work on read counts - do not pass normalized read counts (e.g. FPKM values). If matrix contains read counts, but they are stored as numeric values, use counts<-apply(counts,2,function(x) {storage.mode(x) <- 'integer'; x}) to recast.");
     }
-    
+
     # crossfit
     if(verbose) {
         cat("cross-fitting cells.\n")
@@ -1076,7 +1076,7 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
     if(any(!unlist(lapply(counts,is.integer)))) {
       stop("Some of the supplied counts are not integer values (or stored as non-integer types). Aborting!\nThe method is designed to work on read counts - do not pass normalized read counts (e.g. FPKM values). If matrix contains read counts, but they are stored as numeric values, use counts<-apply(counts,2,function(x) {storage.mode(x) <- 'integer'; x}) to recast.");
     }
-    
+
     # TODO:
     #  - implement check for k >= n.cells (to avoid correlation calculations)
     #  - implement error reporting/handling for failed cell fits
@@ -1171,7 +1171,7 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
             return(TRUE);
         })))
         ml <- ml[vic]; names(ml) <- ids[vic];
-        
+
         if(length(vic)<length(ids)) {
           message("ERROR fitting of ", (length(ids)-length(vic)), " out of ", length(ids), " cells resulted in errors reporting remaining ", length(vic), " cells")
         }
@@ -1537,7 +1537,7 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
     fvi <- vi <- rowSums(matw) > 0 & is.finite(wvar) & wvar > 0
     if(!is.null(fit.genes)) { fvi <- fvi & rownames(mat) %in% fit.genes }
     if(!any(fvi)) { stop("unable to find a set of valid genes to establish the variance fit") }
-    
+
     # s = mgcv:::s
     s = mgcv::s
     if(cv.fit) {
@@ -1986,7 +1986,7 @@ pagoda.effective.cells <- function(pwpca, start = NULL) {
 ##' }
 ##'
 ##' @export
-pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.clusters = 150, n.samples = 60, cor.method = "p", n.internal.shuffles = 0, n.starts = 10, n.cores = detectCores(), verbose = 0, plot = FALSE, show.random = FALSE, n.components = 1, method = "ward", secondary.correlation = FALSE, n.cells = ncol(varinfo$mat), old.results = NULL) {
+pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.clusters = 150, n.samples = 60, cor.method = "p", n.internal.shuffles = 0, n.starts = 10, n.cores = detectCores(), verbose = 0, plot = FALSE, show.random = FALSE, n.components = 1, method = "ward.D", secondary.correlation = FALSE, n.cells = ncol(varinfo$mat), old.results = NULL) {
 
     smooth <- 0
     mat <- varinfo$mat
@@ -2557,7 +2557,7 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
 ##'
 ##' @param tam result of pagoda.top.aspects() call
 ##' @param varinfo result of pagoda.varnorm() call
-##' @param method clustering method ('ward' by default)
+##' @param method clustering method ('ward.D' by default)
 ##' @param verbose 0 or 1 depending on level of desired verbosity
 ##' @param include.aspects whether the aspect patterns themselves should be included alongside with the individual genes in calculating cell distance
 ##' @param return.details Boolean of whether to return just the hclust result or a list containing the hclust result plus the distance matrix and gene values
@@ -2580,7 +2580,7 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
 ##' }
 ##'
 ##' @export
-pagoda.cluster.cells <- function(tam, varinfo, method = "ward", include.aspects = FALSE, verbose = 0, return.details = FALSE) {
+pagoda.cluster.cells <- function(tam, varinfo, method = "ward.D", include.aspects = FALSE, verbose = 0, return.details = FALSE) {
     # gene clustering
     gw <- tam$gw
     gw <- gw[(rowSums(varinfo$matw)*varinfo$arv)[names(gw)] > 1]
@@ -3311,7 +3311,7 @@ calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose =
             }))
             dev.off()
         }
-        
+
         return(ml)
 
     }) # end group iteration
@@ -5561,9 +5561,9 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
     if(is.null(row.order)) {
         if(length(lab) > 2) {
             if(is.element("fastcluster", installed.packages()[, 1])) {
-                hc <- fastcluster::hclust(dd, method = "ward")
+                hc <- fastcluster::hclust(dd, method = "ward.D")
             } else {
-                hc <- stats::hclust(dd, method = "ward")
+                hc <- stats::hclust(dd, method = "ward.D")
             }
             row.order <- hc$order
         } else {
@@ -5575,9 +5575,9 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
         vd <- as.dist(1-cor(as.matrix(d)))
         vd[is.na(vd)] <- 1
         if(is.element("fastcluster", installed.packages()[, 1])) {
-            vhc <- fastcluster::hclust(vd, method = "ward")
+            vhc <- fastcluster::hclust(vd, method = "ward.D")
         } else {
-            vhc <- stats::hclust(vd, method = "ward")
+            vhc <- stats::hclust(vd, method = "ward.D")
         }
 
     }
@@ -5769,9 +5769,9 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
     if(is.null(row.order)) {
         if(length(lab) > 2) {
             if(is.element("fastcluster", installed.packages()[, 1])) {
-                hc <- fastcluster::hclust(dd, method = "ward")
+                hc <- fastcluster::hclust(dd, method = "ward.D")
             } else {
-                hc <- stats::hclust(dd, method = "ward")
+                hc <- stats::hclust(dd, method = "ward.D")
             }
             row.order <- hc$order
         } else {
@@ -5783,9 +5783,9 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
         vd <- as.dist(1-cor(as.matrix(d)))
         vd[is.na(vd)] <- 1
         if(is.element("fastcluster", installed.packages()[, 1])) {
-            vhc <- fastcluster::hclust(vd, method = "ward")
+            vhc <- fastcluster::hclust(vd, method = "ward.D")
         } else {
-            vhc <- stats::hclust(vd, method = "ward")
+            vhc <- stats::hclust(vd, method = "ward.D")
         }
     }
 
@@ -6312,5 +6312,3 @@ ViewPagodaApp <- setRefClass(
         }
             )
     )
-
-
