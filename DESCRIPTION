@@ -1,16 +1,22 @@
 Package: scde
 Type: Package
 Title: Single Cell Differential Expression
-Version: 1.99.0
+Version: 0.99.1
 Date: 2015-05-06
-Description: The scde package implements a set of statistical methods for analyzing single-cell RNA-seq data.
-    scde fits individual error models for single-cell RNA-seq measurements. These models can then be used for
-    assessment of differential expression between groups of cells, as well as other types of analysis.
-    The scde package also contains the pagoda framework which applies pathway and gene set overdispersion analysis
-    to identify and characterize putative cell subpopulations based on transcriptional signatures.
-    The overall approach to the differential expression analysis is detailed in the following publication:
-    "Bayesian approach to single-cell differential expression analysis" (Kharchenko PV, Silberstein L, Scadden DT, Nature Methods, doi:10.1038/nmeth.2967).
-    The overall approach to subpopulation identification and characterization is detailed in the following publication:
+Description: The scde package implements a set of statistical methods for
+    analyzing single-cell RNA-seq data. scde fits individual error models for
+    single-cell RNA-seq measurements. These models can then be used for assessment
+    of differential expression between groups of cells, as well as other types of
+    analysis. The scde package also contains the pagoda framework which applies
+    pathway and gene set overdispersion analysis to identify and characterize
+    putative cell subpopulations based on transcriptional signatures. The overall
+    approach to the differential expression analysis is detailed in the following
+    publication: "Bayesian approach to single-cell differential expression
+    analysis" (Kharchenko PV, Silberstein L, Scadden DT, Nature Methods, doi:
+    10.1038/nmeth.2967). The overall approach to subpopulation identification and
+    characterization is detailed in the following pre-print: "Characterizing 
+    transcriptional heterogeneity through pathway and gene set overdispersion 
+    analysis" (Fan J, et al, doi: http://dx.doi.org/10.1101/026948).
 Author: Peter Kharchenko [aut, cre],
     Jean Fan [aut]
 Authors@R: c(
@@ -20,37 +26,19 @@ Authors@R: c(
 	         email = "jeanfan@fas.harvard.edu")
 	         )
 Maintainer: Jean Fan <jeanfan@fas.harvard.edu>
-URL: http://pklab.med.harvard.edu/scde/index.html
-BugReports: https://github.com/JEFworks/scde/issues
+URL: http://pklab.med.harvard.edu/scde
+BugReports: https://github.com/hms-dbmi/scde/issues
 License: GPL-2
 LazyData: true
-Depends:
-    R (>= 3.0.0),
-    flexmix
-Imports:
-    Rcpp (>= 0.10.4),
-    RcppArmadillo (>= 0.5.400.2.0),
-    mgcv,
-    Rook,
-    rjson,
-    MASS,
-    Cairo,
-    RColorBrewer,
-    edgeR,
-    quantreg,
-    methods,
-    nnet,
-    RMTstat,
-    extRemes,
-    pcaMethods,
-    BiocParallel,
-    parallel
-Suggests:
-    knitr,
-    cba,
-    fastcluster,
-    WGCNA
+Depends: R (>= 3.0.0), flexmix
+Imports: Rcpp (>= 0.10.4), RcppArmadillo (>= 0.5.400.2.0), mgcv, Rook,
+        rjson, MASS, Cairo, RColorBrewer, edgeR, quantreg, methods,
+        nnet, RMTstat, extRemes, pcaMethods, BiocParallel, parallel
+Suggests: knitr, cba, fastcluster, WGCNA, GO.db, org.Hs.eg.db
 biocViews: RNASeq, StatisticalMethod, DifferentialExpression, Bayesian,
-    Transcription, Software
+        Transcription, Software
 LinkingTo: Rcpp, RcppArmadillo
 VignetteBuilder: knitr
+Packaged: 2015-11-02 14:30:04 UTC; reyes
+RoxygenNote: 5.0.0
+NeedsCompilation: yes

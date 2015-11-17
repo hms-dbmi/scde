@@ -1,17 +1,18 @@
 ---
 title: "Getting Started with `pagoda` Routines"
 author: "Peter Kharchenko, Jean Fan"
-date: '2015-06-10'
+date: '2015-11-17'
 output: html_document
 vignette: |
+  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteIndexEntry{Vignette Title} \usepackage[utf8]{inputenc}
 ---
 
 # Pathway and Gene Set Overdispersion Analysis
 
-In this vignette, we show you how to use `pagoda` routines to characterize aspects of transcriptional heterogeneity in populations of single cells. 
+In this vignette, we show you how to use `pagoda` routines in the `scde` package to characterize aspects of transcriptional heterogeneity in populations of single cells. 
 
-The `pagoda` routines implemented in the `scde` resolves multiple, potentially overlapping aspects of transcriptional heterogeneity by identifying known pathways or novel gene sets that show significant excess of coordinated variability among the measured cells. Briefly, cell-specific error models derived from `scde` are used to estimate residual gene expression variance, and identify pathways and gene sets that exhibit statistically significant excess of coordinated variability (overdispersion). `pagoda` can be used to effectively recover known subpopulations and discover putative new subpopulations and their corresponding functional characteristics in single-cell samples.
+The `pagoda` routines implemented in the `scde` resolves multiple, potentially overlapping aspects of transcriptional heterogeneity by identifying known pathways or novel gene sets that show significant excess of coordinated variability among the measured cells. Briefly, cell-specific error models derived from `scde` are used to estimate residual gene expression variance, and identify pathways and gene sets that exhibit statistically significant excess of coordinated variability (overdispersion). `pagoda` can be used to effectively recover known subpopulations and discover putative new subpopulations and their corresponding functional characteristics in single-cell samples. For more information, please refer to the original manuscript by [_Fan et al._](http://biorxiv.org/content/early/2015/09/16/026948).
 
 
 
@@ -43,14 +44,13 @@ Next, we'll translate group and sample source data from [_Pollen et al._](www.nc
 
 
 ```r
-# sample sources
 x <- gsub("^Hi_(.*)_.*", "\\1", colnames(cd))
 l2cols <- c("coral4", "olivedrab3", "skyblue2", "slateblue3")[as.integer(factor(x, levels = c("NPC", "GW16", "GW21", "GW21+3")))]
 ```
 
 ## Fitting error models
 
-Next, we'll construct error models for individual cells. Here, we use k-nearest neighbour model fitting procedure implemented by `knn.error.models()` method. This is a relatively noisy dataset (non-UMI), so we raise the `min.count.threshold` to 2 (minimum number of reads for the gene to be initially classified as a non-failed measurement), requiring at least 5 non-failed measurements per gene. We're providing a rough guess to the complexity of the population, by fitting the error models based on 1/4 of most similar cells (i.e. gussing there might be ~4 subpopulations). 
+Next, we'll construct error models for individual cells. Here, we use k-nearest neighbor model fitting procedure implemented by `knn.error.models()` method. This is a relatively noisy dataset (non-UMI), so we raise the `min.count.threshold` to 2 (minimum number of reads for the gene to be initially classified as a non-failed measurement), requiring at least 5 non-failed measurements per gene. We're providing a rough guess to the complexity of the population, by fitting the error models based on 1/4 of most similar cells (i.e. guessing there might be ~4 subpopulations). 
 
 Note this step takes a considerable amount of time unless multiple cores are used. 
 
@@ -68,7 +68,7 @@ For the purposes of this vignette, the model has been precomputed and can simply
 data(knn)
 ```
 
-The fitting process above wrote out `cell.models.pdf` file in the current directory showing model fits for the first 10 cells (see `max.model.plots` argument). Here's an example of such plot:
+The fitting process above wrote out `cell.models.pdf` file in the current directory showing model fits for the first 10 cells (see `max.model.plots` argument). The fitting process above wrote out `cell.models.pdf` file in the current directory showing model fits for the first 10 cells (see `max.model.plots` argument). Here's an example of such plot:
 
 ![cell 3 model](figures/pagoda-cell.model.fits-0.png)
 
@@ -85,7 +85,7 @@ varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, 
 
 ![plot of chunk varnorm](figures/pagoda-varnorm-1.png) 
 
-The plot on the left shows coefficient of variance squared (on log10 scale) as a function of expression magntidue (log10 FPM). The red line shows local regression model for the genome-wide average dependency. The plot on the right shows adjusted variance (derived based on chi-squared probability of observed/genomewide expected ratio for each gene, with degrees of freedom adjusted for each gene). The adjusted variance of 1 means that a given gene exchibits as much variance as expected for a gene of such population average expression magnitude. Genes with high adjusted variance are overdispersed within the measured population and most likely show subpopulation-specific expression:
+The plot on the left shows coefficient of variance squared (on log10 scale) as a function of expression magnitude (log10 FPM). The red line shows local regression model for the genome-wide average dependency. The plot on the right shows adjusted variance (derived based on chi-squared probability of observed/genomewide expected ratio for each gene, with degrees of freedom adjusted for each gene). The adjusted variance of 1 means that a given gene exhibits as much variance as expected for a gene of such population average expression magnitude. Genes with high adjusted variance are overdispersed within the measured population and most likely show subpopulation-specific expression:
 
 
 ```r
@@ -100,7 +100,7 @@ sort(varinfo$arv, decreasing = TRUE)[1:10]
 ## 4.755811 4.522795
 ```
 
-## Controling for sequencing depth 
+## Controlling for sequencing depth 
 
 Even with all the corrections, sequencing depth or gene coverage is typically still a major aspects of variability. In most studies, we would want to control for that as a technical artifact (exceptions are cell mixtures where subtypes significantly differ in the amount of total mRNA). Below we will control for the gene coverage (estimated as a number of genes with non-zero magnitude per cell) and normalize out that aspect of cell heterogeneity: 
 
@@ -117,7 +117,6 @@ For pre-defined gene sets, we'll use GO annotations.
 
 
 ```r
-# EVALUATION NOT NEEDED. 
 library(org.Hs.eg.db)
 # translate gene names to ids
 ids <- unlist(lapply(mget(rownames(cd), org.Hs.egALIAS2EG, ifnotfound = NA), function(x) x[1]))
@@ -135,18 +134,9 @@ desc <- unlist(lapply(mget(names(go.env), GOTERM, ifnotfound = NA), function(x) 
 names(go.env) <- paste(names(go.env), desc)  # append description to the names
 
 go.env <- list2env(go.env)  # convert to an environment
-
-devtools::use_data(go.env)  # save for later
 ```
 
-An environment mapping GO terms to the set of genes contained in it has been pre-computed.
-
-
-```r
-data(go.env)
-```
-
-Now, we can calculate weighted first prinicpal component magnitudes for each GO gene set in the provided environment.
+Now, we can calculate weighted first principal component magnitudes for each GO gene set in the provided environment.
 
 
 ```r
@@ -162,7 +152,7 @@ df <- pagoda.top.aspects(pwpca, return.table = TRUE, plot = TRUE, z.score = 1.96
 
 ![plot of chunk topPathways](figures/pagoda-topPathways-1.png) 
 
-Each point on the plot shows the PC1 variance (lambda1) magtnidue (normalized by set size) as a function of set size. The red lines show expected (solid) and 95% upper bound (dashed) magnitudes based on the Tracey-Widom model.
+Each point on the plot shows the PC1 variance (lambda1) magnitude (normalized by set size) as a function of set size. The red lines show expected (solid) and 95% upper bound (dashed) magnitudes based on the Tracey-Widom model.
 
 
 ```r
@@ -170,23 +160,23 @@ head(df)
 ```
 
 ```
-##                                                                          name
-## 421                                        GO:0003170 heart valve development
-## 422                                      GO:0003179 heart valve morphogenesis
-## 426                                GO:0003208 cardiac ventricle morphogenesis
-## 123  GO:0000979 RNA polymerase II core promoter sequence-specific DNA binding
-## 4408                          GO:0060563 neuroepithelial cell differentiation
-## 4329      GO:0060045 positive regulation of cardiac muscle cell proliferation
-##      npc  n    score         z     adj.z sh.z adj.sh.z
-## 421    1 13 3.049964 10.125464  9.786492   NA       NA
-## 422    1 13 3.049964 10.125464  9.786492   NA       NA
-## 426    1 25 2.978694 11.961732 11.627068   NA       NA
-## 123    1 22 2.803050 10.666884 10.328873   NA       NA
-## 4408   1 23 2.782324 10.710213 10.372253   NA       NA
-## 4329   1 10 2.713999  8.053025  7.721521   NA       NA
+##                                                         name npc   n
+## 71 GO:0000904 cell morphogenesis involved in differentiation   1 553
+## 70                             GO:0000902 cell morphogenesis   1 800
+## 81          GO:0001505 regulation of neurotransmitter levels   1 114
+## 77                    GO:0001501 skeletal system development   1 237
+## 79                                   GO:0001503 ossification   1 208
+## 30          GO:0000226 microtubule cytoskeleton organization   1 302
+##       score         z     adj.z sh.z adj.sh.z
+## 71 2.254329 23.168080 22.977977   NA       NA
+## 70 1.959605 21.458802 21.285997   NA       NA
+## 81 1.800604  9.352036  9.104016   NA       NA
+## 77 1.779275 11.823187 11.586954   NA       NA
+## 79 1.733867 10.750226 10.522000   NA       NA
+## 30 1.723072 12.127817 11.878912   NA       NA
 ```
 
-* The z column gives the Z-score of pathway over-dispersion realtive to the genome-wide model (Z-score of 1.96 corresponds to P-value of 5%, etc.). 
+* The z column gives the Z-score of pathway over-dispersion relative to the genome-wide model (Z-score of 1.96 corresponds to P-value of 5%, etc.). 
 * "z.adj" column shows the Z-score adjusted for multiple hypothesis (using Benjamini-Hochberg correction). 
 * "score" gives observed/expected variance ratio
 * "sh.z" and "adj.sh.z" columns give the raw and adjusted Z-scores of "pathway cohesion", which compares the observed PC1 magnitude to the magnitudes obtained when the observations for each gene are randomized with respect to cells. When such Z-score is high (e.g. for GO:0008009) then multiple genes within the pathway contribute to the coordinated pattern.
@@ -214,20 +204,20 @@ head(df)
 ```
 
 ```
-##                                                                          name
-## 421                                        GO:0003170 heart valve development
-## 422                                      GO:0003179 heart valve morphogenesis
-## 426                                GO:0003208 cardiac ventricle morphogenesis
-## 123  GO:0000979 RNA polymerase II core promoter sequence-specific DNA binding
-## 4408                          GO:0060563 neuroepithelial cell differentiation
-## 4329      GO:0060045 positive regulation of cardiac muscle cell proliferation
-##      npc  n    score         z     adj.z sh.z adj.sh.z
-## 421    1 13 3.049964 10.125464  9.786492   NA       NA
-## 422    1 13 3.049964 10.125464  9.786492   NA       NA
-## 426    1 25 2.978694 11.961732 11.627068   NA       NA
-## 123    1 22 2.803050 10.666884 10.328873   NA       NA
-## 4408   1 23 2.782324 10.710213 10.372253   NA       NA
-## 4329   1 10 2.713999  8.053025  7.721521   NA       NA
+##                                                         name npc   n
+## 71 GO:0000904 cell morphogenesis involved in differentiation   1 553
+## 70                             GO:0000902 cell morphogenesis   1 800
+## 81          GO:0001505 regulation of neurotransmitter levels   1 114
+## 77                    GO:0001501 skeletal system development   1 237
+## 79                                   GO:0001503 ossification   1 208
+## 30          GO:0000226 microtubule cytoskeleton organization   1 302
+##       score         z     adj.z sh.z adj.sh.z
+## 71 2.254329 23.168080 22.977977   NA       NA
+## 70 1.959605 21.458802 21.285997   NA       NA
+## 81 1.800604  9.352036  9.104016   NA       NA
+## 77 1.779275 11.823187 11.586954   NA       NA
+## 79 1.733867 10.750226 10.522000   NA       NA
+## 30 1.723072 12.127817 11.878912   NA       NA
 ```
 
 ![plot of chunk topPathways2](figures/pagoda-topPathways2-1.png) 
@@ -247,7 +237,7 @@ tam <- pagoda.top.aspects(pwpca, clpca, n.cells = NULL, z.score = qnorm(0.01/2, 
 hc <- pagoda.cluster.cells(tam, varinfo)
 ```
 
-Next, we will reduce redudant aspects in two steps. First we will combine pathways that are driven by the same sets of genes:
+Next, we will reduce redundant aspects in two steps. First we will combine pathways that are driven by the same sets of genes:
 
 
 ```r
@@ -270,7 +260,7 @@ We will view the top aspects, clustering them by pattern similarity (note, to vi
 
 ```r
 col.cols <- rbind(groups = cutree(hc, 3))
-pagoda.view.aspects(tamr2, cell.clustering = hc, box = TRUE, labCol = NA, margins = c(0.5, 20), col.cols = rbind(l1cols))
+pagoda.view.aspects(tamr2, cell.clustering = hc, box = TRUE, labCol = NA, margins = c(0.5, 20), col.cols = rbind(l2cols))
 ```
 
 ![plot of chunk viewAspects](figures/pagoda-viewAspects-1.png) 
@@ -315,4 +305,4 @@ varinfo.cc <- pagoda.subtract.aspect(varinfo, cc.pattern)
 
 ![plot of chunk controlForCellCycle](figures/pagoda-controlForCellCycle-1.png) 
 
-Now we can go through the same analysis as shown above, starting with the `pagoda.pathway.wPCA()` call, using `varinfo.cc` instead of `varinfo`, which will control for the cell cylce heterogeneity between the cells.
+Now we can go through the same analysis as shown above, starting with the `pagoda.pathway.wPCA()` call, using `varinfo.cc` instead of `varinfo`, which will control for the cell cycle heterogeneity between the cells.

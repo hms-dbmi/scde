@@ -4,14 +4,15 @@ author: "Peter Kharchenko, Jean Fan"
 date: '`r Sys.Date()`'
 output: html_document
 vignette: |
+  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteIndexEntry{Vignette Title} \usepackage[utf8]{inputenc}
 ---
 
 # Pathway and Gene Set Overdispersion Analysis
 
-In this vignette, we show you how to use `pagoda` routines to characterize aspects of transcriptional heterogeneity in populations of single cells. 
+In this vignette, we show you how to use `pagoda` routines in the `scde` package to characterize aspects of transcriptional heterogeneity in populations of single cells. 
 
-The `pagoda` routines implemented in the `scde` resolves multiple, potentially overlapping aspects of transcriptional heterogeneity by identifying known pathways or novel gene sets that show significant excess of coordinated variability among the measured cells. Briefly, cell-specific error models derived from `scde` are used to estimate residual gene expression variance, and identify pathways and gene sets that exhibit statistically significant excess of coordinated variability (overdispersion). `pagoda` can be used to effectively recover known subpopulations and discover putative new subpopulations and their corresponding functional characteristics in single-cell samples.
+The `pagoda` routines implemented in the `scde` resolves multiple, potentially overlapping aspects of transcriptional heterogeneity by identifying known pathways or novel gene sets that show significant excess of coordinated variability among the measured cells. Briefly, cell-specific error models derived from `scde` are used to estimate residual gene expression variance, and identify pathways and gene sets that exhibit statistically significant excess of coordinated variability (overdispersion). `pagoda` can be used to effectively recover known subpopulations and discover putative new subpopulations and their corresponding functional characteristics in single-cell samples. For more information, please refer to the original manuscript by [_Fan et al._](http://biorxiv.org/content/early/2015/09/16/026948).
 
 ```{r, include = FALSE}
 library(knitr)
@@ -71,7 +72,7 @@ For the purposes of this vignette, the model has been precomputed and can simply
 data(knn)
 ```
 
-The fitting process above wrote out `cell.models.pdf` file in the current directory showing model fits for the first 10 cells (see `max.model.plots` argument). Here's an example of such plot:
+The fitting process above wrote out `cell.models.pdf` file in the current directory showing model fits for the first 10 cells (see `max.model.plots` argument). The fitting process above wrote out `cell.models.pdf` file in the current directory showing model fits for the first 10 cells (see `max.model.plots` argument). Here's an example of such plot:
 
 ![cell 3 model](figures/pagoda-cell.model.fits-0.png)
 
@@ -106,8 +107,7 @@ In order to detect significant aspects of heterogeneity across the population of
 
 For pre-defined gene sets, we'll use GO annotations. 
 
-```{r, goenv, eval = FALSE}
-# EVALUATION NOT NEEDED. 
+```{r, goenv}
 library(org.Hs.eg.db)
 # translate gene names to ids
 ids <- unlist(lapply(mget(rownames(cd), org.Hs.egALIAS2EG, ifnotfound = NA), function(x) x[1]))
@@ -125,14 +125,6 @@ desc <- unlist(lapply(mget(names(go.env), GOTERM, ifnotfound = NA), function(x) 
 names(go.env) <- paste(names(go.env), desc)  # append description to the names
 
 go.env <- list2env(go.env)  # convert to an environment
-
-devtools::use_data(go.env)  # save for later
-```
-
-An environment mapping GO terms to the set of genes contained in it has been pre-computed.
-
-```{r, results = 'hide'}
-data(go.env)
 ```
 
 Now, we can calculate weighted first principal component magnitudes for each GO gene set in the provided environment.
@@ -208,7 +200,7 @@ We will view the top aspects, clustering them by pattern similarity (note, to vi
 
 ```{r, viewAspects, fig.height = 3.5, fig.width = 8}
 col.cols <- rbind(groups = cutree(hc, 3))
-pagoda.view.aspects(tamr2, cell.clustering = hc, box = TRUE, labCol = NA, margins = c(0.5, 20), col.cols = rbind(l1cols))
+pagoda.view.aspects(tamr2, cell.clustering = hc, box = TRUE, labCol = NA, margins = c(0.5, 20), col.cols = rbind(l2cols))
 ```
 
 While each row here represents a cluster of pathways, the row names are assigned to be the top overdispersed aspect in each cluster.
