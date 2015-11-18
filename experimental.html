@@ -11,8 +11,8 @@ layout: default
 
 <p><strong>IMPORTANT:</strong> Depending on your normalization and weights, results may be misleading and/or non-sensical. This vignette is experimental. USE WITH CAUTION. </p>
 
-<h1>
-<a id="simulating-data-for-demonstration-purposes" class="anchor" href="#simulating-data-for-demonstration-purposes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Simulating data for demonstration purposes</h1>
+<h2>
+<a id="simulating-data-for-demonstration-purposes" class="anchor" href="#simulating-data-for-demonstration-purposes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Simulating data for demonstration purposes</h2>
 
 <p>For the purposes of demonstration, we will simulate a normalized gene expression matrix. We will generate out data such that there are two major components of variation, supported by every other pathway. </p>
 
@@ -53,8 +53,10 @@ heatmap(<span class="pl-smi">mat</span>, <span class="pl-v">col</span> <span cla
 rownames(<span class="pl-smi">matw</span>) <span class="pl-k">&lt;-</span> rownames(<span class="pl-smi">mat</span>)
 colnames(<span class="pl-smi">matw</span>) <span class="pl-k">&lt;-</span> colnames(<span class="pl-smi">mat</span>)
 <span class="pl-c"># Regular variance since equal weights anyway</span>
-<span class="pl-c"># Will need to use weighted</span>
 <span class="pl-smi">var</span> <span class="pl-k">&lt;-</span> apply(<span class="pl-smi">mat</span>, <span class="pl-c1">1</span>, <span class="pl-smi">var</span>)</pre></div>
+
+<h2>
+<a id="using-pagoda-with-custom-matrices" class="anchor" href="#using-pagoda-with-custom-matrices" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using <code>pagoda</code> with custom matrices</h2>
 
 <p>Now we can put our simulated data into an object to pipe into the <code>pagoda</code> pipeline.</p>
 
