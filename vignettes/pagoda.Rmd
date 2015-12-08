@@ -4,8 +4,8 @@ author: "Peter Kharchenko, Jean Fan"
 date: '`r Sys.Date()`'
 output: html_document
 vignette: |
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteIndexEntry{Vignette Title} \usepackage[utf8]{inputenc}
+  %\VignetteEngine{knitr::rmarkdown}
 ---
 
 # Pathway and Gene Set Overdispersion Analysis
@@ -24,7 +24,6 @@ opts_chunk$set(
     cache.path = 'cache/pagoda-',
     cache = TRUE
 )
-
 library(scde)
 ```
 
@@ -33,18 +32,11 @@ library(scde)
 The analysis starts with a matrix of read counts. Here, we use the read count table and cell group annotations from [_Pollen et al._](www.ncbi.nlm.nih.gov/pubmed/25086649) can be loaded using the `data("pollen")` call. Some additional filters are also applied.
 
 ```{r, data}
-  # read in the expression matrix
-  data(pollen)
-  cd <- pollen
-  # filter data
-  # filter out low-gene cells
-  cd <- cd[, colSums(cd>0)>1.8e3]
-  # remove genes that don't have many reads
-  cd <- cd[rowSums(cd)>10, ]
-  # remove genes that are not seen in a sufficient number of cells
-  cd <- cd[rowSums(cd>0)>5, ]
-  # check the final dimensions of the read count matrix
-  dim(cd)
+data(pollen)
+# filter data
+cd <- clean.counts(pollen)
+# check the final dimensions of the read count matrix
+dim(cd)
 ```
 
 Next, we'll translate group and sample source data from [_Pollen et al._](www.ncbi.nlm.nih.gov/pubmed/25086649) into color codes. These will be used later to compare [_Pollen et al._](www.ncbi.nlm.nih.gov/pubmed/25086649)'s derived annotation with subpopulations identified by `pagoda`:
@@ -63,7 +55,6 @@ Note this step takes a considerable amount of time unless multiple cores are use
 ```{r, models, eval = FALSE, hide = TRUE}
 # EVALUATION NOT NEEDED
 knn <- knn.error.models(cd, k = ncol(cd)/4, n.cores = 1, min.count.threshold = 2, min.nonfailed = 5, max.model.plots = 10)
-devtools::use_data(knn)  # save for later since this step takes a long time
 ```
 
 For the purposes of this vignette, the model has been precomputed and can simply be loaded.
@@ -105,32 +96,26 @@ varinfo <- pagoda.subtract.aspect(varinfo, colSums(cd[, rownames(knn)]>0))
 
 In order to detect significant aspects of heterogeneity across the population of single cells, 'pagoda' identifies pathways and gene sets that exhibit statistically significant excess of coordinated variability. Specifically, for each gene set, we tested whether the amount of variance explained by the first principal component significantly exceed the background expectation. We can test both pre-defined gene sets as well as 'de novo' gene sets whose expression profiles are well-correlated within the given dataset. 
 
-For pre-defined gene sets, we'll use GO annotations. 
+For pre-defined gene sets, we'll use GO annotations. For the purposes of this vignette, in order to make calculations faster, we will only consider the first 100 GO terms plus a few that we care about. Additional tutorials on how to create and use your own gene sets can be found in [a separate tutorial](http://hms-dbmi.github.io/scde/genesets.html). 
 
 ```{r, goenv}
 library(org.Hs.eg.db)
 # translate gene names to ids
 ids <- unlist(lapply(mget(rownames(cd), org.Hs.egALIAS2EG, ifnotfound = NA), function(x) x[1]))
-# reverse map
-rids <- names(ids)
-names(rids) <- ids
-# list all the ids per GO category
-go.env <- eapply(org.Hs.egGO2ALLEGS, function(x) as.character(na.omit(rids[x])))
- # omit categories with too few genes
-go.env <- go.env[unlist(lapply(go.env, length))>5]
-  
-# append descriptions to the GO names
-library(GO.db)
-desc <- unlist(lapply(mget(names(go.env), GOTERM, ifnotfound = NA), function(x) if(is.logical(x)) { return("") } else { slot(x, "Term")}))
-names(go.env) <- paste(names(go.env), desc)  # append description to the names
-
-go.env <- list2env(go.env)  # convert to an environment
+rids <- names(ids); names(rids) <- ids 
+# GOs of interest
+gos.interest <- unique(c(ls(org.Hs.egGO2ALLEGS)[1:100],"GO:0022008","GO:0048699", "GO:0000280", "GO:0007067"))
+go.env <- lapply(mget(gos.interest, org.Hs.egGO2ALLEGS), function(x) as.character(na.omit(rids[x])))
+# clean GOs
+go.env <- clean.gos(go.env)
+# convert to an environment
+go.env <- list2env(go.env) 
 ```
 
 Now, we can calculate weighted first principal component magnitudes for each GO gene set in the provided environment.
 
 ```{r, pathwaySig}
-pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components = 1, n.cores = 1, n.internal.shuffles = 0)
+pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components = 1, n.cores = 1)
 ```
 
 We can now evaluate the statistical significance of the observed overdispersion for each GO gene set.
@@ -156,10 +141,10 @@ head(df)
 We can also test 'de novo' gene sets whose expression profiles are well-correlated within the given dataset. The following procedure will determine 'de novo' gene clusters in the data, and build a background model for the expectation of the gene cluster weighted principal component magnitudes. Note the higher trim values for the clusters, as we want to avoid clusters that are formed by outlier cells.
 
 ```{r, clusterPCA, fig.height = 3, fig.width = 6}
-clpca <- pagoda.gene.clusters(varinfo, trim = 7.1/ncol(varinfo$mat), n.clusters = 150, n.cores = 1, plot = TRUE)
+clpca <- pagoda.gene.clusters(varinfo, trim = 7.1/ncol(varinfo$mat), n.clusters = 50, n.cores = 1, plot = TRUE)
 ```
 
-The plot above shows background distribution of the first principal component (`PC1`) variance (`lambda1`) magnitude. The blue scatterplot on the left shows `lambda1` magnitude vs. cluster size for clusters determined based on randomly-generated matrices of the same size. The black circles show top cluster in each simulation. The red lines show expected magnitude and 95% confidence interval based on Tracy-Widom distribution. The right plot shows extreme value distribution fit of residual cluster `PC1` variance magnitude relative to the Tracy-Widom F1 distribution.
+The plot above shows background distribution of the first principal component (`PC1`) variance (`lambda1`) magnitude. The blue scatterplot on the left shows `lambda1` magnitude vs. cluster size for clusters determined based on randomly-generated matrices of the same size. The black circles show top cluster in each simulation. The red lines show expected magnitude and 95% confidence interval based on Tracy-Widom distribution. The right plot shows extreme value distribution fit of residual cluster `PC1` variance magnitude relative to the Gumbel (extreme value) distribution.
 
 Now the set of top aspects can be recalculated taking these `de novo` gene clusters into account:
 
@@ -211,8 +196,7 @@ To interactively browse and explore the output, we can create a `pagoda` app:
 # compile a browsable app, showing top three clusters with the top color bar
 app <- make.pagoda.app(tamr2, tam, varinfo, go.env, pwpca, clpca, col.cols = col.cols, cell.clustering = hc, title = "NPCs")
 # show app in the browser (port 1468)
-show.app(app, "pollen", browse = TRUE, port = 1468)  
-saveRDS(app, file = "pollen.app.rds")
+show.app(app, "pollen", browse = TRUE, port = 1468) 
 ```
 
 The `pagoda` app allows you to view the gene sets grouped within each aspect (row), as well as genes underlying the detected heterogeneity patterns. A screenshot of the app is provided below:
@@ -222,16 +206,16 @@ The `pagoda` app allows you to view the gene sets grouped within each aspect (ro
 Similar views can be obtained in the R session itself. For instance, here we'll view top 10 genes associated with the top two pathways in the neurogenesis cluster: "neurogenesis" (GO:0022008) and "generation of neurons" (GO:0048699)
 
 ```{r, showTopPathwayGenes, fig.height = 3.5, fig.width = 8}
-pagoda.show.pathways(c("GO:0022008 neurogenesis","GO:0048699 generation of neurons"), varinfo, go.env, cell.clustering = hc, margins = c(1,5), show.cell.dendrogram = TRUE, showRowLabels = TRUE, showPC = TRUE)
+pagoda.show.pathways(c("GO:0022008","GO:0048699"), varinfo, go.env, cell.clustering = hc, margins = c(1,5), show.cell.dendrogram = TRUE, showRowLabels = TRUE, showPC = TRUE)
 ```
 
 ## Controlling for undesired aspects of heterogeneity
 
-Depending on the biological setting, certain dominant aspects of transcriptional heterogeneity may not be of interest. To explicitly control for these aspects of heterogeneity that are not of interest, we will use `pagoda.subtract.aspect` method that we've previously used to control for residual patterns associated with sequencing depth differences. Here, we illustrate how to control for the mitotic cell cycle pattern which showed up as one of the four significant aspects in the analysis above.
+Depending on the biological setting, certain dominant aspects of transcriptional heterogeneity may not be of interest. To explicitly control for these aspects of heterogeneity that are not of interest, we will use `pagoda.subtract.aspect` method that we've previously used to control for residual patterns associated with sequencing depth differences. Here, we illustrate how to control for the mitotic cell cycle pattern (GO:0000280 nuclear division and GO:0007067 mitotic nuclear division) which showed up as one of the four significant aspects in the analysis above.
 
 ```{r, controlForCellCycle}
 # get cell cycle signature and view the top genes
-cc.pattern <- pagoda.show.pathways(c("GO:0000280 nuclear division", "GO:0007067 mitotic nuclear division"), varinfo, go.env, show.cell.dendrogram = TRUE, cell.clustering = hc, showRowLabels = TRUE)
+cc.pattern <- pagoda.show.pathways(c("GO:0000280", "GO:0007067"), varinfo, go.env, show.cell.dendrogram = TRUE, cell.clustering = hc, showRowLabels = TRUE)
 # subtract the pattern
 varinfo.cc <- pagoda.subtract.aspect(varinfo, cc.pattern)
 ```
