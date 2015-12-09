@@ -2,7 +2,9 @@
 title: "Getting Started with `pagoda` Routines"
 author: "Peter Kharchenko, Jean Fan"
 date: '`r Sys.Date()`'
-output: html_document
+output:
+  md_document:
+    variant: markdown_github
 vignette: |
   %\VignetteIndexEntry{Vignette Title} \usepackage[utf8]{inputenc}
   %\VignetteEngine{knitr::rmarkdown}

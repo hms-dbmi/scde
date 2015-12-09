@@ -18,7 +18,7 @@ In this vignette, we show you how to modify `pagoda` to run on your own normaliz
 
 
 
-# Simulating data for demonstration purposes
+## Simulating data for demonstration purposes
 
 For the purposes of demonstration, we will simulate a normalized gene expression matrix. We will generate out data such that there are two major components of variation, supported by every other pathway. 
 
@@ -63,9 +63,10 @@ matw <- matrix(1, N, M)
 rownames(matw) <- rownames(mat)
 colnames(matw) <- colnames(mat)
 # Regular variance since equal weights anyway
-# Will need to use weighted
 var <- apply(mat, 1, var)
 ```
+
+## Using `pagoda` with custom matrices
 
 Now we can put our simulated data into an object to pipe into the `pagoda` pipeline.
 
