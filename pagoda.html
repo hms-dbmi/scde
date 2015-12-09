@@ -1,11 +1,7 @@
----
-layout: default
----
-
-<h1>
+      <h1>
 <a id="pathway-and-gene-set-overdispersion-analysis" class="anchor" href="#pathway-and-gene-set-overdispersion-analysis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Pathway and Gene Set Overdispersion Analysis</h1>
 
-<p>In this vignette, we show you how to use <code>pagoda</code> routines in the <code>scde</code> package to characterize aspects of transcriptional heterogeneity in populations of single cells. </p>
+<p>In this vignette, we show you how to use <code>pagoda</code> routines in the <code>scde</code> package to characterize aspects of transcriptional heterogeneity in populations of single cells.</p>
 
 <p>The <code>pagoda</code> routines implemented in the <code>scde</code> resolves multiple, potentially overlapping aspects of transcriptional heterogeneity by identifying known pathways or novel gene sets that show significant excess of coordinated variability among the measured cells. Briefly, cell-specific error models derived from <code>scde</code> are used to estimate residual gene expression variance, and identify pathways and gene sets that exhibit statistically significant excess of coordinated variability (overdispersion). <code>pagoda</code> can be used to effectively recover known subpopulations and discover putative new subpopulations and their corresponding functional characteristics in single-cell samples. For more information, please refer to the original manuscript by <a href="http://biorxiv.org/content/early/2015/09/16/026948"><em>Fan et al.</em></a>.</p>
 
@@ -14,18 +10,11 @@ layout: default
 
 <p>The analysis starts with a matrix of read counts. Here, we use the read count table and cell group annotations from <a href="www.ncbi.nlm.nih.gov/pubmed/25086649"><em>Pollen et al.</em></a> can be loaded using the <code>data("pollen")</code> call. Some additional filters are also applied.</p>
 
-<div class="highlight highlight-source-r"><pre>  <span class="pl-c"># read in the expression matrix</span>
-  data(<span class="pl-smi">pollen</span>)
-  <span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">pollen</span>
-  <span class="pl-c"># filter data</span>
-  <span class="pl-c"># filter out low-gene cells</span>
-  <span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">cd</span>[, colSums(<span class="pl-smi">cd</span><span class="pl-k">&gt;</span><span class="pl-c1">0</span>)<span class="pl-k">&gt;</span><span class="pl-c1">1.8e3</span>]
-  <span class="pl-c"># remove genes that don't have many reads</span>
-  <span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">cd</span>[rowSums(<span class="pl-smi">cd</span>)<span class="pl-k">&gt;</span><span class="pl-c1">10</span>, ]
-  <span class="pl-c"># remove genes that are not seen in a sufficient number of cells</span>
-  <span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">cd</span>[rowSums(<span class="pl-smi">cd</span><span class="pl-k">&gt;</span><span class="pl-c1">0</span>)<span class="pl-k">&gt;</span><span class="pl-c1">5</span>, ]
-  <span class="pl-c"># check the final dimensions of the read count matrix</span>
-  dim(<span class="pl-smi">cd</span>)</pre></div>
+<div class="highlight highlight-source-r"><pre>data(<span class="pl-smi">pollen</span>)
+<span class="pl-c"># remove poor cells and genes</span>
+<span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> clean.counts(<span class="pl-smi">pollen</span>)
+<span class="pl-c"># check the final dimensions of the read count matrix</span>
+dim(<span class="pl-smi">cd</span>)</pre></div>
 
 <pre><code>## [1] 11310    64
 </code></pre>
@@ -38,13 +27,12 @@ layout: default
 <h2>
 <a id="fitting-error-models" class="anchor" href="#fitting-error-models" aria-hidden="true"><span class="octicon octicon-link"></span></a>Fitting error models</h2>
 
-<p>Next, we'll construct error models for individual cells. Here, we use k-nearest neighbor model fitting procedure implemented by <code>knn.error.models()</code> method. This is a relatively noisy dataset (non-UMI), so we raise the <code>min.count.threshold</code> to 2 (minimum number of reads for the gene to be initially classified as a non-failed measurement), requiring at least 5 non-failed measurements per gene. We're providing a rough guess to the complexity of the population, by fitting the error models based on 1/4 of most similar cells (i.e. guessing there might be ~4 subpopulations). </p>
+<p>Next, we'll construct error models for individual cells. Here, we use k-nearest neighbor model fitting procedure implemented by <code>knn.error.models()</code> method. This is a relatively noisy dataset (non-UMI), so we raise the <code>min.count.threshold</code> to 2 (minimum number of reads for the gene to be initially classified as a non-failed measurement), requiring at least 5 non-failed measurements per gene. We're providing a rough guess to the complexity of the population, by fitting the error models based on 1/4 of most similar cells (i.e. guessing there might be ~4 subpopulations).</p>
 
-<p>Note this step takes a considerable amount of time unless multiple cores are used. </p>
+<p>Note this step takes a considerable amount of time unless multiple cores are used. We highly recommend use of multiple cores. You can check the number of available cores available using <code>detectCores()</code>. </p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># EVALUATION NOT NEEDED</span>
-<span class="pl-smi">knn</span> <span class="pl-k">&lt;-</span> knn.error.models(<span class="pl-smi">cd</span>, <span class="pl-v">k</span> <span class="pl-k">=</span> ncol(<span class="pl-smi">cd</span>)<span class="pl-k">/</span><span class="pl-c1">4</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">min.count.threshold</span> <span class="pl-k">=</span> <span class="pl-c1">2</span>, <span class="pl-v">min.nonfailed</span> <span class="pl-k">=</span> <span class="pl-c1">5</span>, <span class="pl-v">max.model.plots</span> <span class="pl-k">=</span> <span class="pl-c1">10</span>)
-<span class="pl-e">devtools</span><span class="pl-k">::</span>use_data(<span class="pl-smi">knn</span>)  <span class="pl-c"># save for later since this step takes a long time</span></pre></div>
+<span class="pl-smi">knn</span> <span class="pl-k">&lt;-</span> knn.error.models(<span class="pl-smi">cd</span>, <span class="pl-v">k</span> <span class="pl-k">=</span> ncol(<span class="pl-smi">cd</span>)<span class="pl-k">/</span><span class="pl-c1">4</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">min.count.threshold</span> <span class="pl-k">=</span> <span class="pl-c1">2</span>, <span class="pl-v">min.nonfailed</span> <span class="pl-k">=</span> <span class="pl-c1">5</span>, <span class="pl-v">max.model.plots</span> <span class="pl-k">=</span> <span class="pl-c1">10</span>)</pre></div>
 
 <p>For the purposes of this vignette, the model has been precomputed and can simply be loaded.</p>
 
@@ -54,7 +42,7 @@ layout: default
 
 <p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-cell.model.fits-0.png" alt="cell 3 model"></p>
 
-<p>The two scatter plots on the left show observed (in a given cell) vs. expected (from k similar cells) expression magnitudes for each gene that is being used for model fitting. The second (from the left) scatter plot shows genes belonging to the drop-out component in red. The black dashed lines show 95% confidence band for the amplified genes (the grey dashed lines show confidence band for an alternative constant-theta model). The third plot shows drop-out probability as a function of magnitude, and the fourth plot shows negative binomial theta local regression fit as a function of magnitude (for the amplified component). </p>
+<p>The two scatter plots on the left show observed (in a given cell) vs. expected (from k similar cells) expression magnitudes for each gene that is being used for model fitting. The second (from the left) scatter plot shows genes belonging to the drop-out component in red. The black dashed lines show 95% confidence band for the amplified genes (the grey dashed lines show confidence band for an alternative constant-theta model). The third plot shows drop-out probability as a function of magnitude, and the fourth plot shows negative binomial theta local regression fit as a function of magnitude (for the amplified component).</p>
 
 <h2>
 <a id="normalizing-variance" class="anchor" href="#normalizing-variance" aria-hidden="true"><span class="octicon octicon-link"></span></a>Normalizing variance</h2>
@@ -63,86 +51,71 @@ layout: default
 
 <div class="highlight highlight-source-r"><pre><span class="pl-smi">varinfo</span> <span class="pl-k">&lt;-</span> pagoda.varnorm(<span class="pl-smi">knn</span>, <span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">trim</span> <span class="pl-k">=</span> <span class="pl-c1">3</span><span class="pl-k">/</span>ncol(<span class="pl-smi">cd</span>), <span class="pl-v">max.adj.var</span> <span class="pl-k">=</span> <span class="pl-c1">5</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">plot</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)</pre></div>
 
-<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-varnorm-1.png" alt="plot of chunk varnorm"> </p>
+<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-varnorm-1.png" alt=""></p>
 
 <p>The plot on the left shows coefficient of variance squared (on log10 scale) as a function of expression magnitude (log10 FPM). The red line shows local regression model for the genome-wide average dependency. The plot on the right shows adjusted variance (derived based on chi-squared probability of observed/genomewide expected ratio for each gene, with degrees of freedom adjusted for each gene). The adjusted variance of 1 means that a given gene exhibits as much variance as expected for a gene of such population average expression magnitude. Genes with high adjusted variance are overdispersed within the measured population and most likely show subpopulation-specific expression:</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># list top overdispersed genes</span>
 sort(<span class="pl-smi">varinfo</span><span class="pl-k">$</span><span class="pl-smi">arv</span>, <span class="pl-v">decreasing</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)[<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-c1">10</span>]</pre></div>
 
-<pre><code>##      DCX     EGR1      FOS  IGFBPL1   MALAT1    MEF2C    STMN2    TOP2A 
-## 5.000000 5.000000 5.000000 5.000000 5.000000 5.000000 5.000000 5.000000 
-##   BCL11A     SOX4 
+<pre><code>##      DCX     EGR1      FOS  IGFBPL1   MALAT1    MEF2C    STMN2    TOP2A
+## 5.000000 5.000000 5.000000 5.000000 5.000000 5.000000 5.000000 5.000000
+##   BCL11A     SOX4
 ## 4.755811 4.522795
 </code></pre>
 
 <h2>
 <a id="controlling-for-sequencing-depth" class="anchor" href="#controlling-for-sequencing-depth" aria-hidden="true"><span class="octicon octicon-link"></span></a>Controlling for sequencing depth</h2>
 
-<p>Even with all the corrections, sequencing depth or gene coverage is typically still a major aspects of variability. In most studies, we would want to control for that as a technical artifact (exceptions are cell mixtures where subtypes significantly differ in the amount of total mRNA). Below we will control for the gene coverage (estimated as a number of genes with non-zero magnitude per cell) and normalize out that aspect of cell heterogeneity: </p>
+<p>Even with all the corrections, sequencing depth or gene coverage is typically still a major aspects of variability. In most studies, we would want to control for that as a technical artifact (exceptions are cell mixtures where subtypes significantly differ in the amount of total mRNA). Below we will control for the gene coverage (estimated as a number of genes with non-zero magnitude per cell) and normalize out that aspect of cell heterogeneity:</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-smi">varinfo</span> <span class="pl-k">&lt;-</span> pagoda.subtract.aspect(<span class="pl-smi">varinfo</span>, colSums(<span class="pl-smi">cd</span>[, rownames(<span class="pl-smi">knn</span>)]<span class="pl-k">&gt;</span><span class="pl-c1">0</span>))</pre></div>
 
 <h2>
 <a id="evaluate-overdispersion-of-pre-defined-gene-sets" class="anchor" href="#evaluate-overdispersion-of-pre-defined-gene-sets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Evaluate overdispersion of pre-defined gene sets</h2>
 
-<p>In order to detect significant aspects of heterogeneity across the population of single cells, 'pagoda' identifies pathways and gene sets that exhibit statistically significant excess of coordinated variability. Specifically, for each gene set, we tested whether the amount of variance explained by the first principal component significantly exceed the background expectation. We can test both pre-defined gene sets as well as 'de novo' gene sets whose expression profiles are well-correlated within the given dataset. </p>
+<p>In order to detect significant aspects of heterogeneity across the population of single cells, 'pagoda' identifies pathways and gene sets that exhibit statistically significant excess of coordinated variability. Specifically, for each gene set, we tested whether the amount of variance explained by the first principal component significantly exceed the background expectation. We can test both pre-defined gene sets as well as 'de novo' gene sets whose expression profiles are well-correlated within the given dataset.</p>
 
-<p>For pre-defined gene sets, we'll use GO annotations. </p>
+<p>For pre-defined gene sets, we'll use GO annotations. For the purposes of this vignette, in order to make calculations faster, we will only consider the first 100 GO terms plus a few that we care about. Additional tutorials on how to create and use your own gene sets can be found in <a href="http://hms-dbmi.github.io/scde/genesets.html">a separate tutorial</a>.</p>
 
 <div class="highlight highlight-source-r"><pre>library(<span class="pl-smi">org.Hs.eg.db</span>)
 <span class="pl-c"># translate gene names to ids</span>
 <span class="pl-smi">ids</span> <span class="pl-k">&lt;-</span> unlist(lapply(mget(rownames(<span class="pl-smi">cd</span>), <span class="pl-smi">org.Hs.egALIAS2EG</span>, <span class="pl-v">ifnotfound</span> <span class="pl-k">=</span> <span class="pl-c1">NA</span>), <span class="pl-k">function</span>(<span class="pl-smi">x</span>) <span class="pl-smi">x</span>[<span class="pl-c1">1</span>]))
-<span class="pl-c"># reverse map</span>
-<span class="pl-smi">rids</span> <span class="pl-k">&lt;-</span> names(<span class="pl-smi">ids</span>)
-names(<span class="pl-smi">rids</span>) <span class="pl-k">&lt;-</span> <span class="pl-smi">ids</span>
-<span class="pl-c"># list all the ids per GO category</span>
-<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> eapply(<span class="pl-smi">org.Hs.egGO2ALLEGS</span>, <span class="pl-k">function</span>(<span class="pl-smi">x</span>) as.character(na.omit(<span class="pl-smi">rids</span>[<span class="pl-smi">x</span>])))
- <span class="pl-c"># omit categories with too few genes</span>
-<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">go.env</span>[unlist(lapply(<span class="pl-smi">go.env</span>, <span class="pl-smi">length</span>))<span class="pl-k">&gt;</span><span class="pl-c1">5</span>]
-
-<span class="pl-c"># append descriptions to the GO names</span>
-library(<span class="pl-smi">GO.db</span>)
-<span class="pl-smi">desc</span> <span class="pl-k">&lt;-</span> unlist(lapply(mget(names(<span class="pl-smi">go.env</span>), <span class="pl-smi">GOTERM</span>, <span class="pl-v">ifnotfound</span> <span class="pl-k">=</span> <span class="pl-c1">NA</span>), <span class="pl-k">function</span>(<span class="pl-smi">x</span>) <span class="pl-k">if</span>(is.logical(<span class="pl-smi">x</span>)) { <span class="pl-k">return</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>) } <span class="pl-k">else</span> { slot(<span class="pl-smi">x</span>, <span class="pl-s"><span class="pl-pds">"</span>Term<span class="pl-pds">"</span></span>)}))
-names(<span class="pl-smi">go.env</span>) <span class="pl-k">&lt;-</span> paste(names(<span class="pl-smi">go.env</span>), <span class="pl-smi">desc</span>)  <span class="pl-c"># append description to the names</span>
-
-<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> list2env(<span class="pl-smi">go.env</span>)  <span class="pl-c"># convert to an environment</span></pre></div>
+<span class="pl-smi">rids</span> <span class="pl-k">&lt;-</span> names(<span class="pl-smi">ids</span>); names(<span class="pl-smi">rids</span>) <span class="pl-k">&lt;-</span> <span class="pl-smi">ids</span>
+<span class="pl-c"># convert GO lists from ids to gene names</span>
+<span class="pl-smi">gos.interest</span> <span class="pl-k">&lt;-</span> unique(c(ls(<span class="pl-smi">org.Hs.egGO2ALLEGS</span>)[<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-c1">100</span>],<span class="pl-s"><span class="pl-pds">"</span>GO:0022008<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>GO:0048699<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>GO:0000280<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>GO:0007067<span class="pl-pds">"</span></span>))
+<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> lapply(mget(<span class="pl-smi">gos.interest</span>, <span class="pl-smi">org.Hs.egGO2ALLEGS</span>), <span class="pl-k">function</span>(<span class="pl-smi">x</span>) as.character(na.omit(<span class="pl-smi">rids</span>[<span class="pl-smi">x</span>])))
+<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> clean.gos(<span class="pl-smi">go.env</span>) <span class="pl-c"># remove GOs with too few or too many genes</span>
+<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> list2env(<span class="pl-smi">go.env</span>) <span class="pl-c"># convert to an environment</span></pre></div>
 
 <p>Now, we can calculate weighted first principal component magnitudes for each GO gene set in the provided environment.</p>
 
-<div class="highlight highlight-source-r"><pre><span class="pl-smi">pwpca</span> <span class="pl-k">&lt;-</span> pagoda.pathway.wPCA(<span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-v">n.components</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">n.internal.shuffles</span> <span class="pl-k">=</span> <span class="pl-c1">0</span>)</pre></div>
+<div class="highlight highlight-source-r"><pre><span class="pl-smi">pwpca</span> <span class="pl-k">&lt;-</span> pagoda.pathway.wPCA(<span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-v">n.components</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>)</pre></div>
 
 <p>We can now evaluate the statistical significance of the observed overdispersion for each GO gene set.</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-smi">df</span> <span class="pl-k">&lt;-</span> pagoda.top.aspects(<span class="pl-smi">pwpca</span>, <span class="pl-k">return</span><span class="pl-v">.table</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">plot</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">z.score</span> <span class="pl-k">=</span> <span class="pl-c1">1.96</span>)</pre></div>
 
-<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-topPathways-1.png" alt="plot of chunk topPathways"> </p>
+<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-topPathways-1.png" alt=""></p>
 
 <p>Each point on the plot shows the PC1 variance (lambda1) magnitude (normalized by set size) as a function of set size. The red lines show expected (solid) and 95% upper bound (dashed) magnitudes based on the Tracey-Widom model.</p>
 
 <div class="highlight highlight-source-r"><pre>head(<span class="pl-smi">df</span>)</pre></div>
 
-<pre><code>##                                                         name npc   n
-## 71 GO:0000904 cell morphogenesis involved in differentiation   1 553
-## 70                             GO:0000902 cell morphogenesis   1 800
-## 81          GO:0001505 regulation of neurotransmitter levels   1 114
-## 77                    GO:0001501 skeletal system development   1 237
-## 79                                   GO:0001503 ossification   1 208
-## 30          GO:0000226 microtubule cytoskeleton organization   1 302
-##       score         z     adj.z sh.z adj.sh.z
-## 71 2.254329 23.168080 22.977977   NA       NA
-## 70 1.959605 21.458802 21.285997   NA       NA
-## 81 1.800604  9.352036  9.104016   NA       NA
-## 77 1.779275 11.823187 11.586954   NA       NA
-## 79 1.733867 10.750226 10.522000   NA       NA
-## 30 1.723072 12.127817 11.878912   NA       NA
+<pre><code>##          name npc   n    score         z     adj.z sh.z adj.sh.z
+## 57 GO:0048699   1 864 2.261079 27.019091 26.894993   NA       NA
+## 56 GO:0022008   1 911 2.233116 27.062973 26.913370   NA       NA
+## 30 GO:0000226   1 302 1.665067 11.226626 10.989344   NA       NA
+## 55 GO:0007067   1 330 1.626072 11.035135 10.814193   NA       NA
+## 37 GO:0000280   1 395 1.617566 11.650728 11.397103   NA       NA
+## 9  GO:0000070   1  96 1.512958  5.888795  5.555273   NA       NA
 </code></pre>
 
 <ul>
-<li>The z column gives the Z-score of pathway over-dispersion relative to the genome-wide model (Z-score of 1.96 corresponds to P-value of 5%, etc.). </li>
-<li>"z.adj" column shows the Z-score adjusted for multiple hypothesis (using Benjamini-Hochberg correction). </li>
-<li>"score" gives observed/expected variance ratio</li>
-<li>"sh.z" and "adj.sh.z" columns give the raw and adjusted Z-scores of "pathway cohesion", which compares the observed PC1 magnitude to the magnitudes obtained when the observations for each gene are randomized with respect to cells. When such Z-score is high (e.g. for GO:0008009) then multiple genes within the pathway contribute to the coordinated pattern.</li>
+<li>  The z column gives the Z-score of pathway over-dispersion relative to the genome-wide model (Z-score of 1.96 corresponds to P-value of 5%, etc.).</li>
+<li>  "z.adj" column shows the Z-score adjusted for multiple hypothesis (using Benjamini-Hochberg correction).</li>
+<li>  "score" gives observed/expected variance ratio</li>
+<li>  "sh.z" and "adj.sh.z" columns give the raw and adjusted Z-scores of "pathway cohesion", which compares the observed PC1 magnitude to the magnitudes obtained when the observations for each gene are randomized with respect to cells. When such Z-score is high (e.g. for GO:0008009) then multiple genes within the pathway contribute to the coordinated pattern.</li>
 </ul>
 
 <h2>
@@ -150,34 +123,27 @@ names(<span class="pl-smi">go.env</span>) <span class="pl-k">&lt;-</span> paste(
 
 <p>We can also test 'de novo' gene sets whose expression profiles are well-correlated within the given dataset. The following procedure will determine 'de novo' gene clusters in the data, and build a background model for the expectation of the gene cluster weighted principal component magnitudes. Note the higher trim values for the clusters, as we want to avoid clusters that are formed by outlier cells.</p>
 
-<div class="highlight highlight-source-r"><pre><span class="pl-smi">clpca</span> <span class="pl-k">&lt;-</span> pagoda.gene.clusters(<span class="pl-smi">varinfo</span>, <span class="pl-v">trim</span> <span class="pl-k">=</span> <span class="pl-c1">7.1</span><span class="pl-k">/</span>ncol(<span class="pl-smi">varinfo</span><span class="pl-k">$</span><span class="pl-smi">mat</span>), <span class="pl-v">n.clusters</span> <span class="pl-k">=</span> <span class="pl-c1">150</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">plot</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)</pre></div>
+<div class="highlight highlight-source-r"><pre><span class="pl-smi">clpca</span> <span class="pl-k">&lt;-</span> pagoda.gene.clusters(<span class="pl-smi">varinfo</span>, <span class="pl-v">trim</span> <span class="pl-k">=</span> <span class="pl-c1">7.1</span><span class="pl-k">/</span>ncol(<span class="pl-smi">varinfo</span><span class="pl-k">$</span><span class="pl-smi">mat</span>), <span class="pl-v">n.clusters</span> <span class="pl-k">=</span> <span class="pl-c1">50</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">plot</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)</pre></div>
 
-<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-clusterPCA-1.png" alt="plot of chunk clusterPCA"> </p>
+<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-clusterPCA-1.png" alt=""></p>
 
-<p>The plot above shows background distribution of the first principal component (<code>PC1</code>) variance (<code>lambda1</code>) magnitude. The blue scatterplot on the left shows <code>lambda1</code> magnitude vs. cluster size for clusters determined based on randomly-generated matrices of the same size. The black circles show top cluster in each simulation. The red lines show expected magnitude and 95% confidence interval based on Tracy-Widom distribution. The right plot shows extreme value distribution fit of residual cluster <code>PC1</code> variance magnitude relative to the Tracy-Widom F1 distribution.</p>
+<p>The plot above shows background distribution of the first principal component (<code>PC1</code>) variance (<code>lambda1</code>) magnitude. The blue scatterplot on the left shows <code>lambda1</code> magnitude vs. cluster size for clusters determined based on randomly-generated matrices of the same size. The black circles show top cluster in each simulation. The red lines show expected magnitude and 95% confidence interval based on Tracy-Widom distribution. The right plot shows extreme value distribution fit of residual cluster <code>PC1</code> variance magnitude relative to the Gumbel (extreme value) distribution.</p>
 
 <p>Now the set of top aspects can be recalculated taking these <code>de novo</code> gene clusters into account:</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-smi">df</span> <span class="pl-k">&lt;-</span> pagoda.top.aspects(<span class="pl-smi">pwpca</span>, <span class="pl-smi">clpca</span>, <span class="pl-k">return</span><span class="pl-v">.table</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">plot</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">z.score</span> <span class="pl-k">=</span> <span class="pl-c1">1.96</span>)
 head(<span class="pl-smi">df</span>)</pre></div>
 
-<pre><code>##                                                         name npc   n
-## 71 GO:0000904 cell morphogenesis involved in differentiation   1 553
-## 70                             GO:0000902 cell morphogenesis   1 800
-## 81          GO:0001505 regulation of neurotransmitter levels   1 114
-## 77                    GO:0001501 skeletal system development   1 237
-## 79                                   GO:0001503 ossification   1 208
-## 30          GO:0000226 microtubule cytoskeleton organization   1 302
-##       score         z     adj.z sh.z adj.sh.z
-## 71 2.254329 23.168080 22.977977   NA       NA
-## 70 1.959605 21.458802 21.285997   NA       NA
-## 81 1.800604  9.352036  9.104016   NA       NA
-## 77 1.779275 11.823187 11.586954   NA       NA
-## 79 1.733867 10.750226 10.522000   NA       NA
-## 30 1.723072 12.127817 11.878912   NA       NA
+<pre><code>##              name npc   n    score         z     adj.z sh.z adj.sh.z
+## 65  geneCluster.8   1 307 3.235994 12.803995 12.496650   NA       NA
+## 57     GO:0048699   1 864 2.261079 27.019091 26.894993   NA       NA
+## 56     GO:0022008   1 911 2.233116 27.062973 26.913370   NA       NA
+## 30     GO:0000226   1 302 1.665067 11.226626 10.989344   NA       NA
+## 72 geneCluster.15   1 287 1.642582  6.453696  5.947129   NA       NA
+## 55     GO:0007067   1 330 1.626072 11.035135 10.814193   NA       NA
 </code></pre>
 
-<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-topPathways2-1.png" alt="plot of chunk topPathways2"> </p>
+<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-topPathways2-1.png" alt=""></p>
 
 <p>The gene clusters and their corresponding model expected value and 95% upper bound are shown in green.</p>
 
@@ -199,16 +165,16 @@ head(<span class="pl-smi">df</span>)</pre></div>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-smi">tamr2</span> <span class="pl-k">&lt;-</span> pagoda.reduce.redundancy(<span class="pl-smi">tamr</span>, <span class="pl-v">distance.threshold</span> <span class="pl-k">=</span> <span class="pl-c1">0.9</span>, <span class="pl-v">plot</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">labRow</span> <span class="pl-k">=</span> <span class="pl-c1">NA</span>, <span class="pl-v">labCol</span> <span class="pl-k">=</span> <span class="pl-c1">NA</span>, <span class="pl-v">box</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">margins</span> <span class="pl-k">=</span> c(<span class="pl-c1">0.5</span>, <span class="pl-c1">0.5</span>), <span class="pl-v">trim</span> <span class="pl-k">=</span> <span class="pl-c1">0</span>)</pre></div>
 
-<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-correlatedCollapse-1.png" alt="plot of chunk correlatedCollapse"> </p>
+<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-correlatedCollapse-1.png" alt=""></p>
 
 <p>In the plot above, the columns are cells, rows are different significant aspects, clustered by their similarity pattern.The green-to-orange color scheme shows low-to-high weighted PCA scores (aspect patterns), where generally orange indicates higher expression. Blocks of color on the left margin show which aspects have been combined by the command above. Here the number of resulting aspects is relatively small. "top" argument (i.e. top = 10) can be used to limit further analysis to top N aspects.</p>
 
-<p>We will view the top aspects, clustering them by pattern similarity (note, to view aspects in the order of increasing <code>lambda1</code> magnitude, use <code>row.clustering = NA</code>). </p>
+<p>We will view the top aspects, clustering them by pattern similarity (note, to view aspects in the order of increasing <code>lambda1</code> magnitude, use <code>row.clustering = NA</code>).</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-smi">col.cols</span> <span class="pl-k">&lt;-</span> rbind(<span class="pl-v">groups</span> <span class="pl-k">=</span> cutree(<span class="pl-smi">hc</span>, <span class="pl-c1">3</span>))
 pagoda.view.aspects(<span class="pl-smi">tamr2</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">box</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">labCol</span> <span class="pl-k">=</span> <span class="pl-c1">NA</span>, <span class="pl-v">margins</span> <span class="pl-k">=</span> c(<span class="pl-c1">0.5</span>, <span class="pl-c1">20</span>), <span class="pl-v">col.cols</span> <span class="pl-k">=</span> rbind(<span class="pl-smi">l2cols</span>))</pre></div>
 
-<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-viewAspects-1.png" alt="plot of chunk viewAspects"> </p>
+<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-viewAspects-1.png" alt=""></p>
 
 <p>While each row here represents a cluster of pathways, the row names are assigned to be the top overdispersed aspect in each cluster.</p>
 
@@ -217,8 +183,7 @@ pagoda.view.aspects(<span class="pl-smi">tamr2</span>, <span class="pl-v">cell.c
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># compile a browsable app, showing top three clusters with the top color bar</span>
 <span class="pl-smi">app</span> <span class="pl-k">&lt;-</span> make.pagoda.app(<span class="pl-smi">tamr2</span>, <span class="pl-smi">tam</span>, <span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-smi">pwpca</span>, <span class="pl-smi">clpca</span>, <span class="pl-v">col.cols</span> <span class="pl-k">=</span> <span class="pl-smi">col.cols</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">title</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>NPCs<span class="pl-pds">"</span></span>)
 <span class="pl-c"># show app in the browser (port 1468)</span>
-show.app(<span class="pl-smi">app</span>, <span class="pl-s"><span class="pl-pds">"</span>pollen<span class="pl-pds">"</span></span>, <span class="pl-v">browse</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">port</span> <span class="pl-k">=</span> <span class="pl-c1">1468</span>)  
-saveRDS(<span class="pl-smi">app</span>, <span class="pl-v">file</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>pollen.app.rds<span class="pl-pds">"</span></span>)</pre></div>
+show.app(<span class="pl-smi">app</span>, <span class="pl-s"><span class="pl-pds">"</span>pollen<span class="pl-pds">"</span></span>, <span class="pl-v">browse</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">port</span> <span class="pl-k">=</span> <span class="pl-c1">1468</span>) </pre></div>
 
 <p>The <code>pagoda</code> app allows you to view the gene sets grouped within each aspect (row), as well as genes underlying the detected heterogeneity patterns. A screenshot of the app is provided below:</p>
 
@@ -226,20 +191,20 @@ saveRDS(<span class="pl-smi">app</span>, <span class="pl-v">file</span> <span cl
 
 <p>Similar views can be obtained in the R session itself. For instance, here we'll view top 10 genes associated with the top two pathways in the neurogenesis cluster: "neurogenesis" (GO:0022008) and "generation of neurons" (GO:0048699)</p>
 
-<div class="highlight highlight-source-r"><pre>pagoda.show.pathways(c(<span class="pl-s"><span class="pl-pds">"</span>GO:0022008 neurogenesis<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>GO:0048699 generation of neurons<span class="pl-pds">"</span></span>), <span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">margins</span> <span class="pl-k">=</span> c(<span class="pl-c1">1</span>,<span class="pl-c1">5</span>), <span class="pl-v">show.cell.dendrogram</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">showRowLabels</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">showPC</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)</pre></div>
+<div class="highlight highlight-source-r"><pre>pagoda.show.pathways(c(<span class="pl-s"><span class="pl-pds">"</span>GO:0022008<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>GO:0048699<span class="pl-pds">"</span></span>), <span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">margins</span> <span class="pl-k">=</span> c(<span class="pl-c1">1</span>,<span class="pl-c1">5</span>), <span class="pl-v">show.cell.dendrogram</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">showRowLabels</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">showPC</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)</pre></div>
 
-<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-showTopPathwayGenes-1.png" alt="plot of chunk showTopPathwayGenes"> </p>
+<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-showTopPathwayGenes-1.png" alt=""></p>
 
 <h2>
 <a id="controlling-for-undesired-aspects-of-heterogeneity" class="anchor" href="#controlling-for-undesired-aspects-of-heterogeneity" aria-hidden="true"><span class="octicon octicon-link"></span></a>Controlling for undesired aspects of heterogeneity</h2>
 
-<p>Depending on the biological setting, certain dominant aspects of transcriptional heterogeneity may not be of interest. To explicitly control for these aspects of heterogeneity that are not of interest, we will use <code>pagoda.subtract.aspect</code> method that we've previously used to control for residual patterns associated with sequencing depth differences. Here, we illustrate how to control for the mitotic cell cycle pattern which showed up as one of the four significant aspects in the analysis above.</p>
+<p>Depending on the biological setting, certain dominant aspects of transcriptional heterogeneity may not be of interest. To explicitly control for these aspects of heterogeneity that are not of interest, we will use <code>pagoda.subtract.aspect</code> method that we've previously used to control for residual patterns associated with sequencing depth differences. Here, we illustrate how to control for the mitotic cell cycle pattern (GO:0000280 nuclear division and GO:0007067 mitotic nuclear division) which showed up as one of the four significant aspects in the analysis above.</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># get cell cycle signature and view the top genes</span>
-<span class="pl-smi">cc.pattern</span> <span class="pl-k">&lt;-</span> pagoda.show.pathways(c(<span class="pl-s"><span class="pl-pds">"</span>GO:0000280 nuclear division<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>GO:0007067 mitotic nuclear division<span class="pl-pds">"</span></span>), <span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-v">show.cell.dendrogram</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">showRowLabels</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)
+<span class="pl-smi">cc.pattern</span> <span class="pl-k">&lt;-</span> pagoda.show.pathways(c(<span class="pl-s"><span class="pl-pds">"</span>GO:0000280<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>GO:0007067<span class="pl-pds">"</span></span>), <span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-v">show.cell.dendrogram</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">showRowLabels</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)
 <span class="pl-c"># subtract the pattern</span>
 <span class="pl-smi">varinfo.cc</span> <span class="pl-k">&lt;-</span> pagoda.subtract.aspect(<span class="pl-smi">varinfo</span>, <span class="pl-smi">cc.pattern</span>)</pre></div>
 
-<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-controlForCellCycle-1.png" alt="plot of chunk controlForCellCycle"> </p>
+<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-controlForCellCycle-1.png" alt=""></p>
 
 <p>Now we can go through the same analysis as shown above, starting with the <code>pagoda.pathway.wPCA()</code> call, using <code>varinfo.cc</code> instead of <code>varinfo</code>, which will control for the cell cycle heterogeneity between the cells.</p>

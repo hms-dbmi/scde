@@ -2,19 +2,19 @@
 layout: default
 ---
 
-<h1>
+      <h1>
 <a id="experimental-use-of-pagoda" class="anchor" href="#experimental-use-of-pagoda" aria-hidden="true"><span class="octicon octicon-link"></span></a>Experimental use of PAGODA</h1>
 
-<p>In this vignette, we show you how to modify <code>pagoda</code> to run on your own normalized gene expression and associated weights matrices. </p>
+<p>In this vignette, we show you how to modify <code>pagoda</code> to run on your own normalized gene expression and associated weights matrices.</p>
 
-<p><strong>NOTE:</strong> Gene expression matrices must be normalized. Variances observed in the normalized data must be representative of biological variation. We strongly recommend taking into consideration magnitude dependencies, batch effects, library size, and other potential technical aspects of variability. </p>
+<p><strong>NOTE:</strong> Gene expression matrices must be normalized. Variances observed in the normalized data must be representative of biological variation. We strongly recommend taking into consideration magnitude dependencies, batch effects, library size, and other potential technical aspects of variability.</p>
 
-<p><strong>IMPORTANT:</strong> Depending on your normalization and weights, results may be misleading and/or non-sensical. This vignette is experimental. USE WITH CAUTION. </p>
+<p><strong>IMPORTANT:</strong> Depending on your normalization and weights, results may be misleading and/or non-sensical. This vignette is experimental. USE WITH CAUTION.</p>
 
 <h2>
 <a id="simulating-data-for-demonstration-purposes" class="anchor" href="#simulating-data-for-demonstration-purposes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Simulating data for demonstration purposes</h2>
 
-<p>For the purposes of demonstration, we will simulate a normalized gene expression matrix. We will generate out data such that there are two major components of variation, supported by every other pathway. </p>
+<p>For the purposes of demonstration, we will simulate a normalized gene expression matrix. We will generate out data such that there are two major components of variation, supported by every other pathway.</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># Get gene sets</span>
 library(<span class="pl-smi">org.Hs.eg.db</span>)
@@ -31,7 +31,7 @@ library(<span class="pl-smi">org.Hs.eg.db</span>)
 <span class="pl-smi">mat</span> <span class="pl-k">&lt;-</span> do.call(<span class="pl-smi">rbind</span>, lapply(seq_along(<span class="pl-smi">gos.sub</span>), <span class="pl-k">function</span>(<span class="pl-smi">i</span>) {
   <span class="pl-smi">gs</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">gos.sub</span>[[<span class="pl-smi">i</span>]]
   set.seed(<span class="pl-smi">i</span><span class="pl-k">%%</span><span class="pl-c1">2</span>) <span class="pl-c"># make every other pathway split the same cells</span>
-  <span class="pl-smi">c</span> <span class="pl-k">&lt;-</span> sample(<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">M</span>, <span class="pl-smi">M</span><span class="pl-k">/</span><span class="pl-c1">2</span>, <span class="pl-v">replace</span><span class="pl-k">=</span><span class="pl-c1">FALSE</span>) 
+  <span class="pl-smi">c</span> <span class="pl-k">&lt;-</span> sample(<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">M</span>, <span class="pl-smi">M</span><span class="pl-k">/</span><span class="pl-c1">2</span>, <span class="pl-v">replace</span><span class="pl-k">=</span><span class="pl-c1">FALSE</span>)
   <span class="pl-smi">s</span> <span class="pl-k">&lt;-</span> length(<span class="pl-smi">gs</span>)
   <span class="pl-smi">mat</span> <span class="pl-k">&lt;-</span> <span class="pl-k">matrix</span>(rnorm(<span class="pl-smi">s</span><span class="pl-k">*</span><span class="pl-smi">M</span>,<span class="pl-v">mean</span><span class="pl-k">=</span><span class="pl-c1">0</span>,<span class="pl-v">sd</span><span class="pl-k">=</span><span class="pl-c1">5</span>), <span class="pl-smi">s</span>, <span class="pl-smi">M</span>)
   <span class="pl-smi">mat</span>[, <span class="pl-smi">c</span>] <span class="pl-k">&lt;-</span> rnorm(<span class="pl-smi">s</span><span class="pl-k">*</span><span class="pl-smi">c</span>,<span class="pl-v">mean</span><span class="pl-k">=</span><span class="pl-c1">10</span>,<span class="pl-v">sd</span><span class="pl-k">=</span><span class="pl-c1">5</span>)
@@ -44,9 +44,9 @@ library(<span class="pl-smi">org.Hs.eg.db</span>)
 <span class="pl-c"># Just cluster and visualize gene expression</span>
 heatmap(<span class="pl-smi">mat</span>, <span class="pl-v">col</span> <span class="pl-k">=</span> colorRampPalette(c(<span class="pl-s"><span class="pl-pds">'</span>blue<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>white<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>red<span class="pl-pds">'</span></span>))(<span class="pl-c1">100</span>))</pre></div>
 
-<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/experimental-data-1.png" alt="plot of chunk data"> </p>
+<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/experimental-data-1.png" alt=""></p>
 
-<p>We will set the associated weights to 1 for all observations in all cells and calculated variances for each gene. </p>
+<p>We will set the associated weights to 1 for all observations in all cells and calculated variances for each gene.</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># Set all weights to 1</span>
 <span class="pl-smi">matw</span> <span class="pl-k">&lt;-</span> <span class="pl-k">matrix</span>(<span class="pl-c1">1</span>, <span class="pl-smi">N</span>, <span class="pl-smi">M</span>)
@@ -63,7 +63,7 @@ colnames(<span class="pl-smi">matw</span>) <span class="pl-k">&lt;-</span> colna
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># Create varinfo object to pipe into PAGODA</span>
 <span class="pl-smi">varinfo</span> <span class="pl-k">&lt;-</span> <span class="pl-k">list</span>(<span class="pl-s"><span class="pl-pds">'</span>mat<span class="pl-pds">'</span></span> <span class="pl-k">=</span> <span class="pl-smi">mat</span>, <span class="pl-s"><span class="pl-pds">'</span>matw<span class="pl-pds">'</span></span> <span class="pl-k">=</span> <span class="pl-smi">matw</span>, <span class="pl-s"><span class="pl-pds">'</span>arv<span class="pl-pds">'</span></span> <span class="pl-k">=</span> <span class="pl-smi">var</span>)</pre></div>
 
-<p>When we run <code>pagoda</code> on the generated data, we indeed recover our two major components of variation. </p>
+<p>When we run <code>pagoda</code> on the generated data, we indeed recover our two major components of variation.</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># Run PAGODA with generated data</span>
 <span class="pl-smi">pwpca</span> <span class="pl-k">&lt;-</span> pagoda.pathway.wPCA(<span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-v">n.components</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">batch.center</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>, <span class="pl-v">verbose</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>)
@@ -76,9 +76,9 @@ colnames(<span class="pl-smi">matw</span>) <span class="pl-k">&lt;-</span> colna
 <span class="pl-smi">col.cols</span> <span class="pl-k">&lt;-</span> rbind(<span class="pl-v">groups</span> <span class="pl-k">=</span> cutree(<span class="pl-smi">hc</span>, <span class="pl-c1">3</span>))
 pagoda.view.aspects(<span class="pl-smi">tamr2</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">col.cols</span> <span class="pl-k">=</span> <span class="pl-smi">col.cols</span>)</pre></div>
 
-<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/experimental-pagoda-1.png" alt="plot of chunk pagoda"> </p>
+<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/experimental-pagoda-1.png" alt=""></p>
 
-<p>We can also create an interactive app to browse our results. </p>
+<p>We can also create an interactive app to browse our results.</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-smi">app</span> <span class="pl-k">&lt;-</span> make.pagoda.app(<span class="pl-smi">tamr2</span>, <span class="pl-smi">tam</span>, <span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-smi">pwpca</span>, <span class="pl-v">col.cols</span> <span class="pl-k">=</span> <span class="pl-smi">col.cols</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">title</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>Experiment<span class="pl-pds">"</span></span>)
 show.app(<span class="pl-smi">app</span>, <span class="pl-s"><span class="pl-pds">"</span>Experiment<span class="pl-pds">"</span></span>, <span class="pl-v">browse</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">port</span> <span class="pl-k">=</span> <span class="pl-c1">1400</span>)  </pre></div>

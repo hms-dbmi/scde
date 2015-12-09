@@ -2,7 +2,7 @@
 layout: default
 ---
 
-<h1>
+      <h1>
 <a id="single-cell-differential-expression-analysis" class="anchor" href="#single-cell-differential-expression-analysis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Single-Cell Differential Expression Analysis</h1>
 
 <p>In this vignette, we show you how perform single cell differential expression analysis using single cell RNA-seq data with the <code>scde</code> package.</p>
@@ -16,35 +16,31 @@ layout: default
 
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># load example dataset</span>
 data(<span class="pl-smi">es.mef.small</span>)
+
 <span class="pl-c"># factor determining cell types</span>
 <span class="pl-smi">sg</span> <span class="pl-k">&lt;-</span> <span class="pl-k">factor</span>(gsub(<span class="pl-s"><span class="pl-pds">"</span>(MEF|ESC).*<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\\</span>1<span class="pl-pds">"</span></span>, colnames(<span class="pl-smi">es.mef.small</span>)), <span class="pl-v">levels</span> <span class="pl-k">=</span> c(<span class="pl-s"><span class="pl-pds">"</span>ESC<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>MEF<span class="pl-pds">"</span></span>))
 <span class="pl-c"># the group factor should be named accordingly</span>
-names(<span class="pl-smi">sg</span>) <span class="pl-k">&lt;-</span> colnames(<span class="pl-smi">es.mef.small</span>)  
+names(<span class="pl-smi">sg</span>) <span class="pl-k">&lt;-</span> colnames(<span class="pl-smi">es.mef.small</span>)
 table(<span class="pl-smi">sg</span>)</pre></div>
 
 <pre><code>## sg
-## ESC MEF 
+## ESC MEF
 ##  20  20
 </code></pre>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># clean up the dataset</span>
-<span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">es.mef.small</span>
-<span class="pl-c"># omit genes that are never detected</span>
-<span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">cd</span>[rowSums(<span class="pl-smi">cd</span>)<span class="pl-k">&gt;</span><span class="pl-c1">0</span>, ]
-<span class="pl-c"># omit cells with very poor coverage</span>
-<span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">cd</span>[, colSums(<span class="pl-smi">cd</span>)<span class="pl-k">&gt;</span><span class="pl-c1">1e4</span>]</pre></div>
+<span class="pl-smi">cd</span> <span class="pl-k">&lt;-</span> clean.counts(<span class="pl-smi">es.mef.small</span>, <span class="pl-v">min.lib.size</span><span class="pl-k">=</span><span class="pl-c1">1000</span>, <span class="pl-v">min.reads</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">min.detected</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>)</pre></div>
 
 <h2>
 <a id="fitting-error-models" class="anchor" href="#fitting-error-models" aria-hidden="true"><span class="octicon octicon-link"></span></a>Fitting error models</h2>
 
-<p>As a next step we fit the error models on which all subsequent calculations will rely. The fitting process relies on a subset of robust genes that are detected in multiple cross-cell comparisons. Here we supply the <code>groups = sg</code> argument, so that the error models for the two cell types are fit independently (using two different sets of "robust" genes). If the <code>groups</code> argument is omitted, the models will be fit using a common set. </p>
+<p>As a next step we fit the error models on which all subsequent calculations will rely. The fitting process relies on a subset of robust genes that are detected in multiple cross-cell comparisons. Here we supply the <code>groups = sg</code> argument, so that the error models for the two cell types are fit independently (using two different sets of "robust" genes). If the <code>groups</code> argument is omitted, the models will be fit using a common set.</p>
 
-<p>Note this step takes a considerable amount of time unless multiple cores are used. </p>
+<p>Note this step takes a considerable amount of time unless multiple cores are used.</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># EVALUATION NOT NEEDED</span>
 <span class="pl-c"># calculate models</span>
-<span class="pl-smi">o.ifm</span> <span class="pl-k">&lt;-</span> scde.error.models(<span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">groups</span> <span class="pl-k">=</span> <span class="pl-smi">sg</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">threshold.segmentation</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">save.crossfit.plots</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>, <span class="pl-v">save.model.plots</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>, <span class="pl-v">verbose</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>)
-<span class="pl-e">devtools</span><span class="pl-k">::</span>use_data(<span class="pl-smi">o.ifm</span>)  <span class="pl-c"># save for later since this step takes a long time</span></pre></div>
+<span class="pl-smi">o.ifm</span> <span class="pl-k">&lt;-</span> scde.error.models(<span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">groups</span> <span class="pl-k">=</span> <span class="pl-smi">sg</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>, <span class="pl-v">threshold.segmentation</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">save.crossfit.plots</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>, <span class="pl-v">save.model.plots</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>, <span class="pl-v">verbose</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>)</pre></div>
 
 <p>For the purposes of this vignette, the model has been precomputed and can simply be loaded.</p>
 
@@ -64,7 +60,7 @@ table(<span class="pl-smi">sg</span>)</pre></div>
 table(<span class="pl-smi">valid.cells</span>)</pre></div>
 
 <pre><code>## valid.cells
-## TRUE 
+## TRUE
 ##   40
 </code></pre>
 
@@ -91,9 +87,9 @@ names(<span class="pl-smi">groups</span>) <span class="pl-k">&lt;-</span> row.na
 <span class="pl-smi">ediff</span> <span class="pl-k">&lt;-</span> scde.expression.difference(<span class="pl-smi">o.ifm</span>, <span class="pl-smi">cd</span>, <span class="pl-smi">o.prior</span>, <span class="pl-v">groups</span>  <span class="pl-k">=</span>  <span class="pl-smi">groups</span>, <span class="pl-v">n.randomizations</span>  <span class="pl-k">=</span>  <span class="pl-c1">100</span>, <span class="pl-v">n.cores</span>  <span class="pl-k">=</span>  <span class="pl-c1">1</span>, <span class="pl-v">verbose</span>  <span class="pl-k">=</span>  <span class="pl-c1">1</span>)</pre></div>
 
 <pre><code>## comparing groups:
-## 
-## ESC MEF 
-##  20  20 
+##
+## ESC MEF
+##  20  20
 ## calculating difference posterior
 ## summarizing differences
 </code></pre>
@@ -102,12 +98,12 @@ names(<span class="pl-smi">groups</span>) <span class="pl-k">&lt;-</span> row.na
 head(<span class="pl-smi">ediff</span>[order(<span class="pl-smi">ediff</span><span class="pl-k">$</span><span class="pl-smi">Z</span>, <span class="pl-v">decreasing</span>  <span class="pl-k">=</span>  <span class="pl-c1">TRUE</span>), ])</pre></div>
 
 <pre><code>##                     lb      mle        ub       ce        Z       cZ
-## Dppa5a        8.075160 9.965929 11.541570 8.075160 7.160813 5.968921
-## Pou5f1        5.357179 7.208557  9.178109 5.357179 7.160333 5.968921
-## Gm13242       5.672307 7.681250  9.768974 5.672307 7.159987 5.968921
-## Tdh           5.829872 8.075160 10.281057 5.829872 7.159599 5.968921
-## Ift46         5.435961 7.366121  9.217500 5.435961 7.150271 5.968921
-## 4930509G22Rik 5.435961 7.484295  9.808365 5.435961 7.115804 5.957784
+## Dppa5a        8.075220 9.984631 11.575807 8.075220 7.160813 5.989598
+## Pou5f1        5.370220 7.200073  9.189043 5.370220 7.160328 5.989598
+## Gm13242       5.688455 7.677425  9.785734 5.688455 7.159979 5.989598
+## Tdh           5.807793 8.075220 10.302866 5.807793 7.159589 5.989598
+## Ift46         5.449779 7.359190  9.228822 5.449779 7.150242 5.989598
+## 4930509G22Rik 5.409999 7.478528  9.785734 5.409999 7.115605 5.978296
 </code></pre>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># write out a table with all the results, showing most significantly different genes (in both directions) on top</span>
@@ -117,11 +113,11 @@ write.table(<span class="pl-smi">ediff</span>[order(abs(<span class="pl-smi">edi
 
 <div class="highlight highlight-source-r"><pre>scde.test.gene.expression.difference(<span class="pl-s"><span class="pl-pds">"</span>Tdh<span class="pl-pds">"</span></span>, <span class="pl-v">models</span> <span class="pl-k">=</span> <span class="pl-smi">o.ifm</span>, <span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">prior</span> <span class="pl-k">=</span> <span class="pl-smi">o.prior</span>)</pre></div>
 
-<pre><code>##           lb      mle       ub       ce        Z       cZ
-## Tdh 5.711698 8.035769 10.32045 5.711698 7.151497 7.151497
+<pre><code>##           lb     mle       ub       ce        Z       cZ
+## Tdh 5.728235 8.03544 10.30287 5.728235 7.151425 7.151425
 </code></pre>
 
-<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/scde-diffexp3-1.png" alt="plot of chunk diffexp3"> </p>
+<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/scde-diffexp3-1.png" alt=""></p>
 
 <p>The top and the bottom plots show expression posteriors derived from individual cells (colored lines) and joint posteriors (black lines). The middle plot shows posterior of the expression fold difference between the two cell groups, highlighting the 95% credible interval by the red shading.</p>
 
@@ -144,10 +140,10 @@ table(<span class="pl-smi">groups</span>, <span class="pl-smi">batch</span>)</pr
 scde.test.gene.expression.difference(<span class="pl-s"><span class="pl-pds">"</span>Tdh<span class="pl-pds">"</span></span>, <span class="pl-v">models</span> <span class="pl-k">=</span> <span class="pl-smi">o.ifm</span>, <span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>, <span class="pl-v">prior</span> <span class="pl-k">=</span> <span class="pl-smi">o.prior</span>, <span class="pl-v">batch</span> <span class="pl-k">=</span> <span class="pl-smi">batch</span>)</pre></div>
 
 <pre><code>##           lb      mle       ub       ce        Z       cZ
-## Tdh 3.663365 7.799423 12.01426 3.663365 3.782533 3.782533
+## Tdh 3.659705 7.796764 12.01338 3.659705 3.782082 3.782082
 </code></pre>
 
-<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/scde-batch-1.png" alt="plot of chunk batch"> </p>
+<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/scde-batch-1.png" alt=""></p>
 
 <p>In the plot above, the grey lines are used to show posterior distributions based on the batch composition alone. The expression magnitude posteriors (top and bottom plots) look very similar, and as a result the log2 expression ratio posterior is close to 0. The thin black line shows log2 expression ratio posterior before correction. The batch correction doesn't shift the location, but increases uncertainty in the ratio estimate (since we're controlling for another factor).</p>
 
@@ -171,21 +167,19 @@ scde.test.gene.expression.difference(<span class="pl-s"><span class="pl-pds">"</
 <h3>
 <a id="more-detailed-functions" class="anchor" href="#more-detailed-functions" aria-hidden="true"><span class="octicon octicon-link"></span></a>More detailed functions</h3>
 
-<p>The <code>scde.expression.difference</code> method can return a more extensive set of results, including joint posteriors and the expression fold difference posteriors for all of the exam
-ined genes:</p>
+<p>The <code>scde.expression.difference</code> method can return a more extensive set of results, including joint posteriors and the expression fold difference posteriors for all of the exam ined genes:</p>
 
 <p>The joint posteriors can also be obtained explicitly for a particular set of cells:</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># calculate joint posterior for ESCs (set return.individual.posterior.modes=T if you need p.modes)</span>
 <span class="pl-smi">jp</span> <span class="pl-k">&lt;-</span> scde.posteriors(<span class="pl-v">models</span> <span class="pl-k">=</span> <span class="pl-smi">o.ifm</span>[grep(<span class="pl-s"><span class="pl-pds">"</span>ESC<span class="pl-pds">"</span></span>,rownames(<span class="pl-smi">o.ifm</span>)), ], <span class="pl-smi">cd</span>, <span class="pl-smi">o.prior</span>, <span class="pl-v">n.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>)</pre></div>
 
-<p>The error models fit the intercept and the slope of the NB "correlated" component, providing more consistent expression magnitude estimates among the cells. These can be obtain
-ed with a quick helper function:</p>
+<p>The error models fit the intercept and the slope of the NB "correlated" component, providing more consistent expression magnitude estimates among the cells. These can be obtain ed with a quick helper function:</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># get expression magntiude estimates</span>
 <span class="pl-smi">o.fpm</span> <span class="pl-k">&lt;-</span> scde.expression.magnitude(<span class="pl-smi">o.ifm</span>, <span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>)</pre></div>
 
-<p>Drop-out probabilities (as a function of expression magnitudes) for different cells are useful for assessing the quality of the measurements: </p>
+<p>Drop-out probabilities (as a function of expression magnitudes) for different cells are useful for assessing the quality of the measurements:</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># get failure probabilities on the expresison range</span>
 <span class="pl-smi">o.fail.curves</span> <span class="pl-k">&lt;-</span> scde.failure.probability(<span class="pl-smi">o.ifm</span>, <span class="pl-v">magnitudes</span> <span class="pl-k">=</span> log((<span class="pl-c1">10</span><span class="pl-k">^</span><span class="pl-smi">o.prior</span><span class="pl-k">$</span><span class="pl-smi">x</span>)<span class="pl-k">-</span><span class="pl-c1">1</span>))
@@ -194,7 +188,7 @@ plot(c(), c(), <span class="pl-v">xlim</span><span class="pl-k">=</span>range(<s
 <span class="pl-k">invisible</span>(apply(<span class="pl-smi">o.fail.curves</span>[, grep(<span class="pl-s"><span class="pl-pds">"</span>ES<span class="pl-pds">"</span></span>,colnames(<span class="pl-smi">o.fail.curves</span>))], <span class="pl-c1">2</span>, <span class="pl-k">function</span>(<span class="pl-smi">y</span>) lines(<span class="pl-v">x</span> <span class="pl-k">=</span> <span class="pl-smi">o.prior</span><span class="pl-k">$</span><span class="pl-smi">x</span>, <span class="pl-v">y</span> <span class="pl-k">=</span> <span class="pl-smi">y</span>,<span class="pl-v">col</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>orange<span class="pl-pds">"</span></span>)))
 <span class="pl-k">invisible</span>(apply(<span class="pl-smi">o.fail.curves</span>[, grep(<span class="pl-s"><span class="pl-pds">"</span>MEF<span class="pl-pds">"</span></span>, colnames(<span class="pl-smi">o.fail.curves</span>))], <span class="pl-c1">2</span>, <span class="pl-k">function</span>(<span class="pl-smi">y</span>) lines(<span class="pl-v">x</span> <span class="pl-k">=</span> <span class="pl-smi">o.prior</span><span class="pl-k">$</span><span class="pl-smi">x</span>, <span class="pl-v">y</span> <span class="pl-k">=</span> <span class="pl-smi">y</span>, <span class="pl-v">col</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>dodgerblue<span class="pl-pds">"</span></span>)))</pre></div>
 
-<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/scde-detailed4-1.png" alt="plot of chunk detailed4"> </p>
+<p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/scde-detailed4-1.png" alt=""></p>
 
 <p>The drop-out probabilities (at a given expression magnitude, or at an observed count) can be useful in subsequent analysis</p>
 
@@ -206,13 +200,12 @@ plot(c(), c(), <span class="pl-v">xlim</span><span class="pl-k">=</span>range(<s
 <h2>
 <a id="adjusted-distance-meaures" class="anchor" href="#adjusted-distance-meaures" aria-hidden="true"><span class="octicon octicon-link"></span></a>Adjusted distance meaures</h2>
 
-<p>The dependency of drop-out probability on the average expression magntiude captured by the cell-speicifc models can be used to adjust cell-to-cell similarity measures, for insta
-nce in the context of cell clustering. Several such measures are explored below.</p>
+<p>The dependency of drop-out probability on the average expression magntiude captured by the cell-speicifc models can be used to adjust cell-to-cell similarity measures, for insta nce in the context of cell clustering. Several such measures are explored below.</p>
 
 <h3>
 <a id="direct-drop-out" class="anchor" href="#direct-drop-out" aria-hidden="true"><span class="octicon octicon-link"></span></a>Direct drop-out</h3>
 
-<p>Direct weighting downweights the contribution of a given gene to the cell-to-cell distance based on the probability that the given measurement is a drop-out event (i.e. belongs to the drop-out component) - the "self-fail" probability shown in the previous section. To estimate the adjusted distance, we will simulate the drop-out events, replacing them with <code>NA</code> values, and calculating correlation using the remaining points: </p>
+<p>Direct weighting downweights the contribution of a given gene to the cell-to-cell distance based on the probability that the given measurement is a drop-out event (i.e. belongs to the drop-out component) - the "self-fail" probability shown in the previous section. To estimate the adjusted distance, we will simulate the drop-out events, replacing them with <code>NA</code> values, and calculating correlation using the remaining points:</p>
 
 <div class="highlight highlight-source-r"><pre><span class="pl-smi">p.self.fail</span> <span class="pl-k">&lt;-</span> scde.failure.probability(<span class="pl-v">models</span> <span class="pl-k">=</span> <span class="pl-smi">o.ifm</span>, <span class="pl-v">counts</span> <span class="pl-k">=</span> <span class="pl-smi">cd</span>)
 <span class="pl-c"># simulate drop-outs</span>
@@ -226,7 +219,7 @@ nce in the context of cell clustering. Several such measures are explored below.
     <span class="pl-smi">x</span>[<span class="pl-k">!</span>as.logical(rbinom(length(<span class="pl-smi">x</span>),<span class="pl-c1">1</span>,<span class="pl-c1">1</span><span class="pl-k">-</span><span class="pl-smi">p.self.fail</span>[,<span class="pl-smi">nam</span>]<span class="pl-k">*</span><span class="pl-smi">k</span>))] <span class="pl-k">&lt;-</span> <span class="pl-c1">NA</span>;
     <span class="pl-smi">x</span>;
     }))
-  rownames(<span class="pl-smi">scd1</span>) <span class="pl-k">&lt;-</span> rownames(<span class="pl-smi">cd</span>); 
+  rownames(<span class="pl-smi">scd1</span>) <span class="pl-k">&lt;-</span> rownames(<span class="pl-smi">cd</span>);
   <span class="pl-c"># calculate correlation on the complete observation pairs</span>
   cor(log10(<span class="pl-smi">scd1</span><span class="pl-k">+</span><span class="pl-c1">1</span>),<span class="pl-v">use</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>pairwise.complete.obs<span class="pl-pds">"</span></span>);
 }, <span class="pl-v">mc.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>)
@@ -247,7 +240,7 @@ require(<span class="pl-smi">boot</span>)
     <span class="pl-smi">f1</span> <span class="pl-k">&lt;-</span> scde.failure.probability(<span class="pl-v">models</span> <span class="pl-k">=</span> <span class="pl-smi">o.ifm</span>[<span class="pl-smi">nam1</span>,,<span class="pl-v">drop</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>], <span class="pl-v">magnitudes</span> <span class="pl-k">=</span> <span class="pl-smi">o.fpm</span>[, <span class="pl-smi">nam2</span>])
     <span class="pl-smi">f2</span> <span class="pl-k">&lt;-</span> scde.failure.probability(<span class="pl-v">models</span> <span class="pl-k">=</span> <span class="pl-smi">o.ifm</span>[<span class="pl-smi">nam2</span>,,<span class="pl-v">drop</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>], <span class="pl-v">magnitudes</span> <span class="pl-k">=</span> <span class="pl-smi">o.fpm</span>[, <span class="pl-smi">nam1</span>])
     <span class="pl-c"># weight factor</span>
-    <span class="pl-smi">pnf</span> <span class="pl-k">&lt;-</span> sqrt((<span class="pl-c1">1</span><span class="pl-k">-</span><span class="pl-smi">f1</span>)<span class="pl-k">*</span>(<span class="pl-c1">1</span><span class="pl-k">-</span><span class="pl-smi">f2</span>))<span class="pl-k">*</span><span class="pl-smi">k</span> <span class="pl-k">+</span>(<span class="pl-c1">1</span><span class="pl-k">-</span><span class="pl-smi">k</span>); 
+    <span class="pl-smi">pnf</span> <span class="pl-k">&lt;-</span> sqrt((<span class="pl-c1">1</span><span class="pl-k">-</span><span class="pl-smi">f1</span>)<span class="pl-k">*</span>(<span class="pl-c1">1</span><span class="pl-k">-</span><span class="pl-smi">f2</span>))<span class="pl-k">*</span><span class="pl-smi">k</span> <span class="pl-k">+</span>(<span class="pl-c1">1</span><span class="pl-k">-</span><span class="pl-smi">k</span>);
     <span class="pl-e">boot</span><span class="pl-k">::</span>corr(log10(cbind(<span class="pl-smi">cd</span>[, <span class="pl-smi">nam1</span>], <span class="pl-smi">cd</span>[, <span class="pl-smi">nam2</span>])<span class="pl-k">+</span><span class="pl-c1">1</span>), <span class="pl-v">w</span> <span class="pl-k">=</span> <span class="pl-smi">pnf</span>)
     }))
 },<span class="pl-v">mc.cores</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>)), <span class="pl-v">upper</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>)</pre></div>

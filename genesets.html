@@ -2,75 +2,99 @@
 layout: default
 ---
 
+      <h1>
+<a id="creating-custom-pathway-annotations-or-gene-sets" class="anchor" href="#creating-custom-pathway-annotations-or-gene-sets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Creating custom pathway annotations or gene sets</h1>
+
+<p>In this vignette, we show you how to create and use your own custom pathway annotations or gene sets with pagoda.</p>
+
 <h1>
-<a id="experimental-use-of-pagoda" class="anchor" href="#experimental-use-of-pagoda" aria-hidden="true"><span class="octicon octicon-link"></span></a>Preparing custom gene sets for <code>pagoda</code></h1>
+<a id="go-annotations" class="anchor" href="#go-annotations" aria-hidden="true"><span class="octicon octicon-link"></span></a>GO annotations</h1>
 
-<p>In this vignette, we show you how to create and use your own gene sets with <code>pagoda</code>. </p>
-
-<h2>
-<a id="simulating-data-for-demonstration-purposes" class="anchor" href="#simulating-data-for-demonstration-purposes" aria-hidden="true"><span class="octicon octicon-link"></span></a>GO annotations</h2>
-
-<div class="highlight highlight-r"><pre>
+<div class="highlight highlight-source-r"><pre><span class="pl-c"># Use the org.Hs.eg.db package for GO annotations</span>
 library(<span class="pl-smi">org.Hs.eg.db</span>)
-<span class="pl-c"># translate gene names to ids</span>
+<span class="pl-c"># Translate gene names to ids</span>
 <span class="pl-smi">ids</span> <span class="pl-k">&lt;-</span> unlist(lapply(mget(rownames(<span class="pl-smi">cd</span>), <span class="pl-smi">org.Hs.egALIAS2EG</span>, <span class="pl-v">ifnotfound</span> <span class="pl-k">=</span> <span class="pl-c1">NA</span>), <span class="pl-k">function</span>(<span class="pl-smi">x</span>) <span class="pl-smi">x</span>[<span class="pl-c1">1</span>]))
-<span class="pl-c"># reverse map</span>
+<span class="pl-c"># Reverse map</span>
 <span class="pl-smi">rids</span> <span class="pl-k">&lt;-</span> names(<span class="pl-smi">ids</span>)
 names(<span class="pl-smi">rids</span>) <span class="pl-k">&lt;-</span> <span class="pl-smi">ids</span>
-<span class="pl-c"># list all the ids per GO category</span>
+<span class="pl-c"># Convert ids per GO category to gene names</span>
 <span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> eapply(<span class="pl-smi">org.Hs.egGO2ALLEGS</span>, <span class="pl-k">function</span>(<span class="pl-smi">x</span>) as.character(na.omit(<span class="pl-smi">rids</span>[<span class="pl-smi">x</span>])))
- <span class="pl-c"># omit categories with too few genes</span>
-<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">go.env</span>[unlist(lapply(<span class="pl-smi">go.env</span>, <span class="pl-smi">length</span>))<span class="pl-k">&gt;</span><span class="pl-c1">5</span>]
+<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> clean.gos(<span class="pl-smi">go.env</span>) <span class="pl-c"># Remove GOs with too few or too many genes</span>
+<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> list2env(<span class="pl-smi">go.env</span>)  <span class="pl-c"># Convert to an environment</span>
 
-<span class="pl-c"># append descriptions to the GO names</span>
-library(<span class="pl-smi">GO.db</span>)
-<span class="pl-smi">desc</span> <span class="pl-k">&lt;-</span> unlist(lapply(mget(names(<span class="pl-smi">go.env</span>), <span class="pl-smi">GOTERM</span>, <span class="pl-v">ifnotfound</span> <span class="pl-k">=</span> <span class="pl-c1">NA</span>), <span class="pl-k">function</span>(<span class="pl-smi">x</span>) <span class="pl-k">if</span>(is.logical(<span class="pl-smi">x</span>)) { <span class="pl-k">return</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>) } <span class="pl-k">else</span> { slot(<span class="pl-smi">x</span>, <span class="pl-s"><span class="pl-pds">"</span>Term<span class="pl-pds">"</span></span>)}))
-names(<span class="pl-smi">go.env</span>) <span class="pl-k">&lt;-</span> paste(names(<span class="pl-smi">go.env</span>), <span class="pl-smi">desc</span>)  <span class="pl-c"># append description to the names</span>
+<span class="pl-c"># Test</span>
+class(<span class="pl-smi">go.env</span>)</pre></div>
 
-<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> list2env(<span class="pl-smi">go.env</span>)  <span class="pl-c"># convert to an environment</span>
+<pre><code>## [1] "environment"
+</code></pre>
 
-<span class="pl-e">devtools</span><span class="pl-k">::</span>use_data(<span class="pl-smi">go.env</span>)  <span class="pl-c"># save for later</span></pre></div>
+<div class="highlight highlight-source-r"><pre>head(ls(<span class="pl-smi">go.env</span>)) <span class="pl-c"># Look at gene set names</span></pre></div>
 
-<h2>
-<a id="simulating-data-for-demonstration-purposes" class="anchor" href="#simulating-data-for-demonstration-purposes" aria-hidden="true"><span class="octicon octicon-link"></span></a>BioMart</h2>
+<pre><code>## [1] "GO:0000002" "GO:0000003" "GO:0000012" "GO:0000014" "GO:0000018"
+## [6] "GO:0000022"
+</code></pre>
+
+<div class="highlight highlight-source-r"><pre>head(get(ls(<span class="pl-smi">go.env</span>)[<span class="pl-c1">1</span>], <span class="pl-smi">go.env</span>)) <span class="pl-c"># Look at one gene set</span></pre></div>
+
+<pre><code>## [1] "SLC25A4" "DNA2"    "TYMP"    "LIG3"    "LIG3"    "MEF2A"
+</code></pre>
+
+<h1>
+<a id="biomart" class="anchor" href="#biomart" aria-hidden="true"><span class="octicon octicon-link"></span></a>BioMart</h1>
 
 <p>Alternatively, we can use Ensembl's BioMart service to get the GO annotations.</p>
 
-<div class="highlight highlight-r"><pre>
-library(<span class="pl-smi">biomaRt</span>)
+<div class="highlight highlight-source-r"><pre>library(<span class="pl-smi">biomaRt</span>)
 library(<span class="pl-smi">GO.db</span>)
 
-<span class="pl-c"># Initialize the connection to the Ensembl BioMart Service
-# Available datasets can be listed with 
-# listDatasets(useMart("ensembl"))
-# Use mmusculus_gene_ensembl for mouse</span>
-<span class="pl-smi">ensembl</span> <span class="pl-k">=</span> useMart(<span class="pl-s"><span class="pl-pds">"</span>ensembl<span class="pl-pds">"</span></span>, <span class="pl-v">dataset </span><span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>hsapiens_gene_ensembl<span class="pl-pds">"</span></span>)
+<span class="pl-c"># Initialize the connection to the Ensembl BioMart Service</span>
+<span class="pl-c"># Available datasets can be listed with </span>
+<span class="pl-c"># listDatasets(useMart("ENSEMBL_MART_ENSEMBL", host="www.ensembl.org"))</span>
+<span class="pl-c"># Use mmusculus_gene_ensembl for mouse</span>
+<span class="pl-smi">ensembl</span> <span class="pl-k">&lt;-</span> useMart(<span class="pl-s"><span class="pl-pds">"</span>ENSEMBL_MART_ENSEMBL<span class="pl-pds">"</span></span>, <span class="pl-v">dataset</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>hsapiens_gene_ensembl<span class="pl-pds">"</span></span>, <span class="pl-v">host</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>www.ensembl.org<span class="pl-pds">"</span></span>)
 
-<span class="pl-c"># Constructs a dataframe with two columns: hgnc_symbol and go_id
-# If rownames are Ensembl IDs, use ensembl_gene_id as filter value</span>
-<span class="pl-smi">go</span> <span class="pl-k">=</span> getBM(<span class="pl-v">attributes</span> <span class="pl-k">=</span> c(<span class="pl-s"><span class="pl-pds">"</span>hgnc_symbol<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>go_id<span class="pl-pds">"</span></span>), <span class="pl-v">filters</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>hgnc_symbol<span class="pl-pds">"</span></span>, <span class="pl-v">values</span> <span class="pl-k">=</span> rownames(<span class="pl-smi">cd</span>), <span class="pl-v">mart</span> <span class="pl-k">=</span> <span class="pl-smi">ensembl</span>)
+<span class="pl-c"># Constructs a dataframe with two columns: hgnc_symbol and go_id</span>
+<span class="pl-c"># If rownames are Ensembl IDs, use ensembl_gene_id as filter value</span>
+<span class="pl-smi">go</span> <span class="pl-k">&lt;-</span> getBM(<span class="pl-v">attributes</span> <span class="pl-k">=</span> c(<span class="pl-s"><span class="pl-pds">"</span>hgnc_symbol<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>go_id<span class="pl-pds">"</span></span>), <span class="pl-v">filters</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>hgnc_symbol<span class="pl-pds">"</span></span>, <span class="pl-v">values</span> <span class="pl-k">=</span> rownames(<span class="pl-smi">cd</span>), <span class="pl-v">mart</span> <span class="pl-k">=</span> <span class="pl-smi">ensembl</span>)
 
 <span class="pl-c"># Use the GO.db library to add a column with the GO-term to the dataframe</span>
-<span class="pl-smi">go<span class="pl-k">$</span>term</span> <span class="pl-k">=</span> Term(<span class="pl-smi">go<span class="pl-k">$</span>go_id</span>)
+<span class="pl-smi">go</span><span class="pl-k">$</span><span class="pl-smi">term</span> <span class="pl-k">&lt;-</span> Term(<span class="pl-smi">go</span><span class="pl-k">$</span><span class="pl-smi">go_id</span>)
 
 <span class="pl-c"># Create a named list of character vectors out of the df</span>
-<span class="pl-smi">s</span> <span class="pl-k">=</span> split(<span class="pl-smi">go<span class="pl-k">$</span>hgnc_symbol</span>, paste(<span class="pl-smi">go<span class="pl-k">$</span>go_id</span>,<span class="pl-smi">go<span class="pl-k">$</span>term</span>))
+<span class="pl-v">s</span> <span class="pl-k">=</span> split(<span class="pl-smi">go</span><span class="pl-k">$</span><span class="pl-smi">hgnc_symbol</span>, paste(<span class="pl-smi">go</span><span class="pl-k">$</span><span class="pl-smi">go_id</span>,<span class="pl-smi">go</span><span class="pl-k">$</span><span class="pl-smi">term</span>))
 
 <span class="pl-c"># Saves the list as a R environment</span>
-<span class="pl-smi">go.env</span> <span class="pl-k">=</span> list2env(<span class="pl-smi">s</span>)
-</pre></div>
+<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> list2env(<span class="pl-smi">s</span>)
 
+<span class="pl-c"># Test</span>
+class(<span class="pl-smi">go.env</span>)</pre></div>
 
-      <h2>
-<a id="from-gmt" class="anchor" href="#from-gmt" aria-hidden="true"><span class="octicon octicon-link"></span></a>From gmt</h2>
+<pre><code>## [1] "environment"
+</code></pre>
 
-<div class="highlight highlight-source-r"><pre><span class="pl-c">## Making gene sets as R environments</span>
-<span class="pl-c">## Example with Broad's MSigDB</span>
-<span class="pl-c">## Source: http://www.broadinstitute.org/gsea/downloads.jsp</span>
+<div class="highlight highlight-source-r"><pre>head(ls(<span class="pl-smi">go.env</span>)) <span class="pl-c"># Look at gene set names</span></pre></div>
 
-<span class="pl-c">## read in Broad gmt format</span>
+<pre><code>## [1] " NA"                                                 
+## [2] "GO:0000002 mitochondrial genome maintenance"         
+## [3] "GO:0000003 reproduction"                             
+## [4] "GO:0000009 alpha-1,6-mannosyltransferase activity"   
+## [5] "GO:0000010 trans-hexaprenyltranstransferase activity"
+## [6] "GO:0000012 single strand break repair"
+</code></pre>
+
+<div class="highlight highlight-source-r"><pre>head(get(ls(<span class="pl-smi">go.env</span>)[<span class="pl-c1">1</span>], <span class="pl-smi">go.env</span>)) <span class="pl-c"># Look at one gene set</span></pre></div>
+
+<pre><code>## [1] "HLA-DOB" "CLDN6"   "YPEL5"   "DYNLRB1" "LRRC41"  "RSPH3"
+</code></pre>
+
+<h1>
+<a id="from-gmt" class="anchor" href="#from-gmt" aria-hidden="true"><span class="octicon octicon-link"></span></a>From GMT</h1>
+
+<p>The GMT file format is a tab delimited file format that describes gene sets. GMT files for Broad's MSigDB and other gene sets can be downloaded from the <a href="http://www.broadinstitute.org/gsea/downloads.jsp">Broad Website</a>.</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c">## read in Broad gmt format</span>
 library(<span class="pl-smi">GSA</span>)
-<span class="pl-smi">filename</span> <span class="pl-k">&lt;-</span> <span class="pl-s"><span class="pl-pds">'</span>msigdb.v5.0.symbols.gmt<span class="pl-pds">'</span></span>
+<span class="pl-smi">filename</span> <span class="pl-k">&lt;-</span> <span class="pl-s"><span class="pl-pds">'</span>https://raw.githubusercontent.com/JEFworks/genesets/master/msigdb.v5.0.symbols.gmt<span class="pl-pds">'</span></span>
 <span class="pl-smi">gs</span> <span class="pl-k">&lt;-</span> GSA.read.gmt(<span class="pl-smi">filename</span>)
 
 <span class="pl-c">## number of gene sets</span>
@@ -81,8 +105,28 @@ library(<span class="pl-smi">GSA</span>)
 <span class="pl-k">invisible</span>(lapply(<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">n</span>,<span class="pl-k">function</span>(<span class="pl-smi">i</span>) {
   <span class="pl-smi">genes</span> <span class="pl-k">&lt;-</span> as.character(unlist(<span class="pl-smi">gs</span><span class="pl-k">$</span><span class="pl-smi">genesets</span>[<span class="pl-smi">i</span>]))
   <span class="pl-smi">name</span> <span class="pl-k">&lt;-</span> as.character(<span class="pl-smi">gs</span><span class="pl-k">$</span><span class="pl-smi">geneset.names</span>[<span class="pl-smi">i</span>])
-  assign(<span class="pl-smi">name</span>,<span class="pl-smi">genes</span>,<span class="pl-v">envir</span><span class="pl-k">=</span><span class="pl-smi">env</span>)
+  assign(<span class="pl-smi">name</span>, <span class="pl-smi">genes</span>, <span class="pl-v">envir</span> <span class="pl-k">=</span> <span class="pl-smi">env</span>)
 }))
 
-<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">env</span></pre></div>
+<span class="pl-smi">go.env</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">env</span>
 
+<span class="pl-c"># Test</span>
+class(<span class="pl-smi">go.env</span>)</pre></div>
+
+<pre><code>## [1] "environment"
+</code></pre>
+
+<div class="highlight highlight-source-r"><pre>head(ls(<span class="pl-smi">go.env</span>)) <span class="pl-c"># Look at gene set names</span></pre></div>
+
+<pre><code>## [1] "3_5_CYCLIC_NUCLEOTIDE_PHOSPHODIESTERASE_ACTIVITY"
+## [2] "3_5_EXONUCLEASE_ACTIVITY"                        
+## [3] "AAACCAC,MIR-140"                                 
+## [4] "AAAGACA,MIR-511"                                 
+## [5] "AAAGGAT,MIR-501"                                 
+## [6] "AAAGGGA,MIR-204,MIR-211"
+</code></pre>
+
+<div class="highlight highlight-source-r"><pre>head(get(ls(<span class="pl-smi">go.env</span>)[<span class="pl-c1">1</span>], <span class="pl-smi">go.env</span>)) <span class="pl-c"># Look at one gene set</span></pre></div>
+
+<pre><code>## [1] "PDE3B"  "PDE4D"  "PDE3A"  "PDE10A" "PDE4C"  "PDE7B"
+</code></pre>
