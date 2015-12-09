@@ -12,7 +12,7 @@ The analysis starts with a matrix of read counts. Here, we use the read count ta
 
 ``` r
 data(pollen)
-# filter data
+# remove poor cells and genes
 cd <- clean.counts(pollen)
 # check the final dimensions of the read count matrix
 dim(cd)
@@ -95,13 +95,11 @@ library(org.Hs.eg.db)
 # translate gene names to ids
 ids <- unlist(lapply(mget(rownames(cd), org.Hs.egALIAS2EG, ifnotfound = NA), function(x) x[1]))
 rids <- names(ids); names(rids) <- ids 
-# GOs of interest
-gos.interest <- unique(c(ls(org.Hs.egGO2ALLEGS)[1:100],"GO:0022008","GO:0048699", "GO:0000280", "GO:0007067"))
-go.env <- lapply(mget(gos.interest, org.Hs.egGO2ALLEGS), function(x) as.character(na.omit(rids[x])))
-# clean GOs
-go.env <- clean.gos(go.env)
-# convert to an environment
-go.env <- list2env(go.env) 
+# convert GO lists from ids to gene names
+gos.interest <- unique(c(ls(org.Hs.egGO2ALLEGS)[1:100],"GO:0022008","GO:0048699", "GO:0000280", "GO:0007067")) 
+go.env <- lapply(mget(gos.interest, org.Hs.egGO2ALLEGS), function(x) as.character(na.omit(rids[x]))) 
+go.env <- clean.gos(go.env) # remove GOs with too few or too many genes
+go.env <- list2env(go.env) # convert to an environment
 ```
 
 Now, we can calculate weighted first principal component magnitudes for each GO gene set in the provided environment.
