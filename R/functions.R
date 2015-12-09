@@ -78,10 +78,13 @@ NULL
 ##' @return a filtered GO list
 ##'
 ##' @examples
+##' \donttest{
 ##' # 10 sample GOs
+##' library(org.Hs.eg.db)
 ##' go.env <- mget(ls(org.Hs.egGO2ALLEGS)[1:10], org.Hs.egGO2ALLEGS)
 ##' # Filter this list and append names for easier interpretation
 ##' go.env <- clean.gos(go.env)
+##' }
 ##'
 ##' @export
 clean.gos <- function(go.env, min.size=5, max.size=5000, annot=FALSE) {

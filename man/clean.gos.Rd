@@ -22,10 +22,13 @@ a filtered GO list
 Filter GOs list and append GO names when appropriate
 }
 \examples{
+\donttest{
 # 10 sample GOs
+library(org.Hs.eg.db)
 go.env <- mget(ls(org.Hs.egGO2ALLEGS)[1:10], org.Hs.egGO2ALLEGS)
 # Filter this list and append names for easier interpretation
 go.env <- clean.gos(go.env)
+}
 
 }
 
