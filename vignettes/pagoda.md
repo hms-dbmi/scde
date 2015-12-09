@@ -32,7 +32,7 @@ Fitting error models
 
 Next, we'll construct error models for individual cells. Here, we use k-nearest neighbor model fitting procedure implemented by `knn.error.models()` method. This is a relatively noisy dataset (non-UMI), so we raise the `min.count.threshold` to 2 (minimum number of reads for the gene to be initially classified as a non-failed measurement), requiring at least 5 non-failed measurements per gene. We're providing a rough guess to the complexity of the population, by fitting the error models based on 1/4 of most similar cells (i.e. guessing there might be ~4 subpopulations).
 
-Note this step takes a considerable amount of time unless multiple cores are used.
+Note this step takes a considerable amount of time unless multiple cores are used. We highly recommend use of multiple cores. You can check the number of available cores available using `detectCores()`. 
 
 ``` r
 # EVALUATION NOT NEEDED
