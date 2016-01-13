@@ -468,7 +468,7 @@ scde.browse.diffexp <- function(results, models, counts, prior, groups = NULL, b
 ##'
 ##' @export
 show.app <- function(app, name, browse = TRUE, port = NULL, ip = '127.0.0.1', server = NULL) {
-    if(tools:::httpdPort() !=0 | tools:::httpdPort()!=port) {
+    if (tools:::httpdPort() !=0 && tools:::httpdPort() == port) {
         cat("ERROR: port is already being used. The PAGODA app is currently incompatible with RStudio. Please try running the interactive app the R console.")
         break
     }
