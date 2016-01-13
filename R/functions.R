@@ -87,17 +87,24 @@ NULL
 ##' }
 ##'
 ##' @export
-clean.gos <- function(go.env, min.size=5, max.size=5000, annot=FALSE) {
-    # Restrict size of GO pathway
-    size <- unlist(lapply(go.env, length))
-    go.env <- go.env[size > min.size & size < max.size]
-    # Append GO name
-    if(annot & is.element("GO.db", installed.packages()[, 1])) {
-        desc <- unlist(lapply(mget(names(go.env), envir=GO.db::GOTERM, ifnotfound = NA), function(x) if(is.logical(x)) { return("") } else { slot(x, "Term")}))
-        names(go.env) <- paste(names(go.env), desc)  # append description to the names
-    }
-    return(go.env)
+clean.gos <- function(go.env, min.size = 5, max.size = 5000, annot = FALSE) {
+  go.env <- as.list(go.env)
+  size <- unlist(lapply(go.env, length))
+  go.env <- go.env[size > min.size & size < max.size]
+  # If we have GO.db installed, then add the term to each GO code.
+  if (annot && "GO.db" %in% installed.packages()[,1]) {
+    desc <- select(
+      GO.db,
+      keys = names(go.env),
+      columns = c("TERM"),
+      multiVals = 'CharacterList'
+    )
+    stopifnot(all(names(go.env) == desc$GOID))
+    names(go.env) <- paste(names(go.env), desc$TERM)
+  }
+  return(go.env)
 }
+
 
 ##' Filter counts matrix
 ##'
@@ -468,7 +475,7 @@ scde.browse.diffexp <- function(results, models, counts, prior, groups = NULL, b
 ##'
 ##' @export
 show.app <- function(app, name, browse = TRUE, port = NULL, ip = '127.0.0.1', server = NULL) {
-    if(tools:::httpdPort() !=0 | tools:::httpdPort()!=port) {
+    if (tools:::httpdPort() !=0 && tools:::httpdPort() == port) {
         cat("ERROR: port is already being used. The PAGODA app is currently incompatible with RStudio. Please try running the interactive app the R console.")
         break
     }
