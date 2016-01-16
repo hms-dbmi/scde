@@ -1175,7 +1175,7 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
         if(length(vic)<length(ids)) {
           message("ERROR fitting of ", (length(ids)-length(vic)), " out of ", length(ids), " cells resulted in errors reporting remaining ", length(vic), " cells")
         }
-        if(length(vic)<length(ids)) {
+        if(save.model.plots) {
                 # model fits
                 if(verbose)  message("plotting ", group, " model fits... ")
                 tryCatch( {
@@ -2423,7 +2423,7 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
 ##' }
 ##'
 ##' @export
-pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = FALSE, cluster.method = "complete", distance.threshold = 0.01, corr.power = 4, n.cores = detectCores(), abs = TRUE, ...) {
+pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = FALSE, cluster.method = "complete", distance.threshold = 0.01, corr.power = 4, n.cores = 1, abs = TRUE, ...) {
     pclc <- pathway.pc.correlation.distance(c(pwpca, clpca$cl.goc), tam$xv, target.ndf = 100, n.cores = n.cores)
     cda <- cor(t(tam$xv))
     if(abs) {
@@ -5032,7 +5032,7 @@ bh.adjust <- function(x, log = FALSE) {
     ox
 }
 
-pathway.pc.correlation.distance <- function(pcc, xv, n.cores = 10, target.ndf = NULL) {
+pathway.pc.correlation.distance <- function(pcc, xv, n.cores = 1, target.ndf = NULL) {
     # all relevant gene names
     rotn <- unique(unlist(lapply(pcc[gsub("^#PC\\d+# ", "", rownames(xv))], function(d) rownames(d$xp$rotation))))
     # prepare an ordered (in terms of genes) and centered version of each component
@@ -5928,10 +5928,15 @@ calculate.go.enrichment <- function(genelist, universe, pvalue.cutoff = 1e-3, mi
 ##' Abstracts out mclapply implementation, and defaults to lapply when only one core is requested (helps with debugging)
 ##' @param ... parameters to pass to lapply, mclapply, bplapply, etc.
 ##' @param n.cores number of cores. If 1 core is requested, will default to lapply
-papply <- function(...,n.cores=n) {
+papply <- function(...,n.cores=detectCores()) {
   if(n.cores>1) {
     # bplapply implementation
-    bplapply(... , BPPARAM = MulticoreParam(workers = n.cores))
+    if(is.element("parallel", installed.packages()[,1])) {
+      mclapply(...,mc.cores=n.cores)
+    } else {
+      # last resort
+      bplapply(... , BPPARAM = MulticoreParam(workers = n.cores))
+    }
   } else { # fall back on lapply
     lapply(...);
   }
