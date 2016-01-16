@@ -63,6 +63,77 @@ NULL
 #
 # @name scde.edff
 
+
+################################# Generic methods
+
+##' Filter GOs list
+##'
+##' Filter GOs list and append GO names when appropriate
+##'
+##' @param go.env GO or gene set list
+##' @param min.size Minimum size for number of genes in a gene set (default: 5)
+##' @param max.size Maximum size for number of genes in a gene set (default: 5000)
+##' @param annot Whether to append GO annotations for easier interpretation (default: FALSE)
+##'
+##' @return a filtered GO list
+##'
+##' @examples
+##' \donttest{
+##' # 10 sample GOs
+##' library(org.Hs.eg.db)
+##' go.env <- mget(ls(org.Hs.egGO2ALLEGS)[1:10], org.Hs.egGO2ALLEGS)
+##' # Filter this list and append names for easier interpretation
+##' go.env <- clean.gos(go.env)
+##' }
+##'
+##' @export
+clean.gos <- function(go.env, min.size = 5, max.size = 5000, annot = FALSE) {
+  go.env <- as.list(go.env)
+  size <- unlist(lapply(go.env, length))
+  go.env <- go.env[size > min.size & size < max.size]
+  # If we have GO.db installed, then add the term to each GO code.
+  if (annot && "GO.db" %in% installed.packages()[,1]) {
+    desc <- select(
+      GO.db,
+      keys = names(go.env),
+      columns = c("TERM"),
+      multiVals = 'CharacterList'
+    )
+    stopifnot(all(names(go.env) == desc$GOID))
+    names(go.env) <- paste(names(go.env), desc$TERM)
+  }
+  return(go.env)
+}
+
+
+##' Filter counts matrix
+##'
+##' Filter counts matrix based on gene and cell requirements
+##'
+##' @param counts read count matrix. The rows correspond to genes, columns correspond to individual cells
+##' @param min.lib.size Minimum number of genes detected in a cell. Cells with fewer genes will be removed (default: 1.8e3)
+##' @param min.reads Minimum number of reads per gene. Genes with fewer reads will be removed (default: 10)
+##' @param min.detected Minimum number of cells a gene must be seen in. Genes not seen in a sufficient number of cells will be removed (default: 5)
+##'
+##' @return a filtered read count matrix
+##'
+##' @examples
+##' data(pollen)
+##' dim(pollen)
+##' cd <- clean.counts(pollen)
+##' dim(cd)
+##'
+##' @export
+clean.counts <- function(counts, min.lib.size = 1.8e3, min.reads = 10, min.detected = 5) {
+    # filter out low-gene cells
+    counts <- counts[, colSums(counts>0)>min.lib.size]
+    # remove genes that don't have many reads
+    counts <- counts[rowSums(counts)>min.reads, ]
+    # remove genes that are not seen in a sufficient number of cells
+    counts <- counts[rowSums(counts>0)>min.detected, ]
+    return(counts)
+}
+
 ################################# SCDE Methods
 
 ##' Fit single-cell error/regression models
@@ -94,13 +165,11 @@ NULL
 ##' @useDynLib scde
 ##'
 ##' @examples
-##' \donttest{
 ##' data(es.mef.small)
-##' cd <- es.mef.small
-##' cd <- cd[rowSums(cd) > 0, ]
-##' cd <- cd[, colSums(cd) > 1e4]
+##' cd <- clean.counts(es.mef.small, min.lib.size=1000, min.reads = 1, min.detected = 1)
 ##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
 ##' names(sg) <- colnames(cd)
+##' \donttest{
 ##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
 ##' }
 ##'
@@ -148,9 +217,7 @@ scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshol
 ##'
 ##' @examples
 ##' data(es.mef.small)
-##' cd <- es.mef.small
-##' cd <- cd[rowSums(cd) > 0, ]
-##' cd <- cd[, colSums(cd) > 1e4]
+##' cd <- clean.counts(es.mef.small, min.lib.size=1000, min.reads = 1, min.detected = 1)
 ##' data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ##'
@@ -219,13 +286,11 @@ scde.expression.prior <- function(models, counts, length.out = 400, show.plot = 
 ##' }
 ##'
 ##' @examples
-##' \donttest{
 ##' data(es.mef.small)
-##' cd <- es.mef.small
-##' cd <- cd[rowSums(cd) > 0, ]
-##' cd <- cd[, colSums(cd) > 1e4]
+##' cd <- clean.counts(es.mef.small, min.lib.size=1000, min.reads = 1, min.detected = 1)
 ##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
 ##' names(sg) <- colnames(cd)
+##' \donttest{
 ##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ##' # make sure groups corresponds to the models (o.ifm)
@@ -361,13 +426,11 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
 ##' @return server instance, on which $stop() function can be called to kill the process.
 ##'
 ##' @examples
-##' \donttest{
 ##' data(es.mef.small)
-##' cd <- es.mef.small
-##' cd <- cd[rowSums(cd) > 0, ]
-##' cd <- cd[, colSums(cd) > 1e4]
+##' cd <- clean.counts(es.mef.small, min.lib.size=1000, min.reads = 1, min.detected = 1)
 ##' sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(cd)), levels = c("ESC", "MEF"))
 ##' names(sg) <- colnames(cd)
+##' \donttest{
 ##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ##' # make sure groups corresponds to the models (o.ifm)
@@ -412,6 +475,12 @@ scde.browse.diffexp <- function(results, models, counts, prior, groups = NULL, b
 ##'
 ##' @export
 show.app <- function(app, name, browse = TRUE, port = NULL, ip = '127.0.0.1', server = NULL) {
+    # replace special characters
+    name <- gsub("[^[:alnum:]]", "_", name)
+    
+    if (tools:::httpdPort() !=0 && tools:::httpdPort() != port) {
+        cat("ERROR: port is already being used. The PAGODA app is currently incompatible with RStudio. Please try running the interactive app in the R console.")
+    }
     if(is.null(server)) { server <- get.scde.server(port) }
     server$add(app = app, name = name)
     if(browse) {
@@ -458,9 +527,7 @@ get.scde.server <- function(port = NULL, ip = '127.0.0.1') {
 ##'
 ##' @examples
 ##' data(es.mef.small)
-##' cd <- es.mef.small
-##' cd <- cd[rowSums(cd) > 0, ]
-##' cd <- cd[, colSums(cd) > 1e4]
+##' cd <- clean.counts(es.mef.small, min.lib.size=1000, min.reads = 1, min.detected = 1)
 ##' data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ##' # calculate joint posteriors
@@ -589,9 +656,7 @@ scde.posteriors <- function(models, counts, prior, n.randomizations = 100, batch
 ##'
 ##' @examples
 ##' data(es.mef.small)
-##' cd <- es.mef.small
-##' cd <- cd[rowSums(cd) > 0, ]
-##' cd <- cd[, colSums(cd) > 1e4]
+##' cd <- clean.counts(es.mef.small, min.lib.size=1000, min.reads = 1, min.detected = 1)
 ##' data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
 ##' # get expression magnitude estimates
 ##' lfpm <- scde.expression.magnitude(o.ifm, cd)
@@ -617,9 +682,7 @@ scde.expression.magnitude <- function(models, counts) {
 ##'
 ##' @examples
 ##' data(es.mef.small)
-##' cd <- es.mef.small
-##' cd <- cd[rowSums(cd) > 0, ]
-##' cd <- cd[, colSums(cd) > 1e4]
+##' cd <- clean.counts(es.mef.small, min.lib.size=1000, min.reads = 1, min.detected = 1)
 ##' data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ##' # calculate probability of observing a drop out at a given set of magnitudes in different cells
@@ -681,9 +744,7 @@ scde.failure.probability <- function(models, magnitudes = NULL, counts = NULL) {
 ##'
 ##' @examples
 ##' data(es.mef.small)
-##' cd <- es.mef.small
-##' cd <- cd[rowSums(cd) > 0, ]
-##' cd <- cd[, colSums(cd) > 1e4]
+##' cd <- clean.counts(es.mef.small, min.lib.size=1000, min.reads = 1, min.detected = 1)
 ##' data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ##' scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior = o.prior)
@@ -875,12 +936,10 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 ##' @return matrix of scde models
 ##'
 ##' @examples
-##' \donttest{
 ##' data(es.mef.small)
-##' cd <- es.mef.small
-##' cd <- cd[rowSums(cd) > 0, ]
-##' cd <- cd[, colSums(cd) > 1e4]
-##' data(o.ifm)  # Load precomputed model. Use ?scde.error.models to see how o.ifm was generated
+##' cd <- clean.counts(es.mef.small, min.lib.size=1000, min.reads = 1, min.detected = 1)
+##' \donttest{
+##' o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 10, threshold.segmentation = TRUE)
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ##' # calculate joint posteriors across all cells
 ##' jp <- scde.posteriors(models = o.ifm, cd, o.prior, n.cores = 10, return.individual.posterior.modes = TRUE, n.randomizations = 100)
@@ -1059,12 +1118,9 @@ winsorize.matrix <- function(mat, trim) {
 ##' @return a data frame with parameters of the fit error models (rows- cells, columns- fitted parameters)
 ##'
 ##' @examples
-##' \donttest{
 ##' data(pollen)
-##' cd <- pollen
-##' cd <- cd[,colSums(cd>0)>1.8e3]
-##' cd <- cd[rowSums(cd)>10,]
-##' cd <- cd[rowSums(cd>0)>5,]
+##' cd <- clean.counts(pollen)
+##' \donttest{
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' }
 ##'
@@ -1238,12 +1294,9 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
 ##' @param gene.length optional vector of gene lengths (corresponding to the rows of counts matrix)
 ##'
 ##' @examples
-##' \donttest{
 ##' data(pollen)
-##' cd <- pollen
-##' cd <- cd[,colSums(cd>0)>1.8e3]
-##' cd <- cd[rowSums(cd)>10,]
-##' cd <- cd[rowSums(cd>0)>5,]
+##' cd <- clean.counts(pollen)
+##' \donttest{
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
 ##' }
@@ -1743,25 +1796,21 @@ pagoda.varnorm <- function(models, counts, batch = NULL, trim = 0, prior = NULL,
 ##' @return a modified varinfo object with adjusted expression matrix (varinfo$mat)
 ##'
 ##' @examples
-##' \donttest{
 ##' data(pollen)
-##' cd <- pollen
-##' cd <- cd[,colSums(cd>0)>1.8e3]
-##' cd <- cd[rowSums(cd)>10,]
-##' cd <- cd[rowSums(cd>0)>5,]
+##' cd <- clean.counts(pollen)
+##' \donttest{
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
 ##' # create go environment
 ##' library(org.Hs.eg.db)
+##' # translate gene names to ids
 ##' ids <- unlist(lapply(mget(rownames(cd), org.Hs.egALIAS2EG, ifnotfound = NA), function(x) x[1]))
-##' rids <- names(ids)
-##' names(rids) <- ids
-##' go.env <- eapply(org.Hs.egGO2ALLEGS, function(x) as.character(na.omit(rids[x])))
-##' go.env <- go.env[unlist(lapply(go.env, length))>5]
-##' library(GO.db)
-##' desc <- unlist(lapply(mget(names(go.env), GOTERM, ifnotfound = NA), function(x) if(is.logical(x)) { return("") } else { slot(x, "Term")}))
-##' names(go.env) <- paste(names(go.env), desc)  # append description to the names
-##' go.env <- list2env(go.env)  # convert to an environment
+##' rids <- names(ids); names(rids) <- ids
+##' go.env <- lapply(mget(ls(org.Hs.egGO2ALLEGS), org.Hs.egGO2ALLEGS), function(x) as.character(na.omit(rids[x])))
+##' # clean GOs
+##' go.env <- clean.gos(go.env)
+##' # convert to an environment
+##' go.env <- list2env(go.env)
 ##' # subtract the pattern
 ##' cc.pattern <- pagoda.show.pathways(ls(go.env)[1:2], varinfo, go.env, show.cell.dendrogram = TRUE, showRowLabels = TRUE)  # Look at pattern from 2 GO annotations
 ##' varinfo.cc <- pagoda.subtract.aspect(varinfo, cc.pattern)
@@ -1806,25 +1855,21 @@ pagoda.subtract.aspect <- function(varinfo, aspect, center = TRUE) {
 ##' @return a list of weighted PCA info for each valid gene set
 ##'
 ##' @examples
-##' \donttest{
 ##' data(pollen)
-##' cd <- pollen
-##' cd <- cd[,colSums(cd>0)>1.8e3]
-##' cd <- cd[rowSums(cd)>10,]
-##' cd <- cd[rowSums(cd>0)>5,]
+##' cd <- clean.counts(pollen)
+##' \donttest{
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
 ##' # create go environment
 ##' library(org.Hs.eg.db)
+##' # translate gene names to ids
 ##' ids <- unlist(lapply(mget(rownames(cd), org.Hs.egALIAS2EG, ifnotfound = NA), function(x) x[1]))
-##' rids <- names(ids)
-##' names(rids) <- ids
-##' go.env <- eapply(org.Hs.egGO2ALLEGS, function(x) as.character(na.omit(rids[x])))
-##' go.env <- go.env[unlist(lapply(go.env, length))>5]
-##' library(GO.db)
-##' desc <- unlist(lapply(mget(names(go.env), GOTERM, ifnotfound = NA), function(x) if(is.logical(x)) { return("") } else { slot(x, "Term")}))
-##' names(go.env) <- paste(names(go.env), desc)  # append description to the names
-##' go.env <- list2env(go.env)  # convert to an environment
+##' rids <- names(ids); names(rids) <- ids
+##' go.env <- lapply(mget(ls(org.Hs.egGO2ALLEGS), org.Hs.egGO2ALLEGS), function(x) as.character(na.omit(rids[x])))
+##' # clean GOs
+##' go.env <- clean.gos(go.env)
+##' # convert to an environment
+##' go.env <- list2env(go.env)
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
 ##' }
 ##'
@@ -1912,12 +1957,9 @@ pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = det
 ##' @return effective number of cells
 ##'
 ##' @examples
-##' \donttest{
 ##' data(pollen)
-##' cd <- pollen
-##' cd <- cd[,colSums(cd>0)>1.8e3]
-##' cd <- cd[rowSums(cd)>10,]
-##' cd <- cd[rowSums(cd>0)>5,]
+##' cd <- clean.counts(pollen)
+##' \donttest{
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
@@ -1974,12 +2016,9 @@ pagoda.effective.cells <- function(pwpca, start = NULL) {
 ##' }
 ##'
 ##' @examples
-##' \donttest{
 ##' data(pollen)
-##' cd <- pollen
-##' cd <- cd[,colSums(cd>0)>1.8e3]
-##' cd <- cd[rowSums(cd)>10,]
-##' cd <- cd[rowSums(cd>0)>5,]
+##' cd <- clean.counts(pollen)
+##' \donttest{
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
 ##' clpca <- pagoda.gene.clusters(varinfo, trim=7.1/ncol(varinfo$mat), n.clusters=150, n.cores=10, plot=FALSE)
@@ -2195,12 +2234,9 @@ pagoda.gene.clusters <- function(varinfo, trim = 3.1/ncol(varinfo$mat), n.cluste
 ##' }
 ##'
 ##' @examples
-##' \donttest{
 ##' data(pollen)
-##' cd <- pollen
-##' cd <- cd[,colSums(cd>0)>1.8e3]
-##' cd <- cd[rowSums(cd)>10,]
-##' cd <- cd[rowSums(cd>0)>5,]
+##' cd <- clean.counts(pollen)
+##' \donttest{
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
@@ -2409,12 +2445,9 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
 ##' @return a list structure analogous to that returned by pagoda.top.aspects(), but with addition of a $cnam element containing a list of aspects summarized by each row of the new (reduced) $xv and $xvw
 ##'
 ##' @examples
-##' \donttest{
 ##' data(pollen)
-##' cd <- pollen
-##' cd <- cd[,colSums(cd>0)>1.8e3]
-##' cd <- cd[rowSums(cd)>10,]
-##' cd <- cd[rowSums(cd>0)>5,]
+##' cd <- clean.counts(pollen)
+##' \donttest{
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
@@ -2480,12 +2513,9 @@ pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = FA
 ##' @return a list structure analogous to that returned by pagoda.top.aspects(), but with addition of a $cnam element containing a list of aspects summarized by each row of the new (reduced) $xv and $xvw
 ##'
 ##' @examples
-##' \donttest{
 ##' data(pollen)
-##' cd <- pollen
-##' cd <- cd[,colSums(cd>0)>1.8e3]
-##' cd <- cd[rowSums(cd)>10,]
-##' cd <- cd[rowSums(cd>0)>5,]
+##' cd <- clean.counts(pollen)
+##' \donttest{
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
@@ -2565,12 +2595,9 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
 ##' @return hclust result
 ##'
 ##' @examples
-##' \donttest{
 ##' data(pollen)
-##' cd <- pollen
-##' cd <- cd[,colSums(cd>0)>1.8e3]
-##' cd <- cd[rowSums(cd)>10,]
-##' cd <- cd[rowSums(cd>0)>5,]
+##' cd <- clean.counts(pollen)
+##' \donttest{
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)
@@ -2632,12 +2659,9 @@ pagoda.cluster.cells <- function(tam, varinfo, method = "ward.D", include.aspect
 ##' @return PAGODA heatmap
 ##'
 ##' @examples
-##' \donttest{
 ##' data(pollen)
-##' cd <- pollen
-##' cd <- cd[,colSums(cd>0)>1.8e3]
-##' cd <- cd[rowSums(cd)>10,]
-##' cd <- cd[rowSums(cd>0)>5,]
+##' cd <- clean.counts(pollen)
+##' \donttest{
 ##' knn <- knn.error.models(cd, k=ncol(cd)/4, n.cores=10, min.count.threshold=2, min.nonfailed=5, max.model.plots=10)
 ##' varinfo <- pagoda.varnorm(knn, counts = cd, trim = 3/ncol(cd), max.adj.var = 5, n.cores = 1, plot = FALSE)
 ##' pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components=1, n.cores=10, n.internal.shuffles=50)

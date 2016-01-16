@@ -23,6 +23,8 @@ export(scde.posteriors)
 export(scde.test.gene.expression.difference)
 export(show.app)
 export(winsorize.matrix)
+export(clean.counts)
+export(clean.gos)
 useDynLib(scde)
 
 # custom additions

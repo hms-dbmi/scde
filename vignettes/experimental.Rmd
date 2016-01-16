@@ -2,7 +2,9 @@
 title: "Experimental use of PAGODA"
 author: "Jean Fan"
 date: '`r Sys.Date()`'
-output: html_document
+output:
+  md_document:
+    variant: markdown_github
 vignette: |
   %\VignetteIndexEntry{Vignette Title} \usepackage[utf8]{inputenc}
   %\VignetteEngine{knitr::rmarkdown}
@@ -30,7 +32,7 @@ opts_chunk$set(
 library(scde)
 ```
 
-# Simulating data for demonstration purposes
+## Simulating data for demonstration purposes
 
 For the purposes of demonstration, we will simulate a normalized gene expression matrix. We will generate out data such that there are two major components of variation, supported by every other pathway. 
 ```{r, data}
@@ -71,9 +73,10 @@ matw <- matrix(1, N, M)
 rownames(matw) <- rownames(mat)
 colnames(matw) <- colnames(mat)
 # Regular variance since equal weights anyway
-# Will need to use weighted
 var <- apply(mat, 1, var)
 ```
+
+## Using `pagoda` with custom matrices
 
 Now we can put our simulated data into an object to pipe into the `pagoda` pipeline.
 

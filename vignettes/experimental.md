@@ -1,28 +1,18 @@
----
-title: "Experimental use of PAGODA"
-author: "Jean Fan"
-date: '2015-11-17'
-output: html_document
-vignette: |
-  %\VignetteIndexEntry{Vignette Title} \usepackage[utf8]{inputenc}
-  %\VignetteEngine{knitr::rmarkdown}
----
+Experimental use of PAGODA
+==========================
 
-# Experimental use of PAGODA
+In this vignette, we show you how to modify `pagoda` to run on your own normalized gene expression and associated weights matrices.
 
-In this vignette, we show you how to modify `pagoda` to run on your own normalized gene expression and associated weights matrices. 
+**NOTE:** Gene expression matrices must be normalized. Variances observed in the normalized data must be representative of biological variation. We strongly recommend taking into consideration magnitude dependencies, batch effects, library size, and other potential technical aspects of variability.
 
-**NOTE:** Gene expression matrices must be normalized. Variances observed in the normalized data must be representative of biological variation. We strongly recommend taking into consideration magnitude dependencies, batch effects, library size, and other potential technical aspects of variability. 
+**IMPORTANT:** Depending on your normalization and weights, results may be misleading and/or non-sensical. This vignette is experimental. USE WITH CAUTION.
 
-**IMPORTANT:** Depending on your normalization and weights, results may be misleading and/or non-sensical. This vignette is experimental. USE WITH CAUTION. 
+Simulating data for demonstration purposes
+------------------------------------------
 
+For the purposes of demonstration, we will simulate a normalized gene expression matrix. We will generate out data such that there are two major components of variation, supported by every other pathway.
 
-
-# Simulating data for demonstration purposes
-
-For the purposes of demonstration, we will simulate a normalized gene expression matrix. We will generate out data such that there are two major components of variation, supported by every other pathway. 
-
-```r
+``` r
 # Get gene sets
 library(org.Hs.eg.db)
 gos <- ls(org.Hs.egGO2ALLEGS)
@@ -52,33 +42,32 @@ mat <- mat[unique(genes),]
 heatmap(mat, col = colorRampPalette(c('blue', 'white', 'red'))(100))
 ```
 
-![plot of chunk data](figures/experimental-data-1.png) 
+![](figures/experimental-data-1.png)
 
-We will set the associated weights to 1 for all observations in all cells and calculated variances for each gene. 
+We will set the associated weights to 1 for all observations in all cells and calculated variances for each gene.
 
-
-```r
+``` r
 # Set all weights to 1
 matw <- matrix(1, N, M)
 rownames(matw) <- rownames(mat)
 colnames(matw) <- colnames(mat)
 # Regular variance since equal weights anyway
-# Will need to use weighted
 var <- apply(mat, 1, var)
 ```
 
+Using `pagoda` with custom matrices
+-----------------------------------
+
 Now we can put our simulated data into an object to pipe into the `pagoda` pipeline.
 
-
-```r
+``` r
 # Create varinfo object to pipe into PAGODA
 varinfo <- list('mat' = mat, 'matw' = matw, 'arv' = var)
 ```
 
-When we run `pagoda` on the generated data, we indeed recover our two major components of variation. 
+When we run `pagoda` on the generated data, we indeed recover our two major components of variation.
 
-
-```r
+``` r
 # Run PAGODA with generated data
 pwpca <- pagoda.pathway.wPCA(varinfo, go.env, n.components = 1, batch.center = FALSE, verbose = 1)
 tam <- pagoda.top.aspects(pwpca, n.cells = NULL, z.score = qnorm(0.01/2, lower.tail = FALSE))
@@ -91,12 +80,11 @@ col.cols <- rbind(groups = cutree(hc, 3))
 pagoda.view.aspects(tamr2, cell.clustering = hc, col.cols = col.cols)
 ```
 
-![plot of chunk pagoda](figures/experimental-pagoda-1.png) 
+![](figures/experimental-pagoda-1.png)
 
-We can also create an interactive app to browse our results. 
+We can also create an interactive app to browse our results.
 
-
-```r
+``` r
 app <- make.pagoda.app(tamr2, tam, varinfo, go.env, pwpca, col.cols = col.cols, cell.clustering = hc, title = "Experiment")
 show.app(app, "Experiment", browse = TRUE, port = 1400)  
 ```

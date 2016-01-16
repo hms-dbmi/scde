@@ -1,0 +1,113 @@
+---
+title: "Preparing custom gene sets for `pagoda`"
+author: "Jean Fan, Jens Preußner"
+date: '`r Sys.Date()`'
+output:
+  md_document:
+    variant: markdown_github
+vignette: |
+  %\VignetteIndexEntry{Vignette Title} \usepackage[utf8]{inputenc}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+# Creating custom pathway annotations or gene sets
+
+In this vignette, we show you how to create and use your own custom pathway annotations or gene sets with pagoda.
+
+```{r, include = FALSE}
+library(knitr)
+opts_chunk$set(
+    warning = FALSE,
+    message = FALSE,
+    fig.show = 'hold',
+    fig.path = 'figures/genesets-',
+    cache.path = 'cache/genesets-',
+    cache = TRUE
+)
+library(scde)
+data(pollen)
+cd <- pollen
+```
+
+# GO annotations
+
+```{r, go}
+# Use the org.Hs.eg.db package for GO annotations
+library(org.Hs.eg.db)
+# Translate gene names to ids
+ids <- unlist(lapply(mget(rownames(cd), org.Hs.egALIAS2EG, ifnotfound = NA), function(x) x[1]))
+# Reverse map
+rids <- names(ids)
+names(rids) <- ids
+# Convert ids per GO category to gene names
+go.env <- eapply(org.Hs.egGO2ALLEGS, function(x) as.character(na.omit(rids[x])))
+go.env <- clean.gos(go.env) # Remove GOs with too few or too many genes
+go.env <- list2env(go.env)  # Convert to an environment
+
+# Test
+class(go.env)
+head(ls(go.env)) # Look at gene set names
+head(get(ls(go.env)[1], go.env)) # Look at one gene set
+```
+
+# BioMart
+
+Alternatively, we can use Ensembl's BioMart service to get the GO annotations.
+
+```{r, biomart}
+library(biomaRt)
+library(GO.db)
+
+# Initialize the connection to the Ensembl BioMart Service
+# Available datasets can be listed with 
+# listDatasets(useMart("ENSEMBL_MART_ENSEMBL", host="www.ensembl.org"))
+# Use mmusculus_gene_ensembl for mouse
+ensembl <- useMart("ENSEMBL_MART_ENSEMBL", dataset = "hsapiens_gene_ensembl", host="www.ensembl.org")
+
+# Constructs a dataframe with two columns: hgnc_symbol and go_id
+# If rownames are Ensembl IDs, use ensembl_gene_id as filter value
+go <- getBM(attributes = c("hgnc_symbol", "go_id"), filters = "hgnc_symbol", values = rownames(cd), mart = ensembl)
+
+# Use the GO.db library to add a column with the GO-term to the dataframe
+go$term <- Term(go$go_id)
+
+# Create a named list of character vectors out of the df
+s = split(go$hgnc_symbol, paste(go$go_id,go$term))
+
+# Saves the list as a R environment
+go.env <- list2env(s)
+
+# Test
+class(go.env)
+head(ls(go.env)) # Look at gene set names
+head(get(ls(go.env)[1], go.env)) # Look at one gene set
+```
+
+# From GMT
+
+The GMT file format is a tab delimited file format that describes gene sets. GMT files for Broad's MSigDB and other gene sets can be downloaded from the [Broad Website](http://www.broadinstitute.org/gsea/downloads.jsp).
+
+```{r, gmt}
+## read in Broad gmt format
+library(GSA)
+filename <- 'https://raw.githubusercontent.com/JEFworks/genesets/master/msigdb.v5.0.symbols.gmt'
+gs <- GSA.read.gmt(filename)
+
+## number of gene sets
+n <- length(gs$geneset.names)
+
+## create environment
+env <- new.env(parent=globalenv())
+invisible(lapply(1:n,function(i) {
+  genes <- as.character(unlist(gs$genesets[i]))
+  name <- as.character(gs$geneset.names[i])
+  assign(name, genes, envir = env)
+}))
+
+go.env <- env
+
+# Test
+class(go.env)
+head(ls(go.env)) # Look at gene set names
+head(get(ls(go.env)[1], go.env)) # Look at one gene set
+```

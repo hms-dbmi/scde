@@ -2,10 +2,12 @@
 title: "Getting Started with `scde`"
 author: "Peter Kharchenko, Jean Fan"
 date: '`r Sys.Date()`'
-output: html_document
+output:
+  md_document:
+    variant: markdown_github
 vignette: |
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteIndexEntry{Vignette Title} \usepackage[utf8]{inputenc}
+  %\VignetteEngine{knitr::rmarkdown}
 ---
 
 # Single-Cell Differential Expression Analysis
@@ -35,6 +37,7 @@ library(scde)
 ```{r, data}
 # load example dataset
 data(es.mef.small)
+
 # factor determining cell types
 sg <- factor(gsub("(MEF|ESC).*", "\\1", colnames(es.mef.small)), levels = c("ESC", "MEF"))
 # the group factor should be named accordingly
@@ -42,11 +45,7 @@ names(sg) <- colnames(es.mef.small)
 table(sg)
 
 # clean up the dataset
-cd <- es.mef.small
-# omit genes that are never detected
-cd <- cd[rowSums(cd)>0, ]
-# omit cells with very poor coverage
-cd <- cd[, colSums(cd)>1e4]
+cd <- clean.counts(es.mef.small, min.lib.size=1000, min.reads = 1, min.detected = 1)
 ```
 
 ## Fitting error models
@@ -58,7 +57,6 @@ Note this step takes a considerable amount of time unless multiple cores are use
 # EVALUATION NOT NEEDED
 # calculate models
 o.ifm <- scde.error.models(counts = cd, groups = sg, n.cores = 1, threshold.segmentation = TRUE, save.crossfit.plots = FALSE, save.model.plots = FALSE, verbose = 1)
-devtools::use_data(o.ifm)  # save for later since this step takes a long time
 ```
 
 For the purposes of this vignette, the model has been precomputed and can simply be loaded.
