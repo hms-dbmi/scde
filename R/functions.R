@@ -476,7 +476,7 @@ scde.browse.diffexp <- function(results, models, counts, prior, groups = NULL, b
 ##' @export
 show.app <- function(app, name, browse = TRUE, port = NULL, ip = '127.0.0.1', server = NULL) {
     # replace special characters
-    name <- gsub("[^[:alnum:]]", "_", name)
+    name <- gsub("[^[:alnum:.]]", "_", name)
     
     if (tools:::httpdPort() !=0 && tools:::httpdPort() != port) {
         cat("ERROR: port is already being used. The PAGODA app is currently incompatible with RStudio. Please try running the interactive app in the R console.")
@@ -2736,15 +2736,24 @@ view.aspects <- function(mat, row.clustering = NA, cell.clustering = NA, zlim = 
 ##' @return PAGODA app
 ##'
 ##' @export
-make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.cols = NULL, cell.clustering = NULL, row.clustering = NULL, title = "pathway clustering", zlim = c(-1, 1)*quantile(tamr$xv, p = 0.95)) {
+make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.cols = NULL, cell.clustering = NULL, row.clustering = NULL, title = "pathway clustering", zlim = c(-1, 1)*quantile(tamr$xv, p = 0.95),inchlib=F) {
     # rcm - xv
+    
     # matvar
     if(is.null(cell.clustering)) {
         cell.clustering <- pagoda.cluster.cells(tam, varinfo)
     }
-    if(is.null(row.clustering)) {
-        row.clustering <- hclust(dist(tamr$xv))
-        row.clustering$order <- rev(row.clustering$order)
+    if(is.null(row.clustering) || is.null(row.clustering$order)) {
+      row.clustering <- hclust(dist(tamr$xv))
+    } else if(class(row.clustering)!="hclust") {
+      # make a fake clustering to match the provided order
+      or <- row.clustering$order;
+      row.clustering <- hclust(dist(tamr3$xv),method='single')
+      names(or) <- as.character(-1*row.clustering$order)
+      nmm <- -1*or[as.character(row.clustering$merge)]
+      nmm[is.na(nmm)] <- as.character(row.clustering$merge)[is.na(nmm)]
+      row.clustering$merge <- matrix(as.integer(nmm),ncol=ncol(row.clustering$merge))
+      row.clustering$order <- as.integer(or);
     }
 
     #fct - which tam row in which tamr$xv cluster.. remap tamr$cnams
@@ -2753,7 +2762,7 @@ make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.co
     names(fct) <- unlist(cn)
     fct <- fct[rownames(tam$xv)]
     rcm <- tamr$xv
-    rownames(rcm) <- as.character(1:nrow(rcm))
+    #rownames(rcm) <- as.character(1:nrow(rcm))
     fres <- list(hvc = cell.clustering, tvc = row.clustering, rcm = rcm, zlim2 = zlim, matvar = apply(tam$xv, 1, sd), ct = fct, matrcmcor = rep(1, nrow(tam$xv)), cols = colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(1024), colcol = col.cols)
 
     # gene df
@@ -2783,7 +2792,11 @@ make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.co
     } else {
         set.env <- env
     }
+  if(inchlib) {
+    sa <- ViewPagodaApp2$new(fres, df, gene.df, varinfo$mat, varinfo$matw, set.env, name = title, trim = 0, batch = varinfo$batch)
+  } else {
     sa <- ViewPagodaApp$new(fres, df, gene.df, varinfo$mat, varinfo$matw, set.env, name = title, trim = 0, batch = varinfo$batch)
+  }
 }
 
 ##################### Internal functions
@@ -5578,7 +5591,7 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
     } else {
         xp <- list()
     }
-
+    hc <- NULL;
     d <- d-rowMeans(d)
     dd <- as.dist(1-abs(cor(t(as.matrix(d)))))
     dd[is.na(dd)] <- 1
@@ -5592,6 +5605,18 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
             row.order <- hc$order
         } else {
             row.order <- c(seq_along(lab))
+            # make up a fake hc
+            if(length(lab)>1) {
+              hc<-list();
+              attributes(hc)<-list(members=length(lab),height=1);
+              class(hc)<-"dendrogram";
+              hc[[1]] <- list();
+              attributes(hc[[1]]) <- list(members=1,height=0,label=rownames(mat)[lab[1]],leaf=T)
+              hc[[2]] <- list();
+              attributes(hc[[2]]) <- list(members=1,height=0,label=rownames(mat)[lab[2]],leaf=T)
+            } else { 
+              hc <- list(); attributes(hc) <- list(members=1,height=0,label=rownames(mat)[lab[1]],leaf=T); class(hc) <- "dendrogram";
+            }
         }
     }
 
@@ -5649,6 +5674,7 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
     }
     xp$vhc <- vhc
     xp$lab <- lab
+    xp$hc <- as.dendrogram(hc)
     xp$row.order <- row.order
     xp$col <- col
     xp$oc.col <- colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(256)
@@ -5800,6 +5826,17 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
             row.order <- hc$order
         } else {
             row.order <- c(seq_along(lab))
+            if(length(lab)>1) {
+              hc<-list();
+              attributes(hc)<-list(members=length(lab),height=1);
+              class(hc)<-"dendrogram";
+              hc[[1]] <- list();
+              attributes(hc[[1]]) <- list(members=1,height=0,label=lab[1],leaf=T)
+              hc[[2]] <- list();
+              attributes(hc[[2]]) <- list(members=1,height=0,label=lab[2],leaf=T)
+            } else { 
+              hc <- list(); attributes(hc) <- list(members=1,height=0,label=lab[1],leaf=T); class(hc) <- "dendrogram";
+            }
         }
     }
 
@@ -5863,6 +5900,7 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
     }
     xp$vhc <- vhc
     xp$lab <- lab
+    xp$hc <- as.dendrogram(hc)
     xp$row.order <- row.order
     xp$oc <- oc
     xp$col <- col
@@ -5990,6 +6028,9 @@ ViewPagodaApp <- setRefClass(
 
         initialize = function(results, pathways, genes, mat, matw, goenv, batch = NULL, name = "pathway overdispersion", trim = 1.1/ncol(mat)) {
             results <<- results
+            #results$tvc$order <<- rev(results$tvc$order);
+            results$tvc$labels <<- as.character(1:nrow(results$rcm));
+            rownames(results$rcm) <<- as.character(1:nrow(results$rcm));
             genes <<- genes
             genes$svar <<- genes$var/max(genes$var)
             genes <<- genes
@@ -6118,7 +6159,7 @@ ViewPagodaApp <- setRefClass(
                    },
                    '/genecl.json' = { # report heatmap data for a selected set of genes
                        selgenes <- fromJSON(req$POST()$genes)
-                       ltrim <- ifelse(is.null(req$params()$trim), 1.1/ncol(mat), as.numeric(req$params()$trim))
+                       ltrim <- ifelse(is.null(req$params()$trim), 0/ncol(mat), as.numeric(req$params()$trim))
                        ol <- getgenecldata(selgenes, ltrim = ltrim)
                        s <- toJSON(ol)
                        res$header('Content-Type', 'application/javascript')
@@ -6128,10 +6169,10 @@ ViewPagodaApp <- setRefClass(
                            res$write(s)
                        }
                    },
-                   '/pathwaygenes.json' = { # report heatmap data for a selected set of genes
+                   '/pathwaygenes.json' = { # report heatmap data for a selected set of pathways
                        ngenes <- ifelse(is.null(req$params()$ngenes), 20, as.integer(req$params()$ngenes))
                        twosided <- ifelse(is.null(req$params()$twosided), FALSE, as.logical(req$params()$twosided))
-                       ltrim <- ifelse(is.null(req$params()$trim), 1.1/ncol(mat), as.numeric(req$params()$trim))
+                       ltrim <- ifelse(is.null(req$params()$trim), 0/ncol(mat), as.numeric(req$params()$trim))
                        pws <- fromJSON(req$POST()$genes)
                        n.pcs <- as.integer(gsub("^#PC(\\d+)# .*", "\\1", pws))
                        n.pcs[is.na(n.pcs)]<-1
@@ -6157,7 +6198,7 @@ ViewPagodaApp <- setRefClass(
                    '/patterngenes.json' = { # report heatmap of genes most closely matching a given pattern
                        ngenes <- ifelse(is.null(req$params()$ngenes), 20, as.integer(req$params()$ngenes))
                        twosided <- ifelse(is.null(req$params()$twosided), FALSE, as.logical(req$params()$twosided))
-                       ltrim <- ifelse(is.null(req$params()$trim), 1.1/ncol(mat), as.numeric(req$params()$trim))
+                       ltrim <- ifelse(is.null(req$params()$trim), 0/ncol(mat), as.numeric(req$params()$trim))
                        pat <- fromJSON(req$POST()$pattern)
                        # reorder the pattern back according to column clustering
                        pat[results$hvc$order] <- pat
@@ -6184,7 +6225,7 @@ ViewPagodaApp <- setRefClass(
                        if(exists("myGOTERM", envir = globalenv())) {
                            tpn <- paste(nams, mget(nams, get("myGOTERM", envir = globalenv()), ifnotfound = ""), sep = " ")
                        } else {
-                           tpn <- names(ii[tpi])
+                           tpn <- nams;
                        }
 
                        lgt <- data.frame(do.call(rbind, lapply(seq_along(tpn), function(i) c(id = names(ii[tpi[i]]), name = tpn[i], npc = npc[i], od = as.numeric(results$matvar[ii[tpi[i]]])/max(results$matvar), sign = as.numeric(results$matrcmcor[ii[tpi[i]]]), initsel = as.integer(results$matvar[ii[tpi[i]]] >= results$matvar[ii[tpi[1]]]*0.8)))))
@@ -6332,12 +6373,653 @@ ViewPagodaApp <- setRefClass(
                        #res$header('"Content-disposition": attachment')
                        res$write(body)
                    },
-{
-    res$header('Location', 'index.html')
-    res$write('Redirecting to <a href = "index.html" > index.html</a >  for interactive browsing.')
-}
-                       )
+                   {
+                     res$header('Location', 'index.html')
+                     res$write('Redirecting to <a href = "index.html" > index.html</a >  for interactive browsing.')
+                   }
+                   )
             res$finish()
         }
-            )
     )
+)
+
+
+
+ViewPagodaApp2 <- setRefClass(
+    'ViewPagodaApp2',
+    fields = c('results', 'genes', 'pathways', 'mat', 'matw', 'goenv', 'renv', 'name', 'trim', 'batch'),
+    methods = list(
+
+      initialize = function(results, pathways, genes, mat, matw, goenv, batch = NULL, name = "pathway overdispersion", trim = 1.1/ncol(mat)) {
+        results <<- results
+        genes <<- genes
+        rownames(results$rcm) <<- as.character(1:nrow(results$rcm));
+        results$tvc$labels <<- as.character(1:nrow(results$rcm));
+        
+        genes$svar <<- genes$var/max(genes$var)
+        genes <<- genes
+        mat <<- mat
+        matw <<- matw
+        batch <<- batch
+        goenv <<- goenv
+        pathways <<- pathways
+        name <<- name
+        trim <<- trim
+                                        # reverse lookup environment
+        renvt <- new.env(parent = globalenv())
+        xn <- ls(envir = goenv)
+        xl <- mget(xn, envir = goenv)
+        gel <- tapply(rep(xn, unlist(lapply(xl, length))), unlist(xl), I)
+        gel <- gel[nchar(names(gel)) > 0]
+        x <- lapply(names(gel), function(n) assign(n, gel[[n]], envir = renvt))
+        renv <<- renvt
+        rm(xn, xl, x, gel, renvt)
+        gc()
+        callSuper()
+      },
+      getgenecldata = function(genes = NULL, gcl = NULL, ltrim = 0) { # helper function to get the heatmap data for a given set of genes
+        if(is.null(gcl)) {
+
+          gcl <- t.view.pathways(genes, mat = mat, matw = matw, env = goenv, vhc = results$hvc, plot = FALSE, trim = ltrim)
+
+        }
+        data <- data.matrix(gcl$vmap[,results$hvc$order,drop=F])
+
+        ## column dendrogram is same
+        hc <- results$hvc
+        #col.dend <- inchlib.dend.to.table(as.dendrogram(hc))
+        #col.dend.json <- inchlib.col.dend.to.json(col.dend)
+
+        
+        ## Draw row dendrogram with data
+        row.dend <- inchlib.dend.to.table(gcl$hc)
+        row.dend.json <- inchlib.row.dend.to.json(row.dend, data)
+        ol <- list(
+          "data" = row.dend.json
+          #,"column_dendrogram" = col.dend.json
+        )
+
+        ## If more than 2 genes selected, show row side and column colors
+        if(nrow(gcl$vmap)>2) {
+          ## row side colors is PC loading
+          rcmvar <- rbind(
+            'loading' = t(gcl$rotation[rev(gcl$row.order),,drop=F])
+          )
+          #colnames(rcmvar) <- gcl$lab
+
+          
+          ## column colors are consensus expression
+          colcols <- rbind(
+            'PC1' = gcl$oc[hc$order]
+          )
+          colnames(colcols) <- hc$label[hc$order]
+          ## write
+          rowCol.json <- inchlib.rowCol.to.json(rcmvar)
+          colCol.json <- inchlib.colCol.to.json(colcols)
+          ## append to output
+          ol <- c(ol,list("metadata"=rowCol.json,"column_metadata"=colCol.json)) 
+        }
+        ol
+      },
+        call = function(env){
+            path <- env[['PATH_INFO']]
+            req <- Request$new(env)
+            res <- Response$new()
+            switch(path,
+                   # INDEX
+                   '/index.html' = {
+                     body <- paste('<!DOCTYPE html >
+                                     <meta charset = "utf-8" >
+                                     <html >
+                                     <head >
+                                     <title > ', name, '</title >
+                                     <meta http-equiv = "Content-Type" content = "text/html charset = iso-8859-1" >
+                                     <head profile = "http://www.w3.org/2005/10/profile" >
+                                     <link rel = "icon" type = "image/png" href = "http://pklab.med.harvard.edu/sde/pagoda.png"/>
+                                     <!--- for InCHlib --->
+                                     <script src="http://pklab.med.harvard.edu/sde/jquery/2.1.3/jquery.min.js"></script>
+                                     <script src="http://pklab.med.harvard.edu/sde/kinetic-v5.1.0.js"></script>
+                                     <script src="http://pklab.med.harvard.edu/sde/inchlib_dev.js"></script>
+
+                                     <!--- for ExtJS --->
+                                     <link rel="stylesheet" type="text/css" href="http://pklab.med.harvard.edu/sde/extjs/resources/ext-theme-neptune/ext-theme-neptune-all.css" />
+                                     <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/pathcl.css" / >
+                                     <script type="text/javascript" src="http://pklab.med.harvard.edu/sde/extjs/ext-all.js"></script>
+
+                                     <!--- for App --->
+                                     <script type="text/javascript" src="http://pklab.med.harvard.edu/sde/pathcl_inchlib.js"></script>
+                                     </head >
+                                     <body > </body >
+                                     </html >
+                                     ', sep = "")
+                       res$header('"Content-Type": "text/html"')
+                       res$write(body)
+                   },
+                   '/pathcl.json' = { # report pathway clustering heatmap data
+                     #data <- data.matrix(results$rcm[results$tvc$order,results$hvc$order])
+                     data <- data.matrix(results$rcm[,results$hvc$order])
+                     #colnames(data) <- rev(results$hvc$label)
+                     rownames(data) <- results$tvc$label
+                     ## column dendrogram
+                     hc <- results$hvc
+                     ## row dendrogram
+                     vc <- results$tvc
+                     ## row side colors = variance
+                     rcmvar <- t(data.frame(
+                       'overdispersion' = apply(results$rcm[,,drop=F],1,var)
+                     ))
+                     colnames(rcmvar) <- vc$label
+                     ## column colors
+                     colcols <- t(apply(results$colcol[nrow(results$colcol):1, results$hvc$order, drop = FALSE], 1,col2hex))
+                     #colcols <- data.frame(
+                     #  'group' = results$colcol[nrow(results$colcol):1,results$hvc$order,drop=F]
+                     #)
+                     ## TODO: current inchlib implementation of colors requires numbers
+#                       colcols <- apply(colcols,1,factor)
+#                       colcols <- apply(colcols,1,numeric)
+                     #rownames(colcols) <- rownames(results$colcol)
+                     colnames(colcols) <- hc$label[hc$order]
+                     ## Draw row dendrogram with data
+                     row.dend <- inchlib.dend.to.table(as.dendrogram(vc),reverse=F)
+                     row.dend.json <- inchlib.row.dend.to.json(row.dend, data)
+                     ## Draw column dendrogram
+                     col.dend <- inchlib.dend.to.table(as.dendrogram(hc))
+                     col.dend.json <- inchlib.col.dend.to.json(col.dend)
+                     ## Row side and column side colors
+                     rowCol.json <- inchlib.rowCol.to.json(rcmvar)
+                     colCol.json <- inchlib.colCol.to.json(colcols,colors=rep(T,nrow(colcols)))
+                     
+                       ## Write to JSON format for InCHlib
+                       s <- toJSON(
+                           list(
+                             "data" = row.dend.json,
+                             "column_dendrogram" = col.dend.json,
+                             "metadata" = rowCol.json,
+                             "column_metadata" = colCol.json,
+                             "zlim"=results$zlim2[2],
+                             "max_value"=max(abs(data))
+                             )
+                       )
+                       
+                       res$header('Content-Type','application/javascript')
+                       if(!is.null(req$params()$callback)) {
+                           res$write(paste(req$params()$callback,"(",s,")",sep=""))
+                       } else {
+                           res$write(s)
+                       }
+                   },
+                   '/genecl.json' = { # report heatmap data for a selected set of genes
+                       selgenes <- fromJSON(req$POST()$genes)
+                       ltrim <- ifelse(is.null(req$params()$trim), 0, as.numeric(req$params()$trim))
+                       ol <- getgenecldata(genes=selgenes, ltrim = ltrim)
+                       s <- toJSON(ol)
+                       res$header('Content-Type', 'application/javascript')
+                       if(!is.null(req$params()$callback)) {
+                           res$write(paste(req$params()$callback, "(", s, ")", sep = ""))
+                       } else {
+                           res$write(s)
+                       }
+                   },
+                   '/pathwaygenes.json' = { # report heatmap data for a given set of pathways
+                       ngenes <- ifelse(is.null(req$params()$ngenes), 20, as.integer(req$params()$ngenes))
+                       twosided <- ifelse(is.null(req$params()$twosided), FALSE, as.logical(req$params()$twosided))
+                       ltrim <- ifelse(is.null(req$params()$trim), 0, as.numeric(req$params()$trim))
+                       pws <- fromJSON(req$POST()$genes)
+                       n.pcs <- as.integer(gsub("^#PC(\\d+)# .*", "\\1", pws))
+                       n.pcs[is.na(n.pcs)]<-1
+                       x <- c.view.pathways(gsub("^#PC\\d+# ", "", pws), mat, matw, goenv = goenv, n.pc = n.pcs, n.genes = ngenes, two.sided = twosided, vhc = results$hvc, plot = FALSE, trim = ltrim, batch = batch)
+                       #x <- t.view.pathways(gsub("^#PC\\d+# ", "", pws), mat, matw, env = goenv, vhc = results$hvc, plot = FALSE, trim = ltrim, n.pc = 1)
+                       ##rsc <- as.vector(rowSums(matw[rownames(x$rotation), ]))*x$rotation[, 1]
+                       #rsc <- x$rotation[, 1]
+                       #if(twosided) {
+                       #  extgenes <- unique(c(names(sort(rsc))[1:min(length(rsc), round(ngenes/2))], names(rev(sort(rsc)))[1:min(length(rsc), round(ngenes/2))]))
+                       # } else {
+                       #   extgenes <- names(sort(abs(rsc), decreasing = TRUE))[1:min(length(rsc), ngenes)]
+                       #}
+                       #ol <- getgenecldata(extgenes, ltrim = ltrim)
+                       ol <- getgenecldata(genes = NULL, gcl = x, ltrim = ltrim)
+                       s <- toJSON(ol)
+                       res$header('Content-Type', 'application/javascript')
+                       if(!is.null(req$params()$callback)) {
+                           res$write(paste(req$params()$callback, "(", s, ")", sep = ""))
+                       } else {
+                           res$write(s)
+                       }
+                   },
+                   '/patterngenes.json' = { # report heatmap of genes most closely matching a given pattern
+                       ngenes <- ifelse(is.null(req$params()$ngenes), 20, as.integer(req$params()$ngenes))
+                       twosided <- ifelse(is.null(req$params()$twosided), FALSE, as.logical(req$params()$twosided))
+                       ltrim <- ifelse(is.null(req$params()$trim), 0, as.numeric(req$params()$trim))
+                       pat <- fromJSON(req$POST()$pattern)
+
+                       # reorder the pattern back according to column clustering
+                       pat[results$hvc$order] <- pat
+                       patc <- .Call("matCorr", as.matrix(t(mat)), as.matrix(pat, ncol = 1) , PACKAGE = "scde")
+                       if(twosided) { patc <- abs(patc) }
+                       mgenes <- rownames(mat)[order(as.numeric(patc), decreasing = TRUE)[1:ngenes]]
+                       ol <- getgenecldata(genes=mgenes, ltrim = ltrim)
+                       ol$pattern <- pat
+                       s <- toJSON(ol)
+                       res$header('Content-Type', 'application/javascript')
+                       if(!is.null(req$params()$callback)) {
+                           res$write(paste(req$params()$callback, "(", s, ")", sep = ""))
+                       } else {
+                           res$write(s)
+                       }
+                   },
+                   '/clinfo.json' = {
+                       pathcl <- ifelse(is.null(req$params()$pathcl), 1, as.integer(req$params()$pathcl))
+                       ii <- which(results$ct == pathcl)
+                       tpi <- order(results$matvar[ii], decreasing = TRUE)
+                       #tpi <- tpi[seq(1, min(length(tpi), 15))]
+                       npc <- gsub("^#PC(\\d+)#.*", "\\1", names(ii[tpi]))
+                       nams <- gsub("^#PC\\d+# ", "", names(ii[tpi]))
+                       if(exists("myGOTERM", envir = globalenv())) {
+                           tpn <- paste(nams, mget(nams, get("myGOTERM", envir = globalenv()), ifnotfound = ""), sep = " ")
+                       } else {
+                           tpn <- nams;
+                       }
+
+                       lgt <- data.frame(do.call(rbind, lapply(seq_along(tpn), function(i) c(id = names(ii[tpi[i]]), name = tpn[i], npc = npc[i], od = as.numeric(results$matvar[ii[tpi[i]]])/max(results$matvar), sign = as.numeric(results$matrcmcor[ii[tpi[i]]]), initsel = as.integer(results$matvar[ii[tpi[i]]] >= results$matvar[ii[tpi[1]]]*0.8)))))
+
+                       # process additional filters
+                       if(!is.null(req$params()$filter)) {
+                           fl <- fromJSON(URLdecode(req$params()$filter))
+                           for( fil in fl) {
+                               lgt <- lgt[grep(fil$value, lgt[, fil$property], perl = TRUE, ignore.case = TRUE), ]
+                           }
+                       }
+                       start <- ifelse(is.null(req$params()$start), 1, as.integer(req$params()$start)+1)
+                       limit <- ifelse(is.null(req$params()$limit), 100, as.integer(req$params()$limit))
+                       dir <- ifelse(is.null(req$params()$dir), "DESC", req$params()$dir)
+                       trows <- nrow(lgt)
+                       if(trows > 0) {
+                           if(!is.null(req$params()$sort)) {
+                               if(req$params()$sort %in% colnames(lgt)) {
+                                   lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir == "DESC")), ]
+                               }
+                           }
+                       }
+                       lgt <- lgt[min(start, nrow(lgt)):min((start+limit), nrow(lgt)), ]
+                       lgt$od <- format(lgt$od, nsmall = 2, digits = 2)
+                       ol <- apply(lgt, 1, function(x) as.list(x))
+                       names(ol) <- NULL
+                       s <- toJSON(list(totalCount = trows, genes = ol))
+
+                       res$header('Content-Type', 'application/javascript')
+                       if(!is.null(req$params()$callback)) {
+                           res$write(paste(req$params()$callback, "(", s, ")", sep = ""))
+                       } else {
+                           res$write(s)
+                       }
+                   },
+                   '/genes.json' = {
+                       lgt <- genes
+                       if(!is.null(req$params()$filter)) {
+                           fl <- fromJSON(URLdecode(req$params()$filter))
+                           for( fil in fl) {
+                               lgt <- lgt[grep(fil$value, lgt[, fil$property], perl = TRUE, ignore.case = TRUE), ]
+                           }
+                       }
+                       start <- ifelse(is.null(req$params()$start), 1, as.integer(req$params()$start)+1)
+                       limit <- ifelse(is.null(req$params()$limit), 1000, as.integer(req$params()$limit))
+                       dir <- ifelse(is.null(req$params()$dir), "DESC", req$params()$dir)
+                       trows <- nrow(lgt)
+                       if(trows > 0) {
+                           if(!is.null(req$params()$sort)) {
+                               if(req$params()$sort %in% colnames(lgt)) {
+                                   lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir == "DESC")), ]
+                               }
+                           } else { # default sort
+                               # already done
+                           }
+                       }
+                       lgt <- format(lgt[min(start, nrow(lgt)):min((start+limit), nrow(lgt)), ], nsmall = 2, digits = 2)
+                       ol <- apply(lgt, 1, function(x) as.list(x))
+                       names(ol) <- NULL
+                       s <- toJSON(list(totalCount = trows, genes = ol))
+                       res$header('Content-Type', 'application/javascript')
+                       if(!is.null(req$params()$callback)) {
+                           res$write(paste(req$params()$callback, "(", s, ")", sep = ""))
+                       } else {
+                           res$write(s)
+                       }
+
+                   },
+                   '/pathways.json' = {
+                       lgt <- pathways
+                       if(!is.null(req$params()$filter)) {
+                           fl <- fromJSON(URLdecode(req$params()$filter))
+                           for( fil in fl) {
+                               lgt <- lgt[grep(fil$value, lgt[, fil$property], perl = TRUE, ignore.case = TRUE), ]
+                           }
+                       }
+                       start <- ifelse(is.null(req$params()$start), 1, as.integer(req$params()$start)+1)
+                       limit <- ifelse(is.null(req$params()$limit), 1000, as.integer(req$params()$limit))
+                       dir <- ifelse(is.null(req$params()$dir), "DESC", req$params()$dir)
+                       trows <- nrow(lgt)
+                       if(trows > 0) {
+                           if(!is.null(req$params()$sort)) {
+                               if(req$params()$sort %in% colnames(lgt)) {
+                                   lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir == "DESC")), ]
+                               }
+                           } else { # default sort
+                               # already done
+                           }
+                       }
+                       lgt <- format(lgt[min(start, nrow(lgt)):min((start+limit), nrow(lgt)), ], nsmall = 2, digits = 2)
+                       ol <- apply(lgt, 1, function(x) as.list(x))
+                       names(ol) <- NULL
+                       s <- toJSON(list(totalCount = trows, genes = ol))
+                       res$header('Content-Type', 'application/javascript')
+                       if(!is.null(req$params()$callback)) {
+                           res$write(paste(req$params()$callback, "(", s, ")", sep = ""))
+                       } else {
+                           res$write(s)
+                       }
+
+                   },
+                   '/testenr.json' = { # run an enrichment test
+                       selgenes <- fromJSON(req$POST()$genes)
+                       lgt <- calculate.go.enrichment(selgenes, rownames(mat), pvalue.cutoff = 0.99, env = renv, over.only = TRUE)$over
+                       if(exists("myGOTERM", envir = globalenv())) {
+                           lgt$nam <- paste(lgt$t, mget(as.character(lgt$t), get("myGOTERM", envir = globalenv()), ifnotfound = ""), sep = " ")
+                       } else {
+                           lgt$name <- lgt$t
+                       }
+                       lgt <- data.frame(id = paste("#PC1#", lgt$t), name = lgt$nam, o = lgt$o, u = lgt$u, Z = lgt$Z, Za = lgt$Za, fe = lgt$fe, stringsAsFactors = FALSE)
+
+                       if(!is.null(req$params()$filter)) {
+                           fl <- fromJSON(URLdecode(req$params()$filter))
+                           for( fil in fl) {
+                               lgt <- lgt[grep(fil$value, lgt[, fil$property], perl = TRUE, ignore.case = TRUE), ]
+                           }
+                       }
+                       start <- ifelse(is.null(req$params()$start), 1, as.integer(req$params()$start)+1)
+                       limit <- ifelse(is.null(req$params()$limit), 1000, as.integer(req$params()$limit))
+                       dir <- ifelse(is.null(req$params()$dir), "DESC", req$params()$dir)
+                       trows <- nrow(lgt)
+                       if(trows > 0) {
+                           if(!is.null(req$params()$sort)) {
+                               if(req$params()$sort %in% colnames(lgt)) {
+                                   lgt <- lgt[order(lgt[, req$params()$sort], decreasing = (dir == "DESC")), ]
+                               }
+                           }
+                       }
+                       lgt <- format(lgt[min(start, nrow(lgt)):min((start+limit), nrow(lgt)), ], nsmall = 2, digits = 2)
+                       ol <- apply(lgt, 1, function(x) as.list(x))
+                       names(ol) <- NULL
+                       s <- toJSON(list(totalCount = trows, genes = ol))
+                       res$header('Content-Type', 'application/javascript')
+                       if(!is.null(req$params()$callback)) {
+                           res$write(paste(req$params()$callback, "(", s, ")", sep = ""))
+                       } else {
+                           res$write(s)
+                       }
+
+                   },
+                   '/celltable.txt' = {
+                       matrix <- results$rcm[rev(results$tvc$order), results$hvc$order]
+                       body <- paste(capture.output(write.table(round(matrix, 1), sep = "\t")), collapse = "\n")
+                       res$header('Content-Type', 'text/plain')
+                       #res$header('"Content-disposition": attachment')
+                       res$write(body)
+                   },
+                   {
+                     res$header('Location', 'index.html')
+                     res$write('Redirecting to <a href = "index.html" > index.html</a >  for interactive browsing.')
+                   }
+                   )
+            res$finish()
+        }
+    )
+)
+
+
+inchlib.get.attr <- function(hr.d, attribute) {
+
+    # Convert to dendrogram
+  #hr.d <- as.dendrogram(hr)
+
+    attr.children.global <<- c()
+
+    # Recursive function to go through tree
+    attr.children <- function(hr.d) {
+        a <- attr(hr.d, attribute)
+        if(is.null(a)) { a <- NA }
+        attr.children.global <<- c(attr.children.global, a)
+        if(!is.leaf(hr.d)) {
+          for(i in 1:length(hr.d)) {
+            attr.children(hr.d[[i]])
+          }
+        }
+    } 
+  attr.children(hr.d)
+
+    return(attr.children.global)
+}
+
+inchlib.get.names <- function(hr.d) {
+
+    # Convert to dendrogram
+  #hr.d <- as.dendrogram(hr)
+    
+    # Get all node names
+    names.global <<- c()
+    #i <<- 1
+    names <- function(hr.d) {
+        a <- attr(hr.d, "label") 
+        #if(is.null(a)) { a <- paste('Parent', i) }
+        # Create unique identifier by collapsing all attributes for internal nodes
+        if(is.null(a)) { a <- paste(attributes(hr.d), collapse='.') }
+        names.global <<- c(names.global, a)
+        #i <<- i + 1
+        if(!is.leaf(hr.d)) {
+          for(i in 1:length(hr.d)) {
+            names(hr.d[[i]])
+          }
+        }
+    }
+    names(hr.d)
+    names.global
+        
+    return(names.global)
+}
+
+inchlib.get.children <- function(hr.d,reverse=F) {
+
+    # Convert to dendrogram
+    #hr.d <- as.dendrogram(hr)
+
+    # Get children relationship
+    children.global <<- c()
+    #Recursive function to go through tree
+    children <- function(hr.d) {
+        if(attr(hr.d, "height")>0) {
+            lc <- attr(hr.d[[1]], "label")
+            if(is.null(lc)) { lc <- paste(attributes(hr.d[[1]]), collapse='.') }
+            if(length(hr.d)>1) {
+              rc <- attr(hr.d[[2]], "label")
+              if(is.null(rc)) { rc <- paste(attributes(hr.d[[2]]), collapse='.') }
+            } else { rc <- NA; }
+            children.global <<- c(children.global, paste(lc, rc, sep=';'))
+            for(i in 1:length(hr.d)) {
+              children(hr.d[[i]])
+            }
+        }
+        # Is leaf, no more children
+        else {
+            children.global <<- c(children.global, "NA;NA")
+        }
+    }
+    children(hr.d)
+    children.global.df <- do.call(rbind, lapply(children.global, function(x) strsplit(x, ';')[[1]]))
+    if(reverse) {
+      colnames(children.global.df) <- c('left.child', 'right.child')
+    } else {
+      colnames(children.global.df) <- c('right.child', 'left.child')      
+    }
+
+    return(children.global.df)
+}
+
+inchlib.dend.to.table <- function(hc,reverse=F) {
+    hc.dend <- cbind('row.name'=inchlib.get.names(hc), inchlib.get.children(hc,reverse=reverse), 'height'=inchlib.get.attr(hc, 'height'), 'num.children'=inchlib.get.attr(hc, 'member'), 'is.leaf'= inchlib.get.attr(hc, 'leaf'))
+    rownames(hc.dend) <- hc.dend[,'row.name']
+    parent.id <- rep(NA, nrow(hc.dend)); names(parent.id) <- hc.dend[,'row.name']
+    parent.id[hc.dend[,'right.child'][hc.dend[,'right.child']!='NA']] <- hc.dend[hc.dend[,'right.child']!='NA', 'row.name']
+    parent.id[hc.dend[,'left.child'][hc.dend[,'left.child']!='NA']] <- hc.dend[hc.dend[,'left.child']!='NA', 'row.name']
+    
+    hc.dend <- cbind(hc.dend, parent.id)
+    return(data.frame(hc.dend, stringsAsFactors=FALSE))
+}
+
+#"node_id": {
+#           "count": 2,    //number of items (leafs) which lie in the dendrogram hierarchy below the given node
+#            "distance": 3.32,    //distance from the zero base of the dendrogram, given by the distance measure used for clustering
+#            "parent": "node_1",    //the ID of a parent node
+#            "left_child": "leaf_1",   //ID of a left child
+#            "right_child": "leaf_2"   //ID of a right child
+#    }, 
+inchlib.json.node <- function(str) {
+    node <- list(
+        "count" = as.numeric(str$num.children),
+        "distance" = as.numeric(str$height),
+        "left_child" = str$left.child,
+        "right_child" = str$right.child
+    )
+        
+    if(!is.na(str$parent.id)) {
+        node[["parent"]] <- str$parent.id
+    }
+
+    return(node) 
+}
+
+#"leaf_id": {
+#        "count": 1,    //number of items (leafs) which lie in the dendrogram hierarchy below the given node
+#            "distance": 0,    //distance from the zero base of the dendrogram, given by the distance measure used for clustering
+#            "features": [1.4, 3.5, 5.1],    //values of individual features defining a data item which is represented by the heatmap row
+#            "parent": "node_1",    //the ID of a parent node
+#            "objects": ["object_id"]    //list of IDs of objects (data points) represented by a given row
+#    },
+json.row.leaf <- function(str, dat) {
+    leaf <- 
+        list(
+            "count" = 1,
+            "distance" = 0,
+          "features" = as.matrix(dat),
+            "objects" = list(str$row.name)
+        )
+     
+    if(!is.na(str$parent.id)) { leaf$parent <- str$parent.id }
+    return(leaf)
+}
+# For column dendrograms
+inchlib.json.col.leaf <- function(str) {
+    leaf <- 
+        list(
+          "count" = 1,
+          "distance" = 0
+        )
+    if(!is.na(str$parent.id)) { leaf$parent <- str$parent.id }
+    return(leaf)    
+}
+
+inchlib.row.dend.to.json <- function(dend, data) {
+
+    nodes <- which(is.na(dend[, 'is.leaf']))
+    leaves <- which(dend[, 'is.leaf']==TRUE)
+
+    nodes.json <- lapply(nodes, function(k) {
+        str <- dend[k,]
+        inchlib.json.node(str)
+    }); names(nodes.json) <- dend[nodes ,'row.name']
+
+    leaves.json <- lapply(leaves, function(k) {
+        str <- dend[k,]
+        row.name <- dend[k, 'row.name']
+        dat <- data[row.name,]
+        json.row.leaf(str, dat)
+    }); names(leaves.json) <- dend[leaves, 'row.name']
+    
+    all.json <- c(nodes.json, leaves.json)
+        
+    final.json <- 
+        list(
+            "feature_names" = colnames(data),
+            "nodes" = all.json
+        )
+    
+    return(final.json)
+}
+
+inchlib.col.dend.to.json <- function(dend) {
+
+    nodes <- which(is.na(dend[, 'is.leaf']))
+    leaves <- which(dend[, 'is.leaf']==TRUE)
+
+    nodes.json <- lapply(nodes, function(k) {
+        str <- dend[k,]
+        inchlib.json.node(str)
+    }); names(nodes.json) <- dend[nodes, 'row.name']
+
+    leaves.json <- lapply(leaves, function(k) {
+        str <- dend[k,]
+        inchlib.json.col.leaf(str)
+    }); names(leaves.json) <- dend[leaves, 'row.name']
+    
+    all.json <- c(nodes.json, leaves.json)
+
+    final.json <- 
+        list(
+            "feature_names" = colnames(data),
+            "nodes" = all.json
+        )
+        
+    return(final.json)
+}
+
+# Given numeric dataframe with data rownames as colnames
+# convert to metadata inchlib json format
+# to be displayed as row colors in the heatmap
+# Ex:
+# > rowCol
+#        Alabama Alaska Arizona Arkansas
+# rowCol    13.2     10     8.1      8.8  
+inchlib.rowCol.to.json <- function(rowCol,colors=rep(F,nrow(rowCol))) {
+
+  nodes.list <- lapply(1:ncol(rowCol), function(i) {
+    list(as.matrix(rowCol[,i]))
+  }) 
+  names(nodes.list) <- colnames(rowCol)
+  
+  metadata.json <- list("nodes" = nodes.list)
+  if(!is.null(rownames(rowCol))) {
+    metadata.json[["feature_names"]] <- list(rownames(rowCol))
+  }else {
+    metadata.json[["feature_names"]] <- list("row label")
+  }
+  metadata.json[["type"]] <- lapply(colors,ifelse,"color","numeric");
+  return(metadata.json)
+}
+
+# Given numeric dataframe
+# convert to column metadata inchlib json format
+# to be displayed as column colors in the heatmap
+# Ex.
+#> princomp(x = USArrests)$scores[1:2,]
+# PC1 -64.80216 11.44801 -2.494933  2.407901
+# PC2  -92.82745 17.98294 20.126575 -4.094047  
+# "column_metadata" = 
+inchlib.colCol.to.json <- function(colCol,colors=rep(F,nrow(colCol))) {
+  #col.metadata.json <- list("features"=list(colCol))
+  col.metadata.json <- list("features"=lapply(1:nrow(colCol),function(i) as.vector(colCol[i,])))
+  if(!is.null(rownames(colCol))) {
+    col.metadata.json[["feature_names"]] <- rownames(colCol)
+  } else {
+    col.metadata.json[["feature_names"]] <- c("column label")
+  }
+  col.metadata.json[["type"]] <- as.vector(lapply(colors,ifelse,"color","numeric"));
+  return(col.metadata.json)
+}
