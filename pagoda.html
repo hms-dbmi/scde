@@ -193,6 +193,8 @@ show.app(<span class="pl-smi">app</span>, <span class="pl-s"><span class="pl-pds
 
 <p><img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-Screen_Shot_2015-06-07_at_4.53.46_PM.png" alt="pagoda app"></p>
 
+<p>An interactive version of the full run (all GO terms tested) can also be found here: <a href="http://pklab.med.harvard.edu/cgi-bin/R/rook/pollen.npc/index.html">http://pklab.med.harvard.edu/cgi-bin/R/rook/pollen.npc/index.html</a>
+
 <p>Similar views can be obtained in the R session itself. For instance, here we'll view top 10 genes associated with the top two pathways in the neurogenesis cluster: "neurogenesis" (GO:0022008) and "generation of neurons" (GO:0048699)</p>
 
 <div class="highlight highlight-source-r"><pre>pagoda.show.pathways(c(<span class="pl-s"><span class="pl-pds">"</span>GO:0022008<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>GO:0048699<span class="pl-pds">"</span></span>), <span class="pl-smi">varinfo</span>, <span class="pl-smi">go.env</span>, <span class="pl-v">cell.clustering</span> <span class="pl-k">=</span> <span class="pl-smi">hc</span>, <span class="pl-v">margins</span> <span class="pl-k">=</span> c(<span class="pl-c1">1</span>,<span class="pl-c1">5</span>), <span class="pl-v">show.cell.dendrogram</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">showRowLabels</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">showPC</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>)</pre></div>
