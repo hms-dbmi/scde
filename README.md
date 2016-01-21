@@ -8,7 +8,9 @@ The overall approach to the differential expression analysis is detailed in the 
 ["Bayesian approach to single-cell differential expression analysis" (Kharchenko PV, Silberstein L, Scadden DT, Nature Methods, doi:10.1038/nmeth.2967)](http://www.nature.com/nmeth/journal/v11/n7/abs/nmeth.2967.html)
 
 The overall approach to pathways and gene set overdispersion analysis is detailed in the following publication:
-"Characterizing transcriptional heterogeneity through pathway and gene set overdispersion analysis" (Fan J, Salathia N, Liu R, Kaeser G, Yung Y, Herman J, Kaper F, Fan JB, Zhang K, Chun J, and Kharchenko PV) COMING SOON!
+["Characterizing transcriptional heterogeneity through pathway and gene set overdispersion analysis" (Fan J, Salathia N, Liu R, Kaeser G, Yung Y, Herman J, Kaper F, Fan JB, Zhang K, Chun J, and Kharchenko PV, Nature Methods, doi:10.1038/nmeth.3734)](http://www.nature.com/nmeth/journal/vaop/ncurrent/full/nmeth.3734.html)
+
+**For additional installation information, tutorials, and more, please visit [the SCDE website ☞](http://hms-dbmi.github.io/scde/)**
 
 # Sample analyses and images
 
@@ -48,7 +50,7 @@ Ift46     5.435 7.366  9.217 5.435 7.150 5.968</pre>
 <table>
   <tr>
     <td width=400px>
-      <img src="vignettes/figures/pagoda-Screen_Shot_2015-06-07_at_4.53.46_PM.png" width="400px"> 
+      <img src="vignettes/figures/PAGODA.gif" width="400px"> 
     </td>
     <td>
       <code>scde</code> contains <code>pagoda</code> routines that characterize aspects of transcriptional heterogeneity in populations of single cells using pre-defined gene sets as well as 'de novo' gene sets derived from the data. Significant aspects are used to cluster cells into subpopulations. A graphical user interface can be deployed to interactively explore results. 
@@ -58,8 +60,6 @@ Ift46     5.435 7.366  9.217 5.435 7.150 5.968</pre>
     
 ---
     
-**For more information, please visit [the SCDE website ☞](http://hms-dbmi.github.io/scde/)**
-
 `scde` is maintained by [Jean Fan](https://github.com/jefworks) of the [Kharchenko Lab](http://pklab.med.harvard.edu/) at the [Department of Biomedical Informatics at Harvard Medical School](https://github.com/hms-dbmi).
 
 ---
