@@ -90,7 +90,7 @@ SEXP jpmatLogBatchBoot(SEXP Matll, SEXP Comp, SEXP Nboot, SEXP Seed){
 // Models - model matrix
 // Ucl - unique count list
 // Uci - unique count index
-// Magnitudes - marginals - (expression magnitudes)
+// Magnitudes - marginals - (expression magnitudes) - natural log scale
 // Nboot - number of bootstrap iterations
 // Seed - random seed
 // ReturnIndividualPosterior: 0 - nothing, 1 - maxima, 2 - full posterior matrices
@@ -132,7 +132,7 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
         std::vector< arma::uword > maxi;
         arma::vec mu=magnitudes * models(i,CORRA_I);
         mu+=models(i,CORRB_I); mu=exp(mu);
-        arma::vec cfp;
+        arma::vec cfp; // dropout probability
         if(squarelogitconc) {
             cfp=models(i,CONCA_I) + magnitudes*models(i,CONCA2_I);
             cfp%=magnitudes;
@@ -144,7 +144,7 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
         arma::vec cfpr=1-cfp;
         cfp=log(cfp); cfpr=log(cfpr);
         double maxcfp=max(cfp);
-        arma::colvec thetas;
+        arma::colvec thetas; // caclulate overdispersion function
         if(localtheta) { // non-constant theta model - prepare theta values
             thetas=-1*magnitudes + models(i,CORRlTM_I);
             thetas*=models(i,CORRlTS_I);
@@ -164,7 +164,7 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
         //std::cout<<"thetas=["; copy(thetas.begin(),thetas.end(),std::ostream_iterator<double>(std::cout," ")); std::cout<<"]"<<std::endl<<std::flush;
 
         for(int j=0;j<ncounts;j++) {
-            // correlated prob
+            // correlated prob (NB component; amplified gene)
             arma::vec nbp(mu.n_elem);
             if(localtheta) { // linear theta model
                 for(unsigned int k=0;k<mu.n_elem;k++) {
@@ -186,7 +186,7 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
             }
             //std::cout<<"nbp1=["; copy(nbp.begin(),nbp.end(),std::ostream_iterator<double>(std::cout," ")); std::cout<<"]"<<std::endl<<std::flush;
             nbp+=cfpr;
-            // // failure probability
+            // // failure probability (Poisson component)
             double fp=Rf_dpois(uc[j],exp(models(i,FAILR_I)),true);
             double maxp=max(nbp);
             if(maxp<(maxcfp+fp)) { maxp=maxcfp+fp; }
@@ -194,7 +194,7 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
             nbp/=sum(nbp);
             nbp=log(nbp);
 
-            // find max point
+            // find max point (for subsequent numerical renormalization)
             if(returnpost==1 || returnpost==3) {
                 arma::uword maxij;
                 double maxv=nbp.max(maxij);
@@ -205,7 +205,7 @@ RcppExport SEXP logBootPosterior(SEXP Models, SEXP Ucl, SEXP CountsI, SEXP Magni
             pm.col(j)=nbp;
         }
 
-        ucposteriors.push_back(pm);
+        ucposteriors.push_back(pm); //save the calculated numerical posteriors for ith cell
         if(returnpost==1 || returnpost==3) { ucmaxi.push_back(maxi);}
         //std::cout<<"."<<std::flush;
     }
