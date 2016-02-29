@@ -4,6 +4,29 @@ layout: default
 
 <h1>Help and Support</h1>
 
+<h2>
+<a id="common-questions" class="anchor" href="#common-questions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Common Questions</h2>
+
+<p><strong>Q:</strong> Can I use SCDE/PAGODA with UMI data?<br>
+<strong>A:</strong> Yes. In the error building step, you will need to reduce <code>min.count.threshold</code> to 1.</p>
+
+<p><strong>Q:</strong> Can I use SCDE/PAGODA with non-count data?<br>
+<strong>A:</strong> SCDE requires count data for its error modeling. If you would like to use PAGODA with normalized non-count data, see <a href="http://hms-dbmi.github.io/scde/experimental.html">this experimental tutorial</a> for more information.  </p>
+
+<p><strong>Q:</strong> Can I use SCDE/PAGODA with 1000s of cells?<br>
+<strong>A:</strong> Yes, however we have set default options based on a 96 cell sample. Therefore, parameters in the error modeling step such as <code>k</code> and <code>min.nonfailed</code> will likely need to be increased to accommodate.</p>
+
+<p><strong>Q:</strong> How can I integrate my ERCC spike-ins for normalization?<br>
+<strong>A:</strong> You can use your ERCC spike-ins to fit the dependency between expression magnitude and variance:</p>
+
+<pre><code># perform varnorm based on ercc fit
+ercc.cd &lt;- cd[ercc.genes,]
+ercc.varinfo &lt;- pagoda.varnorm(knn,counts=ercc.cd,trim=3,ncol(ercc.cd),fit.genes=ercc.genes,n.cores=n.cores,plot=T,verbose=1,max.adj.var=5)
+</code></pre>
+
+<h2>
+<a id="common-questions" class="anchor" href="#common-questions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Additional Support</h2>
+
 Please consult the <code>scde</code> googlegroup for common questions. Join the group to post new questions. To submit a bug report or enhancement request, please use the <a href="https://github.com/hms-dbmi/scde/issues">Github issue tracker</a>. 
 
 <iframe id="forum_embed"
