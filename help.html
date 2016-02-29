@@ -26,6 +26,8 @@ ercc.cd &lt;- cd[ercc.genes,]
 ercc.varinfo &lt;- pagoda.varnorm(knn,counts=ercc.cd,trim=3,ncol(ercc.cd),fit.genes=ercc.genes,n.cores=n.cores,plot=T,verbose=1,max.adj.var=5)
 </code></pre>
 
+<p>The resulting plot will show the spike-ins in green. However, n our experience, the spike-ins often show systematic deviations from the genome wide trend, showing either significantly higher or lower variance. The former, in particular, suggests that they may not be representative of the technical noise impacting the real mRNAs so we recommend proceeding with caution. </p>
+
 <h2>
 <a id="forum" class="anchor" href="#forum" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Forum</h2>
 
