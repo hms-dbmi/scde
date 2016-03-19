@@ -275,7 +275,7 @@ scde.expression.prior <- function(models, counts, length.out = 400, show.plot = 
 ##' \item{lb, mle, ub} {lower bound, maximum likelihood estimate, and upper bound of the 95% confidence interval for the expression fold change on log2 scale.}
 ##' \item{ce} { conservative estimate of expression-fold change (equals to the min(abs(c(lb, ub))), or 0 if the CI crosses the 0}
 ##' \item{Z} { uncorrected Z-score of expression difference}
-##' \item{cZ} {expression difference Z-score corrected for multiple hypothesis testing using Holm procedure}
+##' \item{cZ} {expression difference Z-score corrected for multiple hypothesis testing using Benjamini-Hochberg procedure}
 ##' }
 ##'  If batch correction has been performed (\code{batch} has been supplied), analogous data frames are returned in slots \code{$batch.adjusted} for batch-corrected results, and \code{$batch.effect} for the differences explained by batch effects alone.
 ##' }}
@@ -645,14 +645,14 @@ scde.posteriors <- function(models, counts, prior, n.randomizations = 100, batch
 # models - entire model matrix, or a subset of cells (i.e. select rows) of the model matrix for which the estimates should be obtained
 # counts - count data that covers the desired set of genes (rows) and all specified cells (columns)
 # return - a matrix of log(FPM) estimates with genes as rows and cells  as columns (in the model matrix order).
-##' Return scaled expression magnitude estimates
+##' Return scaled expression magnitude estimates (log FPM)
 ##'
-##' Return point estimates of expression magnitudes of each gene across a set of cells, based on the regression slopes determined during the model fitting procedure.
+##' Return point estimates of expression magnitudes (log FPM) of each gene across a set of cells, based on the regression slopes determined during the model fitting procedure.
 ##'
 ##' @param models models determined by \code{\link{scde.error.models}}
 ##' @param counts count matrix
 ##'
-##' @return a matrix of expression magnitudes on a log scale (rows - genes, columns - cells)
+##' @return a matrix of expression magnitudes on a natural log scale (rows - genes, columns - cells)
 ##'
 ##' @examples
 ##' data(es.mef.small)
@@ -1970,9 +1970,9 @@ pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = det
 pagoda.effective.cells <- function(pwpca, start = NULL) {
     n.genes <- unlist(lapply(pwpca, function(x) rep(x$n, nrow(x$z))))
     var <- unlist(lapply(pwpca, function(x) x$z[, 1]))^2
-    if(is.null(start)) { start <- nrow(pwpca[[1]]$xp$scores)*10 }
-
     n.cells <- nrow(pwpca[[1]]$xp$scores)
+    if(is.null(start)) { start <- n.cells*10 } # start with a high value
+    
     of <- function(p, v, sp) {
         sn <- p[1]
         vfit <- (sn+sp)^2/(sn*sn+1/2) -1.2065335745820*(sn+sp)*((1/sn + 1/sp)^(1/3))/(sn*sn+1/2)
@@ -2383,6 +2383,7 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
     } else {
         vdf$valid <- vdf$z  >=  z.score
     }
+    if(!any(vdf$valid)) { stop("no significantly overdispersed pathways found at z.score threshold of ",z.score) };
 
     if(return.table) {
         df <- df[vdf$valid, ]
@@ -2588,10 +2589,10 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
 ##' @param tam result of pagoda.top.aspects() call
 ##' @param varinfo result of pagoda.varnorm() call
 ##' @param method clustering method ('ward.D' by default)
-##' @param verbose 0 or 1 depending on level of desired verbosity
 ##' @param include.aspects whether the aspect patterns themselves should be included alongside with the individual genes in calculating cell distance
+##' @param verbose 0 or 1 depending on level of desired verbosity
 ##' @param return.details Boolean of whether to return just the hclust result or a list containing the hclust result plus the distance matrix and gene values
-##'
+##' @param min.overdispersion minimum overdispersion (residual vairance) that the genes must have in order to be included in the cell comparison (defaults to 1, which is the random expectation).
 ##' @return hclust result
 ##'
 ##' @examples
@@ -2607,10 +2608,10 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
 ##' }
 ##'
 ##' @export
-pagoda.cluster.cells <- function(tam, varinfo, method = "ward.D", include.aspects = FALSE, verbose = 0, return.details = FALSE) {
+pagoda.cluster.cells <- function(tam, varinfo, method = "ward.D", include.aspects = FALSE, verbose = 0, return.details = FALSE,min.overdispersion=1) {
     # gene clustering
     gw <- tam$gw
-    gw <- gw[(rowSums(varinfo$matw)*varinfo$arv)[names(gw)] > 1]
+    gw <- gw[(rowSums(varinfo$matw)*varinfo$arv)[names(gw)] > min.overdispersion]
 
     gw <- gw/gw
     mi <- match(names(gw), rownames(varinfo$mat))
@@ -2732,11 +2733,12 @@ view.aspects <- function(mat, row.clustering = NA, cell.clustering = NA, zlim = 
 ##' @param row.clustering Dendrogram of combined pathways clustering. Default NULL.
 ##' @param title Title text to be used in the browser label for the app. Default, set as 'pathway clustering'
 ##' @param zlim Range of the normalized gene expression levels, inputted as a list: c(lower_bound, upper_bound). Values outside this range will be Winsorized. Useful for increasing the contrast of the heatmap visualizations. Default, set to the 5th and 95th percentiles.
+##' @param embedding A 2-D embedding of the cells (PCA, tSNE, etc.), passed as a data frame with two columns (two dimensions) and rows corresponding to cells (row names have to match cell names)
 ##'
 ##' @return PAGODA app
 ##'
 ##' @export
-make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.cols = NULL, cell.clustering = NULL, row.clustering = NULL, title = "pathway clustering", zlim = c(-1, 1)*quantile(tamr$xv, p = 0.95),inchlib=T) {
+make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.cols = NULL, cell.clustering = NULL, row.clustering = NULL, title = "pathway clustering", zlim = c(-1, 1)*quantile(tamr$xv, p = 0.95),embedding=NULL,inchlib=T) {
     # rcm - xv
     
     # matvar
@@ -2754,6 +2756,17 @@ make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.co
       nmm[is.na(nmm)] <- as.character(row.clustering$merge)[is.na(nmm)]
       row.clustering$merge <- matrix(as.integer(nmm),ncol=ncol(row.clustering$merge))
       row.clustering$order <- as.integer(or);
+    }
+    if(!is.null(embedding)) {
+      if(is.null(rownames(embedding))) { stop("provided 2D embedding lacks cell names") }
+      vi <- rownames(embedding) %in% colnames(tamr$xv);
+      if(!all(vi)) {
+        warning("provided 2D embedding contains cells that are not in the tamr");
+        embedding <- embedding[vi,];
+        if(nrow(embedding)<2) {
+          stop("provided 2D embedding contains too few cells after intersecting with the cell names in tamr");
+        }
+      }
     }
 
     #fct - which tam row in which tamr$xv cluster.. remap tamr$cnams
@@ -2793,7 +2806,7 @@ make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.co
         set.env <- env
     }
   if(inchlib) {
-    sa <- ViewPagodaApp$new(fres, df, gene.df, varinfo$mat, varinfo$matw, set.env, name = title, trim = 0, batch = varinfo$batch)
+    sa <- ViewPagodaApp$new(fres, df, gene.df, varinfo$mat, varinfo$matw, set.env, name = title, trim = 0, batch = varinfo$batch,embedding=embedding)
   } else {
     sa <- ViewPagodaAppOld$new(fres, df, gene.df, varinfo$mat, varinfo$matw, set.env, name = title, trim = 0, batch = varinfo$batch)
   }
@@ -6386,10 +6399,10 @@ ViewPagodaAppOld <- setRefClass(
 
 ViewPagodaApp <- setRefClass(
     'ViewPagodaApp',
-    fields = c('results', 'genes', 'pathways', 'mat', 'matw', 'goenv', 'renv', 'name', 'trim', 'batch'),
+    fields = c('results', 'genes', 'pathways', 'mat', 'matw', 'goenv', 'renv', 'name', 'trim', 'batch','embedding'),
     methods = list(
 
-        initialize = function(results, pathways, genes, mat, matw, goenv, batch = NULL, name = "pathway overdispersion", trim = 1.1/ncol(mat)) {
+        initialize = function(results, pathways, genes, mat, matw, goenv, batch = NULL, name = "pathway overdispersion", trim = 1.1/ncol(mat), embedding=NULL) {
             results <<- results
             #results$tvc$order <<- rev(results$tvc$order);
             results$tvc$labels <<- as.character(1:nrow(results$rcm));
@@ -6400,19 +6413,17 @@ ViewPagodaApp <- setRefClass(
             mat <<- mat
             matw <<- matw
             batch <<- batch
-            goenv <<- goenv
             pathways <<- pathways
             name <<- name
             trim <<- trim
+            embedding <<- embedding
             # reverse lookup environment
-            renvt <- new.env(parent = globalenv())
-            xn <- ls(envir = goenv)
-            xl <- mget(xn, envir = goenv)
-            gel <- tapply(rep(xn, unlist(lapply(xl, length))), unlist(xl), I)
+            xl <- as.list(goenv);
+            gel <- tapply(rep(names(xl), unlist(lapply(xl, length))), unlist(xl), I)
             gel <- gel[nchar(names(gel)) > 0]
-            x <- lapply(names(gel), function(n) assign(n, gel[[n]], envir = renvt))
-            renv <<- renvt
-            rm(xn, xl, x, gel, renvt)
+            renv <<- list2env(gel,parent=emptyenv());
+            goenv <<- list2env(xl,parent=emptyenv());
+            rm(xl,gel)
             gc()
             callSuper()
         },
@@ -6469,7 +6480,8 @@ ViewPagodaApp <- setRefClass(
                                      <link rel = "icon" type = "image/png" href = "http://pklab.med.harvard.edu/sde/pagoda.png" >
                                      <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/extjs/ext-all.js" > </script >
                                      <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/jquery-1.11.1.min.js" > </script >
-                                     <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/pathcl_canvas.js" > </script >
+                                     <script src = "http://d3js.org/d3.v3.min.js" charset = "utf-8" > </script >
+                                     <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/pathcl_canvas_1.1.js" > </script >
                                      </head >
                                      <body > </body >
                                      </html >
@@ -6503,6 +6515,10 @@ ViewPagodaApp <- setRefClass(
                                        rows=rev(rownames(results$colcol))
                        )
                        ol <- list(matrix = matrix, rowcols = rowcols, colcols = colcols, coldend = treeg, trim = trim)
+                       if(!is.null(embedding)) {
+                         # report embedding, along with the position of each cell in the pathway matrix
+                         ol$embedding <- list(data=data.frame(t(cbind(embedding,match(rownames(embedding),matrix$cols)))),xrange=range(embedding[,1]),yrange=range(embedding[,2]));
+                       }
                        s <- toJSON(ol)
                        res$header('Content-Type', 'application/javascript')
                        if(!is.null(req$params()$callback)) {
@@ -6528,20 +6544,13 @@ ViewPagodaApp <- setRefClass(
                        twosided <- ifelse(is.null(req$params()$twosided), FALSE, as.logical(req$params()$twosided))
                        ltrim <- ifelse(is.null(req$params()$trim), 0/ncol(mat), as.numeric(req$params()$trim))
                        pws <- fromJSON(req$POST()$genes)
+                       
                        n.pcs <- as.integer(gsub("^#PC(\\d+)# .*", "\\1", pws))
                        n.pcs[is.na(n.pcs)]<-1
                        x <- c.view.pathways(gsub("^#PC\\d+# ", "", pws), mat, matw, goenv = goenv, n.pc = n.pcs, n.genes = ngenes, two.sided = twosided, vhc = results$hvc, plot = FALSE, trim = ltrim, batch = batch)
-                       #x <- t.view.pathways(gsub("^#PC\\d+# ", "", pws), mat, matw, env = goenv, vhc = results$hvc, plot = FALSE, trim = ltrim, n.pc = 1)
-                       ##rsc <- as.vector(rowSums(matw[rownames(x$rotation), ]))*x$rotation[, 1]
-                       #rsc <- x$rotation[, 1]
-                       #if(twosided) {
-                       #  extgenes <- unique(c(names(sort(rsc))[1:min(length(rsc), round(ngenes/2))], names(rev(sort(rsc)))[1:min(length(rsc), round(ngenes/2))]))
-                       # } else {
-                       #   extgenes <- names(sort(abs(rsc), decreasing = TRUE))[1:min(length(rsc), ngenes)]
-                       #}
-                       #ol <- getgenecldata(extgenes, ltrim = ltrim)
                        ol <- getgenecldata(genes = NULL, gcl = x, ltrim = ltrim)
                        s <- toJSON(ol)
+                       
                        res$header('Content-Type', 'application/javascript')
                        if(!is.null(req$params()$callback)) {
                            res$write(paste(req$params()$callback, "(", s, ")", sep = ""))
@@ -6721,11 +6730,12 @@ ViewPagodaApp <- setRefClass(
 
                    },
                    '/celltable.txt' = {
-                       matrix <- results$rcm[rev(results$tvc$order), results$hvc$order]
-                       body <- paste(capture.output(write.table(round(matrix, 1), sep = "\t")), collapse = "\n")
-                       res$header('Content-Type', 'text/plain')
-                       #res$header('"Content-disposition": attachment')
-                       res$write(body)
+                     
+                     matrix <- rbind(results$colcol[,results$hvc$order],round(results$rcm[rev(results$tvc$order), results$hvc$order],1))
+                     body <- paste(capture.output(write.table(matrix, sep = "\t",quote=F)), collapse = "\n")
+                     res$header('Content-Type', 'text/plain')
+                                        #res$header('"Content-disposition": attachment')
+                     res$write(body)
                    },
                    {
                      res$header('Location', 'index.html')
