@@ -1,0 +1,113 @@
+.tab-cont {
+    float: left;
+    margin: 0 15px 15px 0;
+}
+
+.tab-icon {
+    background-image: url(extjs/examples/shared/icons/fam/application_view_list.png);
+}
+.pathcl-icon {
+    background-image: url(extjs/examples/shared/icons/fam/text_list_bullets.png);
+}
+
+.colormap {
+    shape-rendering: crispEdges;
+}
+
+.rowLabel {
+    text-anchor: start;
+    dominant-baseline: middle;
+    font: 18px sans-serif;
+}
+
+.geneRowLabel {
+    text-anchor: start;
+    dominant-baseline: middle;
+    font: 12px sans-serif;
+}
+
+/* cross hairs */
+.crosshair line {
+    display:none;
+    pointer-events:none;
+}
+.highlighting .crosshair line {
+  display:inline;
+  stroke-dasharray: 5,5;
+  stroke: black;
+  stroke-width: 1px;
+  pointer-events:none;
+}
+line.highlighting.crosshair {
+    display:inline;
+    stroke-dasharray: 5,5;
+    stroke: black;
+    stroke-width: 1px;
+    pointer-events:none;
+}
+g.crosshair text {
+    display:none;
+    pointer-events:none;
+}
+.highlighting g.crosshair text {
+    display:inline;
+    fill: black;
+    font: 18px sans-serif;
+    font-weight: bold;
+}
+
+div.positive .x-progress-bar.x-progress-bar-default{
+    background-color: #FFABAB;
+    background-image: none;
+}
+div.x-progress .x-progress-text.x-progress-text-back {
+    color:black;
+}
+div.x-progress.x-progress-default {
+    border-color: black; 
+    background-color: #EEEEEE;
+
+}
+div.negative .x-progress-bar.x-progress-bar-default{
+    background-color: #85C2FF;
+    background-image: none;
+}
+
+div.x-progress .x-progress-text {
+    text-align: left;
+    color: black;
+    font-weight: normal;
+    padding-left: 5px;
+}
+
+#pathclsvg path {
+    vector-effect: non-scaling-stroke;
+}
+
+rect.datapt {
+    pointer-events: all;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+
+circle {
+    stroke: black;
+    stroke-width: 0.5;
+    fill-opacity: 0.7;
+}
+
+circle.selected {
+    stroke: black; 
+    stroke-width: 2.0;
+    fill-opacity:1;
+}

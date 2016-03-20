@@ -1,0 +1,19 @@
+body {
+    margin: 0px;
+    margin-top: 0;
+}
+
+table#elevels {
+    //background-color:#FFFFFF;
+    //border: solid #000 2px;
+    width: 500px;
+ }
+ table#elevels th {
+     padding: 5px;
+     text-align: center;
+ }
+ table#elevels td {
+    padding: 5px;
+    text-align: center;
+    border: solid #000 1px;
+ }
