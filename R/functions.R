@@ -210,7 +210,7 @@ scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshol
 ##' @param show.plot show the estimate posterior
 ##' @param pseudo.count pseudo-count value to use (default 1)
 ##' @param bw smoothing bandwidth to use in estimating the prior (default: 0.1)
-##' @param max.quantile determine the maximum expression magnitude based on a quantile (default : 0.999)
+##' @param max.quantile determine the maximum expression magnitude based on a quantile (default : 1)
 ##' @param max.value alternatively, specify the exact maximum expression magnitude value
 ##'
 ##' @return a structure describing expression magnitude grid ($x, on log10 scale) and prior ($y)
@@ -222,7 +222,7 @@ scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshol
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ##'
 ##' @export
-scde.expression.prior <- function(models, counts, length.out = 400, show.plot = FALSE, pseudo.count = 1, bw = 0.1, max.quantile = 1-1e-3, max.value = NULL) {
+scde.expression.prior <- function(models, counts, length.out = 400, show.plot = FALSE, pseudo.count = 1, bw = 0.1, max.quantile = 1, max.value = NULL) {
     fpkm <- scde.expression.magnitude(models, counts)
     fail <- scde.failure.probability(models, counts = counts)
     fpkm <- log10(exp(as.matrix(fpkm))+1)
@@ -267,6 +267,7 @@ scde.expression.prior <- function(models, counts, length.out = 400, show.plot = 
 ##' @param n.cores number of cores to utilize
 ##' @param batch.models (optional) separate models for the batch data (if generated using batch-specific group argument). Normally the same models are used.
 ##' @param return.posteriors whether joint posterior matrices should be returned
+##' @param expectation M level corresponding to H0 hypothesis (usually 0, unless a deviation for a given gene is expected). Given on log2 scale.
 ##' @param verbose integer verbose level (1 for verbose)
 ##'
 ##' @return \subsection{default}{
@@ -300,7 +301,7 @@ scde.expression.prior <- function(models, counts, length.out = 400, show.plot = 
 ##' }
 ##'
 ##' @export
-scde.expression.difference <- function(models, counts, prior, groups = NULL, batch = NULL, n.randomizations = 150, n.cores = 10, batch.models = models, return.posteriors = FALSE, verbose = 0) {
+scde.expression.difference <- function(models, counts, prior, groups = NULL, batch = NULL, n.randomizations = 150, n.cores = 10, batch.models = models, return.posteriors = FALSE, expectation=0, verbose = 0) {
     if(!all(rownames(models) %in% colnames(counts))) {
         stop("ERROR: provided count data does not cover all of the cells specified in the model matrix")
     }
@@ -380,7 +381,7 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
     if(verbose) {
         cat("summarizing differences\n")
     }
-    bdiffp.rep <- quick.distribution.summary(bdiffp)
+    bdiffp.rep <- quick.distribution.summary(bdiffp,expectation=expectation)
 
     if(correct.batch) {
         if(verbose) {
@@ -388,7 +389,7 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
         }
         # adjust for batch effects
         a.bdiffp <- calculate.ratio.posterior(bdiffp, batch.bdiffp, prior = data.frame(x = as.numeric(colnames(bdiffp)), y = rep(1/ncol(bdiffp), ncol(bdiffp))), skip.prior.adjustment = TRUE, n.cores = n.cores)
-        a.bdiffp.rep <- quick.distribution.summary(a.bdiffp)
+        a.bdiffp.rep <- quick.distribution.summary(a.bdiffp,expectation=expectation)
 
         # return with batch correction info
         if(return.posteriors) {
@@ -481,7 +482,7 @@ show.app <- function(app, name, browse = TRUE, port = NULL, ip = '127.0.0.1', se
     if (tools:::httpdPort() !=0 && tools:::httpdPort() != port) {
         cat("ERROR: port is already being used. The PAGODA app is currently incompatible with RStudio. Please try running the interactive app in the R console.")
     }
-    if(is.null(server)) { server <- get.scde.server(port) }
+    if(is.null(server)) { server <- get.scde.server(port=port,ip=ip) }
     server$add(app = app, name = name)
     if(browse) {
         browseURL(paste(server$full_url(name), "index.html", sep = "/"))
@@ -739,6 +740,7 @@ scde.failure.probability <- function(models, magnitudes = NULL, counts = NULL) {
 ##' @param ratio.range optionally specifies the range of the log2 expression ratio plot
 ##' @param show.individual.posteriors whether the individual cell expression posteriors should be plotted
 ##' @param n.cores number of cores to use (default = 1)
+##' @param expectation M level corresponding to H0 hypothesis (usually 0, unless a deviation for a given gene is expected). Given on log2 scale.
 ##'
 ##' @return by default returns MLE of log2 expression difference, 95% CI (upper, lower bound), and a Z-score testing for expression difference. If return.details = TRUE, a list is returned containing the above structure, as well as the expression fold difference posterior itself.
 ##'
@@ -750,7 +752,7 @@ scde.failure.probability <- function(models, magnitudes = NULL, counts = NULL) {
 ##' scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior = o.prior)
 ##'
 ##' @export
-scde.test.gene.expression.difference <- function(gene, models, counts, prior, groups = NULL, batch = NULL, batch.models = models, n.randomizations = 1e3, show.plots = TRUE, return.details = FALSE, verbose = FALSE, ratio.range = NULL, show.individual.posteriors = TRUE, n.cores = 1) {
+scde.test.gene.expression.difference <- function(gene, models, counts, prior, groups = NULL, batch = NULL, batch.models = models, n.randomizations = 1e3, show.plots = TRUE, return.details = FALSE, verbose = FALSE, ratio.range = NULL, show.individual.posteriors = TRUE, expectation=0, n.cores = 1) {
     if(!gene %in% rownames(counts)) {
         stop("ERROR: specified gene (", gene, ") is not found in the count data")
     }
@@ -780,7 +782,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 
     bdiffp <- calculate.ratio.posterior(jpl[[1]]$jp, jpl[[2]]$jp, prior, n.cores = n.cores)
 
-    bdiffp.rep <- quick.distribution.summary(bdiffp)
+    bdiffp.rep <- quick.distribution.summary(bdiffp,expectation=expectation)
 
     nam1 <- levels(groups)[1]
     nam2 <- levels(groups)[2]
@@ -810,7 +812,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
         })
         batch.bdiffp <- calculate.ratio.posterior(batch.jpl[[1]], batch.jpl[[2]], prior, n.cores = n.cores)
         a.bdiffp <- calculate.ratio.posterior(bdiffp, batch.bdiffp, prior = data.frame(x = as.numeric(colnames(bdiffp)), y = rep(1/ncol(bdiffp), ncol(bdiffp))), skip.prior.adjustment = TRUE)
-        a.bdiffp.rep <- quick.distribution.summary(a.bdiffp)
+        a.bdiffp.rep <- quick.distribution.summary(a.bdiffp,expectation=expectation)
     }
 
 
@@ -847,7 +849,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
         rp <- as.numeric(bdiffp[1, ])
         plot(rv, rp, xlab = "log2 expression ratio", ylab = "ratio posterior", type = 'l', lwd = ifelse(correct.batch, 1, 2), main = "", axes = FALSE, xlim = ratio.range, ylim = c(0, max(bdiffp)))
         axis(1, pretty(ratio.range, 5), col = 1)
-        abline(v = 0, lty = 2, col = 8)
+        abline(v = expectation, lty = 2, col = 8)
         if(correct.batch) { # with batch correction
             # show batch difference
             par(new = TRUE)
@@ -3480,13 +3482,23 @@ calculate.ratio.posterior <- function(pmat1, pmat2, prior, n.cores = 15, skip.pr
 }
 
 # quick utility function to get the difference Z score from the ratio posterior
-get.ratio.posterior.Z.score <- function(rpost, min.p = 1e-15) {
+# exectation - H0 M value (in the same scale as rpost columns, usually log10)
+get.ratio.posterior.Z.score <- function(rpost, min.p = 1e-15, expectation=0) {
     rpost <- rpost+min.p
     rpost <- rpost/rowSums(rpost)
-    zi <- which.min(abs(as.numeric(colnames(rpost))))
-    gs <- rowSums(rpost[, 1:(zi-1), drop = FALSE])
+    if(length(expectation)>1) {
+      if(length(expectation)!=nrow(rpost)) { stop("the expectation parameter must be either one number or a vector equal to the number of genes being tested") }
+      mvs <- as.numeric(colnames(rpost))
+      zi <- unlist(lapply(expectation,function(x) which.min(abs(mvs-x))))
+      gs <- unlist(lapply(1:nrow(rpost),function(i) sum(rpost[i, 1:(zi[i]-1), drop = FALSE])))
+      zv <- unlist(lapply(1:nrow(rpost),function(i) rpost[i, zi[i]]))
+    } else {
+      zi <- which.min(abs(as.numeric(colnames(rpost))-expectation)); # grid position closest to 0
+      gs <- rowSums(rpost[, 1:(zi-1), drop = FALSE])
+      zv <- rpost[, zi, drop = FALSE];
+    }
     zl <- pmin(0, qnorm(gs, lower.tail = FALSE))
-    zg <- pmax(0, qnorm(gs+rpost[, zi, drop = FALSE], lower.tail = FALSE))
+    zg <- pmax(0, qnorm(gs+zv, lower.tail = FALSE))
     z <- ifelse(abs(zl) > abs(zg), zl, zg)
 }
 
@@ -4995,7 +5007,8 @@ pairs.extended <- function (x, labels, panel = points, ...,
 
 
 # given a set of pdfs (columns), calculate summary statistics (mle, 95% CI, Z-score deviations from 0)
-quick.distribution.summary <- function(s.bdiffp) {
+# expectation - the M value representing H0 (usually 0), given on log2 scale
+quick.distribution.summary <- function(s.bdiffp,expectation=0) {
     diffv <- as.numeric(colnames(s.bdiffp))
     dq <- t(apply(s.bdiffp, 1, function(p) {
         mle <- which.max(p)
@@ -5006,7 +5019,7 @@ quick.distribution.summary <- function(s.bdiffp) {
     cq <- rep(0, nrow(dq))
     cq[dq[, 1] > 0] <- dq[dq[, 1] > 0, 1]
     cq[dq[, 3]<0] <- dq[dq[, 3]<0, 3]
-    z <- get.ratio.posterior.Z.score(s.bdiffp)
+    z <- get.ratio.posterior.Z.score(s.bdiffp,expectation=expectation/log2(10))
     za <- sign(z)*qnorm(p.adjust(pnorm(abs(z), lower.tail = FALSE), method = "BH"), lower.tail = FALSE)
     data.frame(dq, "ce" = as.numeric(cq), "Z" = as.numeric(z), "cZ" = as.numeric(za))
 }
@@ -5472,20 +5485,18 @@ ViewDiff <- setRefClass(
                        body <- paste('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd" >
                                      <html >
                                      <head >
-                                     <meta http-equiv = "Content-Type" content = "text/html charset = iso-8859-1" >
+                                     <meta http-equiv = "Content-Type" content = "text/html; charset = iso-8859-1" >
                                      <title > SCDE: ', paste(levels(groups), collapse = " vs. "), '</title >
-                                     <!-- ExtJS -- >
-                                     <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/extjs/resources/ext-theme-neptune/ext-theme-neptune-all.css" / >
 
-                                     <!-- Shared -- >
+                                     <!--<link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/extjs/resources/ext-theme-neptune/ext-theme-neptune-all.css" / >-->
+                                     <link rel="stylesheet" type="text/css" href="http://pklab.med.harvard.edu/sde/ext-4.2.1.883/resources/css/ext-all.css" />
                                      <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/ext-4.2.1.883/examples/shared/example.css" / >
 
                                      <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/additional.css" / >
-                                     <!-- GC -- >
 
                                      <style type = "text/css" >
-                                     .x-panel-framed {
-                                     padding: 0
+                                         .x-panel-framed {
+                                         padding: 0
                                      }
                                      </style >
                                      <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/ext-4.2.1.883/ext-all.js" > </script >
@@ -5544,7 +5555,7 @@ ViewDiff <- setRefClass(
 
                        t <- tempfile()
                        #require(Cairo)
-                       CairoPNG(filename = TRUE, width = 350, height = 560)
+                       CairoPNG(filename = t, width = 350, height = 560)
                        scde.test.gene.expression.difference(gene = gene, models = models, counts = counts, groups = groups, prior = prior, batch = batch, ratio.range = c(-10, 10), show.individual.posteriors = show.individual.posteriors, verbose = FALSE)
                        dev.off()
                        res$header('Content-type', 'image/png')
