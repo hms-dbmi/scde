@@ -3,7 +3,9 @@ layout: default
 ---
 
 <h1>
-<a id="scde" class="anchor" href="#scde" aria-hidden="true"><span class="octicon octicon-link"></span></a>Overview of SCDE</h1>
+<a id="overview-of-scde" class="anchor" href="#overview-of-scde" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overview of SCDE</h1>
+
+<p><a href="https://travis-ci.org/hms-dbmi/scde"><img src="https://travis-ci.org/hms-dbmi/scde.svg?branch=master" alt="Build Status"></a></p>
 
 <p>The <code>scde</code> package implements a set of statistical methods for analyzing single-cell RNA-seq data. <code>scde</code> fits individual error models for single-cell RNA-seq measurements. These models can then be used for assessment of differential expression between groups of cells, as well as other types of analysis. The <code>scde</code> package also contains the <code>pagoda</code> framework which applies pathway and gene set overdispersion analysis to identify aspects of transcriptional heterogeneity among single cells. </p>
 
@@ -13,11 +15,13 @@ layout: default
 <p>The overall approach to pathways and gene set overdispersion analysis is detailed in the following publication:
 <a href="http://www.nature.com/nmeth/journal/vaop/ncurrent/full/nmeth.3734.html">"Characterizing transcriptional heterogeneity through pathway and gene set overdispersion analysis" (Fan J, Salathia N, Liu R, Kaeser G, Yung Y, Herman J, Kaper F, Fan JB, Zhang K, Chun J, and Kharchenko PV, Nature Methods, doi:10.1038/nmeth.3734)</a></p>
 
+<p><strong>For additional installation information, tutorials, and more, please visit <a href="http://hms-dbmi.github.io/scde/">the SCDE website ☞</a></strong></p>
+
 <h1>
-<a id="sample-analyses-and-images" class="anchor" href="#sample-analyses-and-images" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sample analyses and images</h1>
+<a id="sample-analyses-and-images" class="anchor" href="#sample-analyses-and-images" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Sample analyses and images</h1>
 
 <h2>
-<a id="single-cell-error-modeling" class="anchor" href="#single-cell-error-modeling" aria-hidden="true"><span class="octicon octicon-link"></span></a>Single cell error modeling</h2>
+<a id="single-cell-error-modeling" class="anchor" href="#single-cell-error-modeling" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Single cell error modeling</h2>
 
 <table>
   <tr>
@@ -31,7 +35,7 @@ layout: default
 </table>
 
 <h2>
-<a id="differential-expression-analysis" class="anchor" href="#differential-expression-analysis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Differential expression analysis</h2>
+<a id="differential-expression-analysis" class="anchor" href="#differential-expression-analysis" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Differential expression analysis</h2>
 
 <table>
   <tr>
@@ -53,7 +57,7 @@ Ift46     5.435 7.366  9.217 5.435 7.150 5.968</pre>
 </table>
 
 <h2>
-<a id="pathway-and-gene-set-overdispersion-analysis" class="anchor" href="#pathway-and-gene-set-overdispersion-analysis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Pathway and gene set overdispersion analysis</h2>
+<a id="pathway-and-gene-set-overdispersion-analysis" class="anchor" href="#pathway-and-gene-set-overdispersion-analysis" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Pathway and gene set overdispersion analysis</h2>
 
 <table>
   <tr>
@@ -61,9 +65,7 @@ Ift46     5.435 7.366  9.217 5.435 7.150 5.968</pre>
       <img src="https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/PAGODA.gif" width="400px"> 
     </td>
     <td>
-      <code>scde</code> contains <code>pagoda</code> routines that characterize aspects of transcriptional heterogeneity in populations of single cells using pre-defined gene sets as well as 'de novo' gene sets derived from the data. Significant aspects are used to cluster cells into subpopulations. <a href="http://pklab.med.harvard.edu/scde/pagoda.links.html">A graphical user interface can be deployed to interactively explore results</a>. 
+      <code>scde</code> contains <code>pagoda</code> routines that characterize aspects of transcriptional heterogeneity in populations of single cells using pre-defined gene sets as well as 'de novo' gene sets derived from the data. Significant aspects are used to cluster cells into subpopulations. A graphical user interface can be deployed to interactively explore results. See examples from the PAGODA publication <a href="http://pklab.med.harvard.edu/scde/pagoda.links.html">here</a>. See analysis of the PBMC data from 10x Genomics <a href="http://pklab.med.harvard.edu/cgi-bin/R/rook/10x.pbmc/index.html">here</a>.
     </td>
   </tr>
 </table>
-    
-
