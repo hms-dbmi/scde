@@ -32,7 +32,7 @@ Fitting error models
 
 Next, we'll construct error models for individual cells. Here, we use k-nearest neighbor model fitting procedure implemented by `knn.error.models()` method. This is a relatively noisy dataset (non-UMI), so we raise the `min.count.threshold` to 2 (minimum number of reads for the gene to be initially classified as a non-failed measurement), requiring at least 5 non-failed measurements per gene. We're providing a rough guess to the complexity of the population, by fitting the error models based on 1/4 of most similar cells (i.e. guessing there might be ~4 subpopulations).
 
-Note this step takes a considerable amount of time unless multiple cores are used. We highly recommend use of multiple cores. You can check the number of available cores available using `detectCores()`. 
+Note this step takes a considerable amount of time unless multiple cores are used. We highly recommend use of multiple cores. You can check the number of available cores available using `detectCores()`.
 
 ``` r
 # EVALUATION NOT NEEDED
@@ -226,6 +226,31 @@ pagoda.show.pathways(c("GO:0022008","GO:0048699"), varinfo, go.env, cell.cluster
 ```
 
 ![](figures/pagoda-showTopPathwayGenes-1.png)
+
+### Adding 2D embedding
+
+One can add a 2D embedding of the cells to aid visualization. The code below uses PAGODA's weighted Pearson correlation distance (that was used to derive hierarchical clustering) to generate a tSNE embedding of the cells:
+
+``` r
+library(Rtsne);
+# recalculate clustering distance .. we'll need to specify return.details=T
+cell.clustering <- pagoda.cluster.cells(tam,varinfo,include.aspects=TRUE,verbose=TRUE,return.details=T)
+# fix the seed to ensure reproducible results
+set.seed(0); 
+tSNE.pagoda <- Rtsne(cell.clustering$distance,is_distance=T,initial_dims=100,perplexity=10)
+par(mfrow=c(1,1), mar = c(2.5,2.5,2.0,0.5), mgp = c(2,0.65,0), cex = 1.0);
+plot(tSNE.pagoda$Y,col=adjustcolor(col.cols,alpha=0.5),cex=1,pch=19,xlab="",ylab="")
+```
+
+![](figures/pagoda-tSNE-1.png)<!-- -->
+
+The resulting embedding can be passed into the PAGODA app to visualize individual aspects, genes, etc. within this embedding:
+
+``` r
+app <- make.pagoda.app(tamr2, tam, varinfo, go.env, pwpca, clpca, col.cols = col.cols, cell.clustering = hc, title = "NPCs", embedding = tSNE.pagoda$Y)
+# show app in the browser (port 1468)
+show.app(app, "pollen", browse = TRUE, port = 1468) 
+```
 
 Controlling for undesired aspects of heterogeneity
 --------------------------------------------------

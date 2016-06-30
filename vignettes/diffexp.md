@@ -123,6 +123,12 @@ head(ediff[order(ediff$Z, decreasing  =  TRUE), ])
 write.table(ediff[order(abs(ediff$Z), decreasing = TRUE), ], file = "results.txt", row.names = TRUE, col.names = TRUE, sep = "\t", quote = FALSE)
 ```
 
+One can also browse the differentially expressed genes, along with the associated posterior distributions, using a web browser application. The command below will start an internal web server accessible on port 1299 and call up a browser to point to the resulting page (note: internal browser doesn't work under RStudio)
+
+``` r
+scde.browse.diffexp(ediff, o.ifm, cd, o.prior, groups = groups, name = "diffexp1", port = 1299)
+```
+
 Alternatively we can run the differential expression on a single gene, and visualize the results:
 
 ``` r
