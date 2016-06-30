@@ -209,6 +209,27 @@ Similar views can be obtained in the R session itself. For instance, here we'll 
 pagoda.show.pathways(c("GO:0022008","GO:0048699"), varinfo, go.env, cell.clustering = hc, margins = c(1,5), show.cell.dendrogram = TRUE, showRowLabels = TRUE, showPC = TRUE)
 ```
 
+### Adding 2D embedding
+One can add a 2D embedding of the cells to aid visualization. The code below uses PAGODA's weighted Pearson correlation distance (that was used to derive hierarchical clustering) to generate a tSNE embedding of the cells:
+
+```{r, tSNE, fig.height=3.5, fig.width=3.5}
+library(Rtsne);
+# recalculate clustering distance .. we'll need to specify return.details=T
+cell.clustering <- pagoda.cluster.cells(tam,varinfo,include.aspects=TRUE,verbose=TRUE,return.details=T)
+# fix the seed to ensure reproducible results
+set.seed(0); 
+tSNE.pagoda <- Rtsne(cell.clustering$distance,is_distance=T,initial_dims=100,perplexity=10)
+par(mfrow=c(1,1), mar = c(2.5,2.5,2.0,0.5), mgp = c(2,0.65,0), cex = 1.0);
+plot(tSNE.pagoda$Y,col=adjustcolor(col.cols,alpha=0.5),cex=1,pch=19,xlab="",ylab="")
+```
+
+The resulting embedding can be passed into the PAGODA app to visualize individual aspects, genes, etc. within this embedding:
+```{r, tSNEapp, eval=FALSE}
+app <- make.pagoda.app(tamr2, tam, varinfo, go.env, pwpca, clpca, col.cols = col.cols, cell.clustering = hc, title = "NPCs", embedding = tSNE.pagoda$Y)
+# show app in the browser (port 1468)
+show.app(app, "pollen", browse = TRUE, port = 1468) 
+```
+
 ## Controlling for undesired aspects of heterogeneity
 
 Depending on the biological setting, certain dominant aspects of transcriptional heterogeneity may not be of interest. To explicitly control for these aspects of heterogeneity that are not of interest, we will use `pagoda.subtract.aspect` method that we've previously used to control for residual patterns associated with sequencing depth differences. Here, we illustrate how to control for the mitotic cell cycle pattern (GO:0000280 nuclear division and GO:0007067 mitotic nuclear division) which showed up as one of the four significant aspects in the analysis above.
