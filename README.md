@@ -53,7 +53,7 @@ Ift46     5.435 7.366  9.217 5.435 7.150 5.968</pre>
       <img src="vignettes/figures/PAGODA.gif" width="400px"> 
     </td>
     <td>
-      <code>scde</code> contains <code>pagoda</code> routines that characterize aspects of transcriptional heterogeneity in populations of single cells using pre-defined gene sets as well as 'de novo' gene sets derived from the data. Significant aspects are used to cluster cells into subpopulations. A graphical user interface can be deployed to interactively explore results. 
+      <code>scde</code> contains <code>pagoda</code> routines that characterize aspects of transcriptional heterogeneity in populations of single cells using pre-defined gene sets as well as 'de novo' gene sets derived from the data. Significant aspects are used to cluster cells into subpopulations. A graphical user interface can be deployed to interactively explore results. See examples from the PAGODA publication <a href="http://pklab.med.harvard.edu/scde/pagoda.links.html">here</a>. See analysis of the PBMC data from 10x Genomics <a href="http://pklab.med.harvard.edu/cgi-bin/R/rook/10x.pbmc/index.html">here</a>.
     </td>
   </tr>
 </table>
