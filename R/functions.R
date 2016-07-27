@@ -478,22 +478,19 @@ scde.browse.diffexp <- function(results, models, counts, prior, groups = NULL, b
 show.app <- function(app, name, port, ip, browse = TRUE,  server = NULL) {
   # replace special characters
   name <- gsub("[^[:alnum:.]]", "_", name)
-    
-  #if (tools:::httpdPort() !=0 && tools:::httpdPort() != port) {
-  #      cat("ERROR: port is already being used. The PAGODA app is currently incompatible with RStudio. Please try running the interactive app in the R console.")
- #   }
+
   if(is.null(server)) {
     server <- get.scde.server(port=port,ip=ip)
   }
   server$add(app = app, name = name)
+  if(is.function(server$listenPort)) {
+    url <- paste("http://", server$listenAddr, ":", server$listenPort(), server$appList[[name]]$path,"/index.html",sep='')
+  } else {
+    url <- paste("http://", server$listenAddr, ":", server$listenPort, server$appList[[name]]$path,"/index.html",sep='')
+  }
+  print("app loaded at: ",url)
   if(browse) {
-    if(is.function(server$listenPort)) {
-      browseURL(paste("http://", server$listenAddr, ":", server$listenPort(), server$appList[[name]]$path,"/index.html",sep=''))
-    } else {
-      browseURL(paste("http://", server$listenAddr, ":", server$listenPort, server$appList[[name]]$path,"/index.html",sep=''))
-    }
-        
-    #browseURL(paste(server$full_url(name), "index.html", sep = "/")) # seems to be defective in the latest rook because of the listenPort handling
+    browseURL(url);
   }
 
   return(invisible(server))
