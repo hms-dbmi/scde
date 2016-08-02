@@ -488,7 +488,7 @@ show.app <- function(app, name, port, ip, browse = TRUE,  server = NULL) {
   } else {
     url <- paste("http://", server$listenAddr, ":", server$listenPort, server$appList[[name]]$path,"/index.html",sep='')
   }
-  print("app loaded at: ",url)
+  print(paste("app loaded at: ",url,sep=""))
   if(browse) {
     browseURL(url);
   }
