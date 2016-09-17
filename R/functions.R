@@ -496,6 +496,15 @@ show.app <- function(app, name, port, ip, browse = TRUE,  server = NULL) {
   return(invisible(server))
 }
 
+##' Launch a web view listing current PAGODA apps
+##' 
+##' @param ... all the parameters are passed to show.app()
+##' @export
+show.pagoda.app.table <- function(name="applist",...) {
+  x <- ListPagodaAppsApp()
+  show.app(x,name=name,...)
+}
+
 # get SCDE server from saved session
 get.scde.server <- function(port,ip) {
     if(exists("___scde.server", envir = globalenv())) {
@@ -2427,7 +2436,7 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
         xm <- t(x$xp$scoreweights)
     }))
     vi <- vdf$valid
-    xvw <- xvw[vi, ]/rowSums(xvw[vi, ])
+    xvw <- xvw[vi, ,drop=FALSE ]/rowSums(xvw[vi, ,drop=FALSE])
 
     # return scaled patterns
     xmv <- do.call(rbind, lapply(pwpca, function(x) {
@@ -2435,10 +2444,10 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
     }))
 
     if(use.oe.scale) {
-        xmv <- (xmv[vi, ] -rowMeans(xmv[vi, ]))* (as.numeric(vdf$oe[vi])/sqrt(apply(xmv[vi, ], 1, var)))
+        xmv <- (xmv[vi, ,drop=FALSE] -rowMeans(xmv[vi, ,drop=FALSE]))* (as.numeric(vdf$oe[vi])/sqrt(apply(xmv[vi, ,drop=FALSE], 1, var)))
     } else {
         # chi-squared
-        xmv <- (xmv[vi, ]-rowMeans(xmv[vi, ])) * sqrt((qchisq(pnorm(vdf$z[vi], lower.tail = FALSE, log.p = TRUE), n.cells, lower.tail = FALSE, log.p = TRUE)/n.cells)/apply(xmv[vi, ], 1, var))
+        xmv <- (xmv[vi, ,drop=FALSE]-rowMeans(xmv[vi, ,drop=FALSE])) * sqrt((qchisq(pnorm(vdf$z[vi], lower.tail = FALSE, log.p = TRUE), n.cells, lower.tail = FALSE, log.p = TRUE)/n.cells)/apply(xmv[vi,,drop=FALSE ], 1, var))
     }
     rownames(xmv) <- paste("#PC", vdf$npc[vi], "# ", names(pwpca)[vdf$i[vi]], sep = "")
 
@@ -6419,4 +6428,111 @@ ViewPagodaApp <- setRefClass(
 )
 
 
+
+# app for listing current PAGODA applications
+
+ListPagodaAppsApp <- setRefClass(
+  'ListPagodaAppsApp',
+  methods = list(
+    
+    initialize = function() {
+      callSuper()
+    },
+    call = function(env){
+      path <- env[['PATH_INFO']]
+      req <- Request$new(env)
+      res <- Response$new()
+      # default response
+      path <- env[['PATH_INFO']]
+      req <- Request$new(env)
+      res <- Response$new()
+      switch(path,
+             { # default
+               if(exists("___scde.server", envir = globalenv())) {
+                 server <- get("___scde.server", envir = globalenv())
+                 content <- '<table id="apps" class="table table-striped table-bordered" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Cells</th>
+                <th>Genes</th>
+                <th>Pathways</th>
+                <th>Aspects</th>
+            </tr>
+        </thead>
+        <tbody>';
+                 for(a in server$appList) {
+                   if(class(a$app)[1]!="ViewPagodaApp") { next; }
+                   if(is.function(server$listenPort)) {
+                     url <- paste("http://", server$listenAddr, ":", server$listenPort(), a$path,"/index.html",sep='')
+                   } else {
+                     url <- paste("http://", server$listenAddr, ":", server$listenPort, a$path,"/index.html",sep='')
+                   }
+                   content <- paste(content,'
+            <tr>
+                <th><a href="',url,'">',a$name,'</a></th>
+                <th>',ncol(a$app$mat),'</th>
+                <th>',nrow(a$app$mat),'</th>
+                <th>',nrow(a$app$pathways),'</th>
+                <th>',nrow(a$app$results$rcm),'</th>
+            </tr>
+          ',sep='');
+                 }
+                 content <- paste(content,'</tbody>
+    </table>');
+               } else {
+                 content <- "<h3>Unable to locate internal web server</h3>"
+                 
+               }
+               
+               body <- paste('<!DOCTYPE html >
+				       <meta charset = "utf-8" >
+				       <html >
+				       <head >
+				       <title >PAGODA app list</title >
+				       <meta http-equiv = "Content-Type" content = "text/html charset = iso-8859-1" >
+				        <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/bootstrap/3.3.7/css/bootstrap.min.css" / >
+               <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/bootstrap/3.3.7/css/dataTables.bootstrap.min.css" / >
+				      
+				       <link rel = "icon" type = "image/png" href = "http://pklab.med.harvard.edu/sde/pagoda.png" >
+				       <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/jquery/jquery-1.12.3.js" > </script >
+				       <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/bootstrap/3.3.6/jquery.dataTables.min.js" > </script >
+				       <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/bootstrap/3.3.7/js/dataTables.bootstrap.min.js" > </script >
+                                       <script>$(document).ready(function() {
+                                                  $("#apps").DataTable({
+                                                    pageLength:25
+                                                  });
+                                               } );
+                                       </script>
+				       </head >
+				       <body > 
+
+     <div class="container">
+
+       <div class="header clearfix">
+
+        <h1 class="text-muted"><a href="http://pklab.med.harvard.edu/scde/">SCDE</a></h1>
+      </div>
+
+      
+      <div class="row marketing">
+        <div class="well">
+          <h4>PAGODA Apps</h4>
+
+',content,' 
+          </h4>
+        </div>
+      </div>
+    </div>
+</body >
+				       </html >
+				       ', sep = "")
+               res$header('"Content-Type": "text/html"')
+               res$write(body)
+             }
+      )
+      res$finish()
+    }
+  )
+)
 

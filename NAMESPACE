@@ -25,6 +25,7 @@ export(show.app)
 export(winsorize.matrix)
 export(clean.counts)
 export(clean.gos)
+export(show.pagoda.app.table)
 useDynLib(scde)
 
 # custom additions
