@@ -5835,6 +5835,7 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
         #lab <- match(names(selected.genes), rownames(mat))
         lab <- names(selected.genes);
 
+
         if(length(lab) == 0)
             return(NULL)
         if(length(lab)<3) { return(NULL) }
@@ -5864,7 +5865,7 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
         dw <- matw[lab, , drop = FALSE]
         consensus.npc = n.pc[1] # use specified PC as a pattern
     }
-
+    names(lab) <- lab;
     d <- d-rowMeans(d)
     dd <- as.dist(1-abs(cor(t(as.matrix(d)))))
     dd[is.na(dd)] <- 1
@@ -5890,6 +5891,8 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
               hc <- list(); attributes(hc) <- list(members=1,height=0,label=lab[1],leaf=T); class(hc) <- "dendrogram";
             }
         }
+    } else {
+      hc <- NULL;
     }
 
     if(is.null(vhc)) {
@@ -5952,7 +5955,9 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
     }
     xp$vhc <- vhc
     xp$lab <- lab
-    xp$hc <- as.dendrogram(hc)
+    if(!is.null(hc)) {
+      xp$hc <- as.dendrogram(hc)
+    }
     xp$row.order <- row.order
     xp$oc <- oc
     xp$col <- col
