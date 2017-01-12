@@ -1,4 +1,4 @@
-Package: scde
+Package: scdemultithreadfix
 Type: Package
 Title: Single Cell Differential Expression
 Version: 1.99.4
