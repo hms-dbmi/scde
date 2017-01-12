@@ -26,7 +26,7 @@ export(winsorize.matrix)
 export(clean.counts)
 export(clean.gos)
 export(show.pagoda.app.table)
-useDynLib(scdemultithreadfix)
+useDynLib(scde)
 
 # custom additions
 importFrom(Cairo,CairoPNG)
