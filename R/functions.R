@@ -3274,7 +3274,7 @@ calculate.individual.models <- function(counts, groups, cfm, nrep = 1, verbose =
         # pair cell name matrix
         nm <- do.call(rbind, lapply(rl, function(x) x$ii))
 
-        ml <- papply(seq_along(ids), function(i) { try({
+        ml <- null.mclapply(seq_along(ids), function(i) { try({
             if(verbose)  message(paste(i, ":", ids[i]))
             # determine genes with sufficient number of non-failed observations in other experiments
             vi <- which(rowSums(vil[, -i, drop = FALSE]) >= min(length(ids)-1, min.nonfailed))
@@ -6059,6 +6059,20 @@ papply <- function(...,n.cores=detectCores()) {
   } else { # fall back on lapply
     lapply(...);
   }
+}
+
+null.mclapply <- function(X,FUN,n.cores,...) {
+    require(parallel)
+    base <- paste0(tempdir(),"/",paste0(sample(c(letters,LETTERS,0:9), replace=T,size=12),collapse=""))
+    message(paste0("Saving results to ",base))
+    mclapply(seq_along(X),function(i) {
+        saveRDS(FUN(X[i]),file=paste0(base,"_",i,".Rds"),compress=F)
+        return(NULL)
+    }, mc.cores=n.cores,...)
+    message(paste0("Reading results from ",base))
+    mclapply(seq_along(X),function(i) {
+        readRDS(paste0(base,"_",i,".Rds"))
+    },mc.cores=n.cores,...)
 }
 
 
