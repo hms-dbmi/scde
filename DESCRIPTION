@@ -34,7 +34,8 @@ LazyData: true
 Depends: R (>= 3.0.0), flexmix
 Imports: Rcpp (>= 0.10.4), RcppArmadillo (>= 0.5.400.2.0), mgcv, Rook,
         rjson, MASS, Cairo, RColorBrewer, edgeR, quantreg, methods,
-        nnet, RMTstat, extRemes, pcaMethods, BiocParallel, parallel
+        nnet, RMTstat, extRemes, pcaMethods, BiocParallel, parallel,
+	AnnotationDbi
 Suggests: knitr, cba, fastcluster, WGCNA, GO.db, org.Hs.eg.db, rmarkdown
 biocViews: RNASeq, StatisticalMethod, DifferentialExpression, Bayesian,
         Transcription, Software
