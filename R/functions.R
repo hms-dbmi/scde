@@ -93,7 +93,7 @@ clean.gos <- function(go.env, min.size = 5, max.size = 5000, annot = FALSE) {
   go.env <- go.env[size > min.size & size < max.size]
   # If we have GO.db installed, then add the term to each GO code.
   if (annot && "GO.db" %in% installed.packages()[,1]) {
-    desc <- select(
+    desc <- AnnotationDbi::select(
       GO.db,
       keys = names(go.env),
       columns = c("TERM"),
