@@ -16,12 +16,14 @@ r:
  - release
  - devel
 
-r_binary-packages:
-  - r-cran-flexmix=2.3-13-1cran1ppa0
+install:
+  - R -e 'devtools::install_deps(dependencies = TRUE)'
+  - R -e 'devtools::install_version("flexmix", "2.3-13")'
 
 # do not build vignettes...takes too long and times out on travis
-r_build_args: --no-build-vignettes --no-manual
-r_check_args: --no-build-vignettes --no-manual --timings
+script:
+  - R CMD build --no-build-vignettes --no-manual .
+  - R CMD check --no-build-vignettes --no-manual --timings *tar.gz
 
 # catch package installation issues sooner rather than later
 r_github_packages:
