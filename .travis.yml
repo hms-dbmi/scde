@@ -17,6 +17,7 @@ r:
  - devel
 
 install:
+  - R -e 'install.packages("devtools")'
   - R -e 'devtools::install_deps(dependencies = TRUE)'
   - R -e 'devtools::install_version("flexmix", "2.3-13")'
 
