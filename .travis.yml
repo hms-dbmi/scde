@@ -7,6 +7,8 @@ warnings_are_errors: false
 env:
   global:
     - BIOC_USE_DEVEL="FALSE"  ## Use the current release version
+    - _R_CHECK_FORCE_SUGGESTS_="FALSE"  ## Some suggested packages not
+                                        ## available for r-oldrel
 
 r:
  - oldrel
