@@ -13,6 +13,11 @@ r:
  - release
  - devel
 
+addons:
+  apt:
+    packages:
+      - libnlopt-dev
+
 install:
   - R -e 'install.packages("devtools")'
   - R -e 'devtools::install_deps(dependencies = TRUE)'
