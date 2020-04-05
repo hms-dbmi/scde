@@ -106,6 +106,16 @@ head(<span class="pl-smi">ediff</span>[order(<span class="pl-smi">ediff</span><s
 ## 4930509G22Rik 5.409999 7.478528  9.785734 5.409999 7.115605 5.978296
 </code></pre>
 
+<p>The columns in the table above are:
+    <ul>
+            <li><b>mle:</b> log2 fold expression difference value, reported as maximum likelihood estimate (mle)</li>
+            <li><b>lb, ub:</b> 95% lower bound (lb) and upper bound (ub) of the log2 fold expression difference value</li>
+            <li><b>ce:</b> conservative estiamte of the log2 fold expression difference value (upper or lower bound, whichever is closer to 0, or 0 if the 95% confidence interval includes 0)</li>
+            <li><b>Z:</b> statistical significance of the expression differences, expressed as a signed Z score (can be directly converted to P values; roughly a p-value of 1e-2 would correspond to a Z score around 2.3, and a p-value of 1e-3 to 3.1; Z scores are signed, so that the positive values correspond to up-regulated genes, negative to downregulated)</li>
+            <li><b>cZ:</b> Z score adjusted for multiple hypothesis testing</li>
+    </ul>
+</p>
+
 <div class="highlight highlight-source-r"><pre><span class="pl-c"># write out a table with all the results, showing most significantly different genes (in both directions) on top</span>
 write.table(<span class="pl-smi">ediff</span>[order(abs(<span class="pl-smi">ediff</span><span class="pl-k">$</span><span class="pl-smi">Z</span>), <span class="pl-v">decreasing</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>), ], <span class="pl-v">file</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>results.txt<span class="pl-pds">"</span></span>, <span class="pl-v">row.names</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">col.names</span> <span class="pl-k">=</span> <span class="pl-c1">TRUE</span>, <span class="pl-v">sep</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\t</span><span class="pl-pds">"</span></span>, <span class="pl-v">quote</span> <span class="pl-k">=</span> <span class="pl-c1">FALSE</span>)</pre></div>
 
