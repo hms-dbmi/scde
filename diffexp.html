@@ -111,7 +111,7 @@ head(<span class="pl-smi">ediff</span>[order(<span class="pl-smi">ediff</span><s
             <li><b>mle:</b> log2 fold expression difference value, reported as maximum likelihood estimate (mle)</li>
             <li><b>lb, ub:</b> 95% lower bound (lb) and upper bound (ub) of the log2 fold expression difference value</li>
             <li><b>ce:</b> conservative estiamte of the log2 fold expression difference value (upper or lower bound, whichever is closer to 0, or 0 if the 95% confidence interval includes 0)</li>
-            <li><b>Z:</b> statistical significance of the expression differences, expressed as a signed Z score (can be directly converted to P values; roughly a p-value of 1e-2 would correspond to a Z score around 2.3, and a p-value of 1e-3 to 3.1; Z scores are signed, so that the positive values correspond to up-regulated genes, negative to downregulated)</li>
+            <li><b>Z:</b> statistical significance of the expression differences, expressed as a signed Z score (can be directly converted to P values; roughly a p-value of 1e-2 would correspond to a Z score around 2.3, and a p-value of 1e-3 to 3.1; One can convert Z scores back to p-values using <code>pnorm(Z,lower.tail=F)</code> for upregulated genes and <code>pnorm(Z,lower.tail=T)</code> for downregulated genes; Z scores are signed, so that the positive values correspond to up-regulated genes, negative to downregulated)</li>
             <li><b>cZ:</b> Z score adjusted for multiple hypothesis testing</li>
     </ul>
 </p>
