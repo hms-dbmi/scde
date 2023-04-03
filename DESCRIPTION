@@ -1,8 +1,7 @@
 Package: scde
 Type: Package
 Title: Single Cell Differential Expression
-Version: 1.99.4
-Date: 2016-08-26
+Version: 2.62.2
 Description: The scde package implements a set of statistical methods for
     analyzing single-cell RNA-seq data. scde fits individual error models for
     single-cell RNA-seq measurements. These models can then be used for assessment
@@ -19,14 +18,14 @@ Description: The scde package implements a set of statistical methods for
     analysis" (Fan J, Salathia N, Liu R, Kaeser G, Yung Y, Herman J, Kaper F,
     Fan JB, Zhang K, Chun J, and Kharchenko PV, Nature Methods, doi:10.1038/nmeth.3734).
 Author: Peter Kharchenko [aut, cre],
-    Jean Fan [aut]
+    Jean Fan [aut], Evan Biederstedt [aut]
 Authors@R: c(
     person("Peter", "Kharchenko", role = c("aut", "cre"),
 		     email = "peter_kharchenko@hms.harvard.edu"),
     person("Jean", "Fan", role = "aut",
 	         email = "jeanfan@fas.harvard.edu")
 	         )
-Maintainer: Jean Fan <jeanfan@fas.harvard.edu>
+Maintainer: Evan Biederstedt <evan.biederstedt@gmail.com>
 URL: http://pklab.med.harvard.edu/scde
 BugReports: https://github.com/hms-dbmi/scde/issues
 License: GPL-2

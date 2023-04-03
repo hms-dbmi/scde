@@ -8,7 +8,9 @@ The overall approach to the differential expression analysis is detailed in the 
 The overall approach to pathways and gene set overdispersion analysis is detailed in the following publication:
 ["Characterizing transcriptional heterogeneity through pathway and gene set overdispersion analysis" (Fan J, Salathia N, Liu R, Kaeser G, Yung Y, Herman J, Kaper F, Fan JB, Zhang K, Chun J, and Kharchenko PV, Nature Methods, doi:10.1038/nmeth.3734)](http://www.nature.com/nmeth/journal/vaop/ncurrent/full/nmeth.3734.html)
 
-**For additional installation information, tutorials, and more, please visit [the SCDE website ☞](http://hms-dbmi.github.io/scde/)**
+**For additional installation information, tutorials, and more, please visit [the SCDE website ☞](http://hms-dbmi.github.io/scde/) and [the Bioconductor package page](https://bioconductor.org/packages/release/bioc/html/scde.html)**
+
+**Note:** We recommend that users refer to the package [pagoda2](https://github.com/kharchenkolab/pagoda2). While we do continue to maintain the [Bioconductor package](https://bioconductor.org/packages/release/bioc/html/scde.html), we don't have the bandwidth to address all bugs and feature requests reported in this repo. 
 
 # Sample analyses and images
 
@@ -58,10 +60,18 @@ Ift46     5.435 7.366  9.217 5.435 7.150 5.968</pre>
     
 ---
     
-`scde` is maintained by [Jean Fan](https://github.com/jefworks) of the [Kharchenko Lab](http://pklab.med.harvard.edu/) at the [Department of Biomedical Informatics at Harvard Medical School](https://github.com/hms-dbmi).
+`scde` is maintained by [Jean Fan](https://github.com/jefworks) and [Evan Biederstedt](https://github.com/evanbiederstedt) of the [Kharchenko Lab](http://pklab.med.harvard.edu/) at the [Department of Biomedical Informatics at Harvard Medical School](https://github.com/hms-dbmi).
 
 ---
 
 # Contributing
 
 We welcome any bug reports, enhancement requests, and other contributions. To submit a bug report or enhancement request, please use the [`scde` GitHub issues tracker](https://github.com/hms-dbmi/scde/issues). For more substantial contributions, please fork this repo, push your changes to your fork, and submit a pull request with a good commit message. For more general discussions or troubleshooting, please consult the [`scde` Google Group](http://hms-dbmi.github.io/scde/help.html).  
+
+
+## Citation
+If you find `leidenAlg` useful for your publication, please cite:
+
+```
+Kharchenko P, Fan J (2023). scde: Single Cell Differential Expression. R package version 2.26.2, http://pklab.med.harvard.edu/scde.
+```
