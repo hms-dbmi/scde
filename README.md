@@ -1,3 +1,5 @@
+[![](https://img.shields.io/badge/release%20version-2.26.2-green.svg)](https://www.bioconductor.org/packages/scde)
+
 # Overview of SCDE
 
 The `scde` package implements a set of statistical methods for analyzing single-cell RNA-seq data. `scde` fits individual error models for single-cell RNA-seq measurements. These models can then be used for assessment of differential expression between groups of cells, as well as other types of analysis. The `scde` package also contains the `pagoda` framework which applies pathway and gene set overdispersion analysis to identify aspects of transcriptional heterogeneity among single cells. 
@@ -18,7 +20,7 @@ The overall approach to pathways and gene set overdispersion analysis is detaile
 <table>
   <tr>
     <td width=400px>
-      <img src="inst/figures/pagoda-cell.model.fits-0.png" width="400px">
+      <img src="https://github.com/hms-dbmi/scde/blob/develop/inst/figures/pagoda-cell.model.fits-0.png" width="400px">
     </td>
     <td>
       <code>scde</code> fits individual error models for single cells using counts derived from single-cell RNA-seq data to estimate drop-out and amplification biases on gene expression magnitude.
@@ -30,7 +32,7 @@ The overall approach to pathways and gene set overdispersion analysis is detaile
 <table>
   <tr>
     <td width=250px>
-      <img src="inst/figures/scde-diffexp3-1.png" width="250px">
+      <img src="https://github.com/hms-dbmi/scde/blob/develop/inst/figures/scde-diffexp3-1.png" width="250px">
     </td>
     <td>
       <pre>
@@ -50,7 +52,7 @@ Ift46     5.435 7.366  9.217 5.435 7.150 5.968</pre>
 <table>
   <tr>
     <td width=400px>
-      <img src="inst/figures/PAGODA.gif" width="400px"> 
+      <img src="https://github.com/hms-dbmi/scde/blob/develop/inst/figures/PAGODA.gif" width="400px"> 
     </td>
     <td>
       <code>scde</code> contains <code>pagoda</code> routines that characterize aspects of transcriptional heterogeneity in populations of single cells using pre-defined gene sets as well as 'de novo' gene sets derived from the data. Significant aspects are used to cluster cells into subpopulations. A graphical user interface can be deployed to interactively explore results. See examples from the PAGODA publication <a href="http://pklab.med.harvard.edu/scde/pagoda.links.html">here</a>. See analysis of the PBMC data from 10x Genomics <a href="http://pklab.med.harvard.edu/cgi-bin/R/rook/10x.pbmc/index.html">here</a>.
