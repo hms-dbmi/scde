@@ -22,7 +22,6 @@ void set_random_matrix(arma::mat& target,arma::mat& source) {
     std::vector<int> ind(target.n_rows);
     for(int j=0;j<target.n_rows;j++) {
         ind[j]=j;
-        R_CheckUserInterrupt();
     } // set up initial index (1,2,3)
 
     for(int i=0;i<target.n_cols;i++) {
@@ -30,7 +29,6 @@ void set_random_matrix(arma::mat& target,arma::mat& source) {
         //std::sort(ind.start(), ind.end(), std::bind(compare_on_other,  _1, _2, rv));
         for(int j=0;j<target.n_rows;j++) {
             target(j,i)=source(ind[j],i);
-            //R_CheckUserInterrupt();
         }
         R_CheckUserInterrupt();
     }
@@ -41,7 +39,6 @@ void set_random_matrices(arma::mat& target1,arma::mat& source1,arma::mat& target
     std::vector<int> ind(target1.n_rows);
     for(int j=0;j<target1.n_rows;j++) {
         ind[j]=j;
-        R_CheckUserInterrupt();
     } // set up initial index (1,2,3)
 
     for(int i=0;i<target1.n_cols;i++) {
@@ -50,7 +47,6 @@ void set_random_matrices(arma::mat& target1,arma::mat& source1,arma::mat& target
         for(int j=0;j<target1.n_rows;j++) {
             target1(j,i)=source1(ind[j],i);
             target2(j,i)=source2(ind[j],i);
-            //R_CheckUserInterrupt();
         }
         R_CheckUserInterrupt();
     }
@@ -315,8 +311,8 @@ void baileyWPCAround(arma::mat& m,arma::mat& mw,int nstarts,int npcs,int seed,in
             bestcoef=bcoef;
             besteigenv=beigenv;
         }
+
+	R_CheckUserInterrupt();
+
     }
-
-    R_CheckUserInterrupt();
-
 }

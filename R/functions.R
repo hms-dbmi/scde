@@ -93,7 +93,7 @@ clean.gos <- function(go.env, min.size = 5, max.size = 5000, annot = FALSE) {
   go.env <- go.env[size > min.size & size < max.size]
   # If we have GO.db installed, then add the term to each GO code.
   if (annot && "GO.db" %in% installed.packages()[,1]) {
-    desc <- AnnotationDbi::select(
+    desc <- MASS::select(
       GO.db,
       keys = names(go.env),
       columns = c("TERM"),
@@ -210,7 +210,7 @@ scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshol
 ##' @param show.plot show the estimate posterior
 ##' @param pseudo.count pseudo-count value to use (default 1)
 ##' @param bw smoothing bandwidth to use in estimating the prior (default: 0.1)
-##' @param max.quantile determine the maximum expression magnitude based on a quantile (default : 1)
+##' @param max.quantile determine the maximum expression magnitude based on a quantile (default : 0.999)
 ##' @param max.value alternatively, specify the exact maximum expression magnitude value
 ##'
 ##' @return a structure describing expression magnitude grid ($x, on log10 scale) and prior ($y)
@@ -222,7 +222,7 @@ scde.error.models <- function(counts, groups = NULL, min.nonfailed = 3, threshol
 ##' o.prior <- scde.expression.prior(models = o.ifm, counts = cd, length.out = 400, show.plot = FALSE)
 ##'
 ##' @export
-scde.expression.prior <- function(models, counts, length.out = 400, show.plot = FALSE, pseudo.count = 1, bw = 0.1, max.quantile = 1, max.value = NULL) {
+scde.expression.prior <- function(models, counts, length.out = 400, show.plot = FALSE, pseudo.count = 1, bw = 0.1, max.quantile = 1-1e-3, max.value = NULL) {
     fpkm <- scde.expression.magnitude(models, counts)
     fail <- scde.failure.probability(models, counts = counts)
     fpkm <- log10(exp(as.matrix(fpkm))+1)
@@ -267,7 +267,6 @@ scde.expression.prior <- function(models, counts, length.out = 400, show.plot = 
 ##' @param n.cores number of cores to utilize
 ##' @param batch.models (optional) separate models for the batch data (if generated using batch-specific group argument). Normally the same models are used.
 ##' @param return.posteriors whether joint posterior matrices should be returned
-##' @param expectation M level corresponding to H0 hypothesis (usually 0, unless a deviation for a given gene is expected). Given on log2 scale.
 ##' @param verbose integer verbose level (1 for verbose)
 ##'
 ##' @return \subsection{default}{
@@ -276,7 +275,7 @@ scde.expression.prior <- function(models, counts, length.out = 400, show.plot = 
 ##' \item{lb, mle, ub} {lower bound, maximum likelihood estimate, and upper bound of the 95% confidence interval for the expression fold change on log2 scale.}
 ##' \item{ce} { conservative estimate of expression-fold change (equals to the min(abs(c(lb, ub))), or 0 if the CI crosses the 0}
 ##' \item{Z} { uncorrected Z-score of expression difference}
-##' \item{cZ} {expression difference Z-score corrected for multiple hypothesis testing using Benjamini-Hochberg procedure}
+##' \item{cZ} {expression difference Z-score corrected for multiple hypothesis testing using Holm procedure}
 ##' }
 ##'  If batch correction has been performed (\code{batch} has been supplied), analogous data frames are returned in slots \code{$batch.adjusted} for batch-corrected results, and \code{$batch.effect} for the differences explained by batch effects alone.
 ##' }}
@@ -301,7 +300,7 @@ scde.expression.prior <- function(models, counts, length.out = 400, show.plot = 
 ##' }
 ##'
 ##' @export
-scde.expression.difference <- function(models, counts, prior, groups = NULL, batch = NULL, n.randomizations = 150, n.cores = 10, batch.models = models, return.posteriors = FALSE, expectation=0, verbose = 0) {
+scde.expression.difference <- function(models, counts, prior, groups = NULL, batch = NULL, n.randomizations = 150, n.cores = 10, batch.models = models, return.posteriors = FALSE, verbose = 0) {
     if(!all(rownames(models) %in% colnames(counts))) {
         stop("ERROR: provided count data does not cover all of the cells specified in the model matrix")
     }
@@ -381,7 +380,7 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
     if(verbose) {
         cat("summarizing differences\n")
     }
-    bdiffp.rep <- quick.distribution.summary(bdiffp,expectation=expectation)
+    bdiffp.rep <- quick.distribution.summary(bdiffp)
 
     if(correct.batch) {
         if(verbose) {
@@ -389,7 +388,7 @@ scde.expression.difference <- function(models, counts, prior, groups = NULL, bat
         }
         # adjust for batch effects
         a.bdiffp <- calculate.ratio.posterior(bdiffp, batch.bdiffp, prior = data.frame(x = as.numeric(colnames(bdiffp)), y = rep(1/ncol(bdiffp), ncol(bdiffp))), skip.prior.adjustment = TRUE, n.cores = n.cores)
-        a.bdiffp.rep <- quick.distribution.summary(a.bdiffp,expectation=expectation)
+        a.bdiffp.rep <- quick.distribution.summary(a.bdiffp)
 
         # return with batch correction info
         if(return.posteriors) {
@@ -475,57 +474,29 @@ scde.browse.diffexp <- function(results, models, counts, prior, groups = NULL, b
 ##' @return Rook server instance
 ##'
 ##' @export
-show.app <- function(app, name, port, ip, browse = TRUE,  server = NULL) {
-  # replace special characters
-  name <- gsub("[^[:alnum:.]]", "_", name)
-
-  if(is.null(server)) {
-    server <- get.scde.server(port=port,ip=ip)
-  }
-  server$add(app = app, name = name)
-  if(is.function(server$listenPort)) {
-    url <- paste("http://", server$listenAddr, ":", server$listenPort(), server$appList[[name]]$path,"/index.html",sep='')
-  } else {
-    url <- paste("http://", server$listenAddr, ":", server$listenPort, server$appList[[name]]$path,"/index.html",sep='')
-  }
-  print(paste("app loaded at: ",url,sep=""))
-  if(browse) {
-    browseURL(url);
-  }
-
-  return(invisible(server))
+show.app <- function(app, name, browse = TRUE, port = NULL, ip = '127.0.0.1', server = NULL) {
+    # replace special characters
+    name <- gsub("[^[:alnum:]]", "_", name)
+    
+    if (tools:::httpdPort() !=0 && tools:::httpdPort() != port) {
+        cat("ERROR: port is already being used. The PAGODA app is currently incompatible with RStudio. Please try running the interactive app in the R console.")
+    }
+    if(is.null(server)) { server <- get.scde.server(port) }
+    server$add(app = app, name = name)
+    if(browse) {
+        browseURL(paste(server$full_url(name), "index.html", sep = "/"))
+    }
+    return(server)
 }
-
-##' Launch a web view listing current PAGODA apps
-##' 
-##' @param ... all the parameters are passed to show.app()
-##' @export
-show.pagoda.app.table <- function(name="applist",...) {
-  x <- ListPagodaAppsApp()
-  show.app(x,name=name,...)
-}
-
 # get SCDE server from saved session
-get.scde.server <- function(port,ip) {
+get.scde.server <- function(port = NULL, ip = '127.0.0.1') {
     if(exists("___scde.server", envir = globalenv())) {
         server <- get("___scde.server", envir = globalenv())
     } else {
         require(Rook)
         server <- Rhttpd$new()
         assign("___scde.server", server, envir = globalenv())
-        if(!missing(ip)) {
-          if(missing(port)) {
-            server$start(listen = ip)
-          } else {
-            server$start(listen = ip, port = port)
-          }
-        } else {
-          if(missing(port)) {
-            server$start()
-          } else {
-            server$start(port=port)
-          }
-        }
+        server$start(listen = ip, port = port)
     }
     return(server)
 }
@@ -674,14 +645,14 @@ scde.posteriors <- function(models, counts, prior, n.randomizations = 100, batch
 # models - entire model matrix, or a subset of cells (i.e. select rows) of the model matrix for which the estimates should be obtained
 # counts - count data that covers the desired set of genes (rows) and all specified cells (columns)
 # return - a matrix of log(FPM) estimates with genes as rows and cells  as columns (in the model matrix order).
-##' Return scaled expression magnitude estimates (log FPM)
+##' Return scaled expression magnitude estimates
 ##'
-##' Return point estimates of expression magnitudes (log FPM) of each gene across a set of cells, based on the regression slopes determined during the model fitting procedure.
+##' Return point estimates of expression magnitudes of each gene across a set of cells, based on the regression slopes determined during the model fitting procedure.
 ##'
 ##' @param models models determined by \code{\link{scde.error.models}}
 ##' @param counts count matrix
 ##'
-##' @return a matrix of expression magnitudes on a natural log scale (rows - genes, columns - cells)
+##' @return a matrix of expression magnitudes on a log scale (rows - genes, columns - cells)
 ##'
 ##' @examples
 ##' data(es.mef.small)
@@ -768,7 +739,6 @@ scde.failure.probability <- function(models, magnitudes = NULL, counts = NULL) {
 ##' @param ratio.range optionally specifies the range of the log2 expression ratio plot
 ##' @param show.individual.posteriors whether the individual cell expression posteriors should be plotted
 ##' @param n.cores number of cores to use (default = 1)
-##' @param expectation M level corresponding to H0 hypothesis (usually 0, unless a deviation for a given gene is expected). Given on log2 scale.
 ##'
 ##' @return by default returns MLE of log2 expression difference, 95% CI (upper, lower bound), and a Z-score testing for expression difference. If return.details = TRUE, a list is returned containing the above structure, as well as the expression fold difference posterior itself.
 ##'
@@ -780,7 +750,7 @@ scde.failure.probability <- function(models, magnitudes = NULL, counts = NULL) {
 ##' scde.test.gene.expression.difference("Tdh", models = o.ifm, counts = cd, prior = o.prior)
 ##'
 ##' @export
-scde.test.gene.expression.difference <- function(gene, models, counts, prior, groups = NULL, batch = NULL, batch.models = models, n.randomizations = 1e3, show.plots = TRUE, return.details = FALSE, verbose = FALSE, ratio.range = NULL, show.individual.posteriors = TRUE, expectation=0, n.cores = 1) {
+scde.test.gene.expression.difference <- function(gene, models, counts, prior, groups = NULL, batch = NULL, batch.models = models, n.randomizations = 1e3, show.plots = TRUE, return.details = FALSE, verbose = FALSE, ratio.range = NULL, show.individual.posteriors = TRUE, n.cores = 1) {
     if(!gene %in% rownames(counts)) {
         stop("ERROR: specified gene (", gene, ") is not found in the count data")
     }
@@ -810,7 +780,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
 
     bdiffp <- calculate.ratio.posterior(jpl[[1]]$jp, jpl[[2]]$jp, prior, n.cores = n.cores)
 
-    bdiffp.rep <- quick.distribution.summary(bdiffp,expectation=expectation)
+    bdiffp.rep <- quick.distribution.summary(bdiffp)
 
     nam1 <- levels(groups)[1]
     nam2 <- levels(groups)[2]
@@ -840,7 +810,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
         })
         batch.bdiffp <- calculate.ratio.posterior(batch.jpl[[1]], batch.jpl[[2]], prior, n.cores = n.cores)
         a.bdiffp <- calculate.ratio.posterior(bdiffp, batch.bdiffp, prior = data.frame(x = as.numeric(colnames(bdiffp)), y = rep(1/ncol(bdiffp), ncol(bdiffp))), skip.prior.adjustment = TRUE)
-        a.bdiffp.rep <- quick.distribution.summary(a.bdiffp,expectation=expectation)
+        a.bdiffp.rep <- quick.distribution.summary(a.bdiffp)
     }
 
 
@@ -877,7 +847,7 @@ scde.test.gene.expression.difference <- function(gene, models, counts, prior, gr
         rp <- as.numeric(bdiffp[1, ])
         plot(rv, rp, xlab = "log2 expression ratio", ylab = "ratio posterior", type = 'l', lwd = ifelse(correct.batch, 1, 2), main = "", axes = FALSE, xlim = ratio.range, ylim = c(0, max(bdiffp)))
         axis(1, pretty(ratio.range, 5), col = 1)
-        abline(v = expectation, lty = 2, col = 8)
+        abline(v = 0, lty = 2, col = 8)
         if(correct.batch) { # with batch correction
             # show batch difference
             par(new = TRUE)
@@ -1261,7 +1231,7 @@ knn.error.models <- function(counts, groups = NULL, k = round(ncol(counts)/2), m
         if(length(vic)<length(ids)) {
           message("ERROR fitting of ", (length(ids)-length(vic)), " out of ", length(ids), " cells resulted in errors reporting remaining ", length(vic), " cells")
         }
-        if(save.model.plots) {
+        if(length(vic)<length(ids)) {
                 # model fits
                 if(verbose)  message("plotting ", group, " model fits... ")
                 tryCatch( {
@@ -2000,9 +1970,9 @@ pagoda.pathway.wPCA <- function(varinfo, setenv, n.components = 2, n.cores = det
 pagoda.effective.cells <- function(pwpca, start = NULL) {
     n.genes <- unlist(lapply(pwpca, function(x) rep(x$n, nrow(x$z))))
     var <- unlist(lapply(pwpca, function(x) x$z[, 1]))^2
+    if(is.null(start)) { start <- nrow(pwpca[[1]]$xp$scores)*10 }
+
     n.cells <- nrow(pwpca[[1]]$xp$scores)
-    if(is.null(start)) { start <- n.cells*10 } # start with a high value
-    
     of <- function(p, v, sp) {
         sn <- p[1]
         vfit <- (sn+sp)^2/(sn*sn+1/2) -1.2065335745820*(sn+sp)*((1/sn + 1/sp)^(1/3))/(sn*sn+1/2)
@@ -2413,7 +2383,6 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
     } else {
         vdf$valid <- vdf$z  >=  z.score
     }
-    if(!any(vdf$valid)) { stop("no significantly overdispersed pathways found at z.score threshold of ",z.score) };
 
     if(return.table) {
         df <- df[vdf$valid, ]
@@ -2436,7 +2405,7 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
         xm <- t(x$xp$scoreweights)
     }))
     vi <- vdf$valid
-    xvw <- xvw[vi, ,drop=FALSE ]/rowSums(xvw[vi, ,drop=FALSE])
+    xvw <- xvw[vi, ]/rowSums(xvw[vi, ])
 
     # return scaled patterns
     xmv <- do.call(rbind, lapply(pwpca, function(x) {
@@ -2444,10 +2413,10 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
     }))
 
     if(use.oe.scale) {
-        xmv <- (xmv[vi, ,drop=FALSE] -rowMeans(xmv[vi, ,drop=FALSE]))* (as.numeric(vdf$oe[vi])/sqrt(apply(xmv[vi, ,drop=FALSE], 1, var)))
+        xmv <- (xmv[vi, ] -rowMeans(xmv[vi, ]))* (as.numeric(vdf$oe[vi])/sqrt(apply(xmv[vi, ], 1, var)))
     } else {
         # chi-squared
-        xmv <- (xmv[vi, ,drop=FALSE]-rowMeans(xmv[vi, ,drop=FALSE])) * sqrt((qchisq(pnorm(vdf$z[vi], lower.tail = FALSE, log.p = TRUE), n.cells, lower.tail = FALSE, log.p = TRUE)/n.cells)/apply(xmv[vi,,drop=FALSE ], 1, var))
+        xmv <- (xmv[vi, ]-rowMeans(xmv[vi, ])) * sqrt((qchisq(pnorm(vdf$z[vi], lower.tail = FALSE, log.p = TRUE), n.cells, lower.tail = FALSE, log.p = TRUE)/n.cells)/apply(xmv[vi, ], 1, var))
     }
     rownames(xmv) <- paste("#PC", vdf$npc[vi], "# ", names(pwpca)[vdf$i[vi]], sep = "")
 
@@ -2487,7 +2456,7 @@ pagoda.top.aspects <- function(pwpca, clpca = NULL, n.cells = NULL, z.score = qn
 ##' }
 ##'
 ##' @export
-pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = FALSE, cluster.method = "complete", distance.threshold = 0.01, corr.power = 4, n.cores = 1, abs = TRUE, ...) {
+pagoda.reduce.loading.redundancy <- function(tam, pwpca, clpca = NULL, plot = FALSE, cluster.method = "complete", distance.threshold = 0.01, corr.power = 4, n.cores = detectCores(), abs = TRUE, ...) {
     pclc <- pathway.pc.correlation.distance(c(pwpca, clpca$cl.goc), tam$xv, target.ndf = 100, n.cores = n.cores)
     cda <- cor(t(tam$xv))
     if(abs) {
@@ -2619,10 +2588,10 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
 ##' @param tam result of pagoda.top.aspects() call
 ##' @param varinfo result of pagoda.varnorm() call
 ##' @param method clustering method ('ward.D' by default)
-##' @param include.aspects whether the aspect patterns themselves should be included alongside with the individual genes in calculating cell distance
 ##' @param verbose 0 or 1 depending on level of desired verbosity
+##' @param include.aspects whether the aspect patterns themselves should be included alongside with the individual genes in calculating cell distance
 ##' @param return.details Boolean of whether to return just the hclust result or a list containing the hclust result plus the distance matrix and gene values
-##' @param min.overdispersion minimum overdispersion (residual vairance) that the genes must have in order to be included in the cell comparison (defaults to 1, which is the random expectation).
+##'
 ##' @return hclust result
 ##'
 ##' @examples
@@ -2638,10 +2607,10 @@ pagoda.reduce.redundancy <- function(tamr, distance.threshold = 0.2, cluster.met
 ##' }
 ##'
 ##' @export
-pagoda.cluster.cells <- function(tam, varinfo, method = "ward.D", include.aspects = FALSE, verbose = 0, return.details = FALSE,min.overdispersion=1) {
+pagoda.cluster.cells <- function(tam, varinfo, method = "ward.D", include.aspects = FALSE, verbose = 0, return.details = FALSE) {
     # gene clustering
     gw <- tam$gw
-    gw <- gw[(rowSums(varinfo$matw)*varinfo$arv)[names(gw)] > min.overdispersion]
+    gw <- gw[(rowSums(varinfo$matw)*varinfo$arv)[names(gw)] > 1]
 
     gw <- gw/gw
     mi <- match(names(gw), rownames(varinfo$mat))
@@ -2763,40 +2732,19 @@ view.aspects <- function(mat, row.clustering = NA, cell.clustering = NA, zlim = 
 ##' @param row.clustering Dendrogram of combined pathways clustering. Default NULL.
 ##' @param title Title text to be used in the browser label for the app. Default, set as 'pathway clustering'
 ##' @param zlim Range of the normalized gene expression levels, inputted as a list: c(lower_bound, upper_bound). Values outside this range will be Winsorized. Useful for increasing the contrast of the heatmap visualizations. Default, set to the 5th and 95th percentiles.
-##' @param embedding A 2-D embedding of the cells (PCA, tSNE, etc.), passed as a data frame with two columns (two dimensions) and rows corresponding to cells (row names have to match cell names)
 ##'
 ##' @return PAGODA app
 ##'
 ##' @export
-make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.cols = NULL, cell.clustering = NULL, row.clustering = NULL, title = "pathway clustering", zlim = c(-1, 1)*quantile(tamr$xv, p = 0.95),embedding=NULL,inchlib=T) {
+make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.cols = NULL, cell.clustering = NULL, row.clustering = NULL, title = "pathway clustering", zlim = c(-1, 1)*quantile(tamr$xv, p = 0.95)) {
     # rcm - xv
-    
     # matvar
     if(is.null(cell.clustering)) {
         cell.clustering <- pagoda.cluster.cells(tam, varinfo)
     }
-    if(is.null(row.clustering) || is.null(row.clustering$order)) {
-      row.clustering <- hclust(dist(tamr$xv))
-    } else if(class(row.clustering)!="hclust") {
-      # make a fake clustering to match the provided order
-      or <- row.clustering$order;
-      row.clustering <- hclust(dist(tamr3$xv),method='single')
-      names(or) <- as.character(-1*row.clustering$order)
-      nmm <- -1*or[as.character(row.clustering$merge)]
-      nmm[is.na(nmm)] <- as.character(row.clustering$merge)[is.na(nmm)]
-      row.clustering$merge <- matrix(as.integer(nmm),ncol=ncol(row.clustering$merge))
-      row.clustering$order <- as.integer(or);
-    }
-    if(!is.null(embedding)) {
-      if(is.null(rownames(embedding))) { stop("provided 2D embedding lacks cell names") }
-      vi <- rownames(embedding) %in% colnames(tamr$xv);
-      if(!all(vi)) {
-        warning("provided 2D embedding contains cells that are not in the tamr");
-        embedding <- embedding[vi,];
-        if(nrow(embedding)<2) {
-          stop("provided 2D embedding contains too few cells after intersecting with the cell names in tamr");
-        }
-      }
+    if(is.null(row.clustering)) {
+        row.clustering <- hclust(dist(tamr$xv))
+        row.clustering$order <- rev(row.clustering$order)
     }
 
     #fct - which tam row in which tamr$xv cluster.. remap tamr$cnams
@@ -2805,7 +2753,7 @@ make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.co
     names(fct) <- unlist(cn)
     fct <- fct[rownames(tam$xv)]
     rcm <- tamr$xv
-    #rownames(rcm) <- as.character(1:nrow(rcm))
+    rownames(rcm) <- as.character(1:nrow(rcm))
     fres <- list(hvc = cell.clustering, tvc = row.clustering, rcm = rcm, zlim2 = zlim, matvar = apply(tam$xv, 1, sd), ct = fct, matrcmcor = rep(1, nrow(tam$xv)), cols = colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(1024), colcol = col.cols)
 
     # gene df
@@ -2835,11 +2783,7 @@ make.pagoda.app <- function(tamr, tam, varinfo, env, pwpca, clpca = NULL, col.co
     } else {
         set.env <- env
     }
-  if(inchlib) {
-    sa <- ViewPagodaApp$new(fres, df, gene.df, varinfo$mat, varinfo$matw, set.env, name = title, trim = 0, batch = varinfo$batch,embedding=embedding)
-  } else {
-    sa <- ViewPagodaAppOld$new(fres, df, gene.df, varinfo$mat, varinfo$matw, set.env, name = title, trim = 0, batch = varinfo$batch)
-  }
+    sa <- ViewPagodaApp$new(fres, df, gene.df, varinfo$mat, varinfo$matw, set.env, name = title, trim = 0, batch = varinfo$batch)
 }
 
 ##################### Internal functions
@@ -3510,23 +3454,13 @@ calculate.ratio.posterior <- function(pmat1, pmat2, prior, n.cores = 15, skip.pr
 }
 
 # quick utility function to get the difference Z score from the ratio posterior
-# exectation - H0 M value (in the same scale as rpost columns, usually log10)
-get.ratio.posterior.Z.score <- function(rpost, min.p = 1e-15, expectation=0) {
+get.ratio.posterior.Z.score <- function(rpost, min.p = 1e-15) {
     rpost <- rpost+min.p
     rpost <- rpost/rowSums(rpost)
-    if(length(expectation)>1) {
-      if(length(expectation)!=nrow(rpost)) { stop("the expectation parameter must be either one number or a vector equal to the number of genes being tested") }
-      mvs <- as.numeric(colnames(rpost))
-      zi <- unlist(lapply(expectation,function(x) which.min(abs(mvs-x))))
-      gs <- unlist(lapply(1:nrow(rpost),function(i) sum(rpost[i, 1:(zi[i]-1), drop = FALSE])))
-      zv <- unlist(lapply(1:nrow(rpost),function(i) rpost[i, zi[i]]))
-    } else {
-      zi <- which.min(abs(as.numeric(colnames(rpost))-expectation)); # grid position closest to 0
-      gs <- rowSums(rpost[, 1:(zi-1), drop = FALSE])
-      zv <- rpost[, zi, drop = FALSE];
-    }
+    zi <- which.min(abs(as.numeric(colnames(rpost))))
+    gs <- rowSums(rpost[, 1:(zi-1), drop = FALSE])
     zl <- pmin(0, qnorm(gs, lower.tail = FALSE))
-    zg <- pmax(0, qnorm(gs+zv, lower.tail = FALSE))
+    zg <- pmax(0, qnorm(gs+rpost[, zi, drop = FALSE], lower.tail = FALSE))
     z <- ifelse(abs(zl) > abs(zg), zl, zg)
 }
 
@@ -5035,8 +4969,7 @@ pairs.extended <- function (x, labels, panel = points, ...,
 
 
 # given a set of pdfs (columns), calculate summary statistics (mle, 95% CI, Z-score deviations from 0)
-# expectation - the M value representing H0 (usually 0), given on log2 scale
-quick.distribution.summary <- function(s.bdiffp,expectation=0) {
+quick.distribution.summary <- function(s.bdiffp) {
     diffv <- as.numeric(colnames(s.bdiffp))
     dq <- t(apply(s.bdiffp, 1, function(p) {
         mle <- which.max(p)
@@ -5047,7 +4980,7 @@ quick.distribution.summary <- function(s.bdiffp,expectation=0) {
     cq <- rep(0, nrow(dq))
     cq[dq[, 1] > 0] <- dq[dq[, 1] > 0, 1]
     cq[dq[, 3]<0] <- dq[dq[, 3]<0, 3]
-    z <- get.ratio.posterior.Z.score(s.bdiffp,expectation=expectation/log2(10))
+    z <- get.ratio.posterior.Z.score(s.bdiffp)
     za <- sign(z)*qnorm(p.adjust(pnorm(abs(z), lower.tail = FALSE), method = "BH"), lower.tail = FALSE)
     data.frame(dq, "ce" = as.numeric(cq), "Z" = as.numeric(z), "cZ" = as.numeric(za))
 }
@@ -5123,7 +5056,7 @@ bh.adjust <- function(x, log = FALSE) {
     ox
 }
 
-pathway.pc.correlation.distance <- function(pcc, xv, n.cores = 1, target.ndf = NULL) {
+pathway.pc.correlation.distance <- function(pcc, xv, n.cores = 10, target.ndf = NULL) {
     # all relevant gene names
     rotn <- unique(unlist(lapply(pcc[gsub("^#PC\\d+# ", "", rownames(xv))], function(d) rownames(d$xp$rotation))))
     # prepare an ordered (in terms of genes) and centered version of each component
@@ -5513,18 +5446,20 @@ ViewDiff <- setRefClass(
                        body <- paste('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd" >
                                      <html >
                                      <head >
-                                     <meta http-equiv = "Content-Type" content = "text/html; charset = iso-8859-1" >
+                                     <meta http-equiv = "Content-Type" content = "text/html charset = iso-8859-1" >
                                      <title > SCDE: ', paste(levels(groups), collapse = " vs. "), '</title >
+                                     <!-- ExtJS -- >
+                                     <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/extjs/resources/ext-theme-neptune/ext-theme-neptune-all.css" / >
 
-                                     <!--<link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/extjs/resources/ext-theme-neptune/ext-theme-neptune-all.css" / >-->
-                                     <link rel="stylesheet" type="text/css" href="http://pklab.med.harvard.edu/sde/ext-4.2.1.883/resources/css/ext-all.css" />
+                                     <!-- Shared -- >
                                      <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/ext-4.2.1.883/examples/shared/example.css" / >
 
                                      <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/additional.css" / >
+                                     <!-- GC -- >
 
                                      <style type = "text/css" >
-                                         .x-panel-framed {
-                                         padding: 0
+                                     .x-panel-framed {
+                                     padding: 0
                                      }
                                      </style >
                                      <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/ext-4.2.1.883/ext-all.js" > </script >
@@ -5583,7 +5518,7 @@ ViewDiff <- setRefClass(
 
                        t <- tempfile()
                        #require(Cairo)
-                       CairoPNG(filename = t, width = 350, height = 560)
+                       CairoPNG(filename = TRUE, width = 350, height = 560)
                        scde.test.gene.expression.difference(gene = gene, models = models, counts = counts, groups = groups, prior = prior, batch = batch, ratio.range = c(-10, 10), show.individual.posteriors = show.individual.posteriors, verbose = FALSE)
                        dev.off()
                        res$header('Content-type', 'image/png')
@@ -5643,7 +5578,7 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
     } else {
         xp <- list()
     }
-    hc <- NULL;
+
     d <- d-rowMeans(d)
     dd <- as.dist(1-abs(cor(t(as.matrix(d)))))
     dd[is.na(dd)] <- 1
@@ -5657,18 +5592,6 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
             row.order <- hc$order
         } else {
             row.order <- c(seq_along(lab))
-            # make up a fake hc
-            if(length(lab)>1) {
-              hc<-list();
-              attributes(hc)<-list(members=length(lab),height=1);
-              class(hc)<-"dendrogram";
-              hc[[1]] <- list();
-              attributes(hc[[1]]) <- list(members=1,height=0,label=rownames(mat)[lab[1]],leaf=T)
-              hc[[2]] <- list();
-              attributes(hc[[2]]) <- list(members=1,height=0,label=rownames(mat)[lab[2]],leaf=T)
-            } else { 
-              hc <- list(); attributes(hc) <- list(members=1,height=0,label=rownames(mat)[lab[1]],leaf=T); class(hc) <- "dendrogram";
-            }
         }
     }
 
@@ -5726,7 +5649,6 @@ t.view.pathways <- function(pathways, mat, matw, env, proper.names = rownames(ma
     }
     xp$vhc <- vhc
     xp$lab <- lab
-    xp$hc <- as.dendrogram(hc)
     xp$row.order <- row.order
     xp$col <- col
     xp$oc.col <- colorRampPalette(c("darkgreen", "white", "darkorange"), space = "Lab")(256)
@@ -5835,7 +5757,6 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
         #lab <- match(names(selected.genes), rownames(mat))
         lab <- names(selected.genes);
 
-
         if(length(lab) == 0)
             return(NULL)
         if(length(lab)<3) { return(NULL) }
@@ -5865,7 +5786,7 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
         dw <- matw[lab, , drop = FALSE]
         consensus.npc = n.pc[1] # use specified PC as a pattern
     }
-    names(lab) <- lab;
+
     d <- d-rowMeans(d)
     dd <- as.dist(1-abs(cor(t(as.matrix(d)))))
     dd[is.na(dd)] <- 1
@@ -5879,20 +5800,7 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
             row.order <- hc$order
         } else {
             row.order <- c(seq_along(lab))
-            if(length(lab)>1) {
-              hc<-list();
-              attributes(hc)<-list(members=length(lab),height=1);
-              class(hc)<-"dendrogram";
-              hc[[1]] <- list();
-              attributes(hc[[1]]) <- list(members=1,height=0,label=lab[1],leaf=T)
-              hc[[2]] <- list();
-              attributes(hc[[2]]) <- list(members=1,height=0,label=lab[2],leaf=T)
-            } else { 
-              hc <- list(); attributes(hc) <- list(members=1,height=0,label=lab[1],leaf=T); class(hc) <- "dendrogram";
-            }
         }
-    } else {
-      hc <- NULL;
     }
 
     if(is.null(vhc)) {
@@ -5955,9 +5863,6 @@ c.view.pathways <- function(pathways, mat, matw, goenv = NULL, batch = NULL, n.g
     }
     xp$vhc <- vhc
     xp$lab <- lab
-    if(!is.null(hc)) {
-      xp$hc <- as.dendrogram(hc)
-    }
     xp$row.order <- row.order
     xp$oc <- oc
     xp$col <- col
@@ -6047,15 +5952,10 @@ calculate.go.enrichment <- function(genelist, universe, pvalue.cutoff = 1e-3, mi
 ##' Abstracts out mclapply implementation, and defaults to lapply when only one core is requested (helps with debugging)
 ##' @param ... parameters to pass to lapply, mclapply, bplapply, etc.
 ##' @param n.cores number of cores. If 1 core is requested, will default to lapply
-papply <- function(...,n.cores=detectCores()) {
+papply <- function(...,n.cores=n) {
   if(n.cores>1) {
     # bplapply implementation
-    if(is.element("parallel", installed.packages()[,1])) {
-      mclapply(...,mc.cores=n.cores)
-    } else {
-      # last resort
-      bplapply(... , BPPARAM = MulticoreParam(workers = n.cores))
-    }
+    bplapply(... , BPPARAM = MulticoreParam(workers = n.cores))
   } else { # fall back on lapply
     lapply(...);
   }
@@ -6078,35 +5978,32 @@ papply <- function(...,n.cores=detectCores()) {
 ##' @field trim Trim quantity used for Winsorization for visualization
 ##' @field batch Any batch or other known confounders to be included in the visualization as a column color track
 ##'
-
-
 ViewPagodaApp <- setRefClass(
     'ViewPagodaApp',
-    fields = c('results', 'genes', 'pathways', 'mat', 'matw', 'goenv', 'renv', 'name', 'trim', 'batch','embedding'),
+    fields = c('results', 'genes', 'pathways', 'mat', 'matw', 'goenv', 'renv', 'name', 'trim', 'batch'),
     methods = list(
 
-        initialize = function(results, pathways, genes, mat, matw, goenv, batch = NULL, name = "pathway overdispersion", trim = 1.1/ncol(mat), embedding=NULL) {
+        initialize = function(results, pathways, genes, mat, matw, goenv, batch = NULL, name = "pathway overdispersion", trim = 1.1/ncol(mat)) {
             results <<- results
-            #results$tvc$order <<- rev(results$tvc$order);
-            results$tvc$labels <<- as.character(1:nrow(results$rcm));
-            rownames(results$rcm) <<- as.character(1:nrow(results$rcm));
             genes <<- genes
             genes$svar <<- genes$var/max(genes$var)
             genes <<- genes
             mat <<- mat
             matw <<- matw
             batch <<- batch
+            goenv <<- goenv
             pathways <<- pathways
             name <<- name
             trim <<- trim
-            embedding <<- embedding
             # reverse lookup environment
-            xl <- as.list(goenv);
-            gel <- tapply(rep(names(xl), unlist(lapply(xl, length))), unlist(xl), I)
+            renvt <- new.env(parent = globalenv())
+            xn <- ls(envir = goenv)
+            xl <- mget(xn, envir = goenv)
+            gel <- tapply(rep(xn, unlist(lapply(xl, length))), unlist(xl), I)
             gel <- gel[nchar(names(gel)) > 0]
-            renv <<- list2env(gel,parent=emptyenv());
-            goenv <<- list2env(xl,parent=emptyenv());
-            rm(xl,gel)
+            x <- lapply(names(gel), function(n) assign(n, gel[[n]], envir = renvt))
+            renv <<- renvt
+            rm(xn, xl, x, gel, renvt)
             gc()
             callSuper()
         },
@@ -6121,23 +6018,23 @@ ViewPagodaApp <- setRefClass(
                            rows = rownames(matrix),
                            cols = colnames(matrix),
                            colors = gcl$col,
-                           zlim = as.numeric(gcl$zlim)
-                           )
-                                      
+                           domain = seq.int(gcl$zlim[1], gcl$zlim[2], length.out = length(gcl$col))
+            )
+
             ol <- list(matrix = matrix)
             if(nrow(gcl$vmap) > 2) {
                 rcmvar <- matrix(gcl$rotation[rev(gcl$row.order), , drop = FALSE], ncol = 1)
                 rowcols <- list(data = as.numeric(t(rcmvar)),
                                 dim = dim(rcmvar),
                                 colors = gcl$oc.col,
-                                zlim = c(-1,1)*max(abs(rcmvar))
+                                domain = seq.int(-1*max(abs(rcmvar)), max(abs(rcmvar)), length.out = length(gcl$oc.col))
                 )
 
                 colcols <- matrix(gcl$oc[results$hvc$order], nrow = 1)
                 colcols <- list(data = as.numeric(t(colcols)),
                                 dim = dim(colcols),
                                 colors = gcl$oc.col,
-                                zlim = c(-1,1)*max(abs(colcols))
+                                domain = seq.int(-1*max(abs(colcols)), max(abs(colcols)), length.out = length(gcl$oc.col))
                 )
                 ol <- c(ol, list(rowcols = rowcols, colcols = colcols))
             }
@@ -6164,7 +6061,7 @@ ViewPagodaApp <- setRefClass(
                                      <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/extjs/ext-all.js" > </script >
                                      <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/jquery-1.11.1.min.js" > </script >
                                      <script src = "http://d3js.org/d3.v3.min.js" charset = "utf-8" > </script >
-                                     <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/pathcl_canvas_1.1.js" > </script >
+                                     <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/pathcl.js" > </script >
                                      </head >
                                      <body > </body >
                                      </html >
@@ -6174,7 +6071,14 @@ ViewPagodaApp <- setRefClass(
                    },
                    '/pathcl.json' = { # report pathway clustering heatmap data
                        # column dendrogram
-                     treeg <- list(merge=as.vector(t(results$hvc$merge)),height=results$hvc$height,order=match(1:length(results$hvc$order),results$hvc$order))
+                       t <- paste(tempfile(), "svg", sep = ".")
+                       svg(file = t, width = 1, height = 1) # will be rescaled later
+                       par(mar = rep(0, 4), mgp = c(2, 0.65, 0), cex = 1, oma = rep(0, 4))
+                       #plot(results$hvc, main = "", sub = "", xlab = "", ylab = "", axes = FALSE, labels = FALSE, xaxs = "i", yaxs = "i", hang = 0.02)
+                       plot(as.dendrogram(results$hvc), axes = FALSE, yaxs = "i", xaxs = "i", xlab = "", ylab = "", sub = "", main = "", leaflab = "none")
+                       dev.off()
+                       x <- readLines(t)
+                       treeg <- paste(x[-c(1, 2, length(x))], collapse = "")
 
                        matrix <- results$rcm[rev(results$tvc$order), results$hvc$order]
                        matrix <- list(data = as.numeric(t(matrix)),
@@ -6182,26 +6086,23 @@ ViewPagodaApp <- setRefClass(
                                       rows = rownames(matrix),
                                       cols = colnames(matrix),
                                       colors = results$cols,
-                                      zlim = as.numeric(results$zlim2)
+                                      domain = seq.int(results$zlim2[1], results$zlim2[2], length.out = length(results$cols)),
+                                      range = range(matrix)
                        )
 
 
                        icols <- colorRampPalette(c("white", "black"), space = "Lab")(256)
                        rcmvar <- matrix(apply(results$rcm[rev(results$tvc$order), , drop = FALSE], 1, var), ncol = 1)
                        rowcols <- list(data = as.numeric(t(rcmvar)),
+                                       # TODO: add annotation
                                        dim = dim(rcmvar),
                                        colors = icols,
-                                       zlim = c(0, max(rcmvar))
+                                       domain = seq.int(0, max(rcmvar), length.out = length(icols))
                        )
                        colcols <- list(data = unlist(lapply(as.character(t(results$colcol[nrow(results$colcol):1, results$hvc$order, drop = FALSE])), col2hex)),
-                                       dim = dim(results$colcol),
-                                       rows=rev(rownames(results$colcol))
+                                       dim = dim(results$colcol)
                        )
                        ol <- list(matrix = matrix, rowcols = rowcols, colcols = colcols, coldend = treeg, trim = trim)
-                       if(!is.null(embedding)) {
-                         # report embedding, along with the position of each cell in the pathway matrix
-                         ol$embedding <- list(data=data.frame(t(cbind(embedding,match(rownames(embedding),matrix$cols)))),xrange=range(embedding[,1]),yrange=range(embedding[,2]));
-                       }
                        s <- toJSON(ol)
                        res$header('Content-Type', 'application/javascript')
                        if(!is.null(req$params()$callback)) {
@@ -6211,10 +6112,8 @@ ViewPagodaApp <- setRefClass(
                        }
                    },
                    '/genecl.json' = { # report heatmap data for a selected set of genes
-                     # Under Rstudio server, the URL decoding is not done automatically ..
-                     #  .. here we're calling URLdecode again for everything (it shouldn't have an effect on a properly formed list)
-                     selgenes <- fromJSON(URLdecode(req$POST()$genes))
-                       ltrim <- ifelse(is.null(req$params()$trim), 0/ncol(mat), as.numeric(req$params()$trim))
+                       selgenes <- fromJSON(req$POST()$genes)
+                       ltrim <- ifelse(is.null(req$params()$trim), 1.1/ncol(mat), as.numeric(req$params()$trim))
                        ol <- getgenecldata(selgenes, ltrim = ltrim)
                        s <- toJSON(ol)
                        res$header('Content-Type', 'application/javascript')
@@ -6224,18 +6123,25 @@ ViewPagodaApp <- setRefClass(
                            res$write(s)
                        }
                    },
-                   '/pathwaygenes.json' = { # report heatmap data for a selected set of pathways
+                   '/pathwaygenes.json' = { # report heatmap data for a selected set of genes
                        ngenes <- ifelse(is.null(req$params()$ngenes), 20, as.integer(req$params()$ngenes))
                        twosided <- ifelse(is.null(req$params()$twosided), FALSE, as.logical(req$params()$twosided))
-                       ltrim <- ifelse(is.null(req$params()$trim), 0/ncol(mat), as.numeric(req$params()$trim))
-                       pws <- fromJSON(URLdecode(req$POST()$genes))
-                       
+                       ltrim <- ifelse(is.null(req$params()$trim), 1.1/ncol(mat), as.numeric(req$params()$trim))
+                       pws <- fromJSON(req$POST()$genes)
                        n.pcs <- as.integer(gsub("^#PC(\\d+)# .*", "\\1", pws))
                        n.pcs[is.na(n.pcs)]<-1
                        x <- c.view.pathways(gsub("^#PC\\d+# ", "", pws), mat, matw, goenv = goenv, n.pc = n.pcs, n.genes = ngenes, two.sided = twosided, vhc = results$hvc, plot = FALSE, trim = ltrim, batch = batch)
+                       #x <- t.view.pathways(gsub("^#PC\\d+# ", "", pws), mat, matw, env = goenv, vhc = results$hvc, plot = FALSE, trim = ltrim, n.pc = 1)
+                       ##rsc <- as.vector(rowSums(matw[rownames(x$rotation), ]))*x$rotation[, 1]
+                       #rsc <- x$rotation[, 1]
+                       #if(twosided) {
+                       #  extgenes <- unique(c(names(sort(rsc))[1:min(length(rsc), round(ngenes/2))], names(rev(sort(rsc)))[1:min(length(rsc), round(ngenes/2))]))
+                       # } else {
+                       #   extgenes <- names(sort(abs(rsc), decreasing = TRUE))[1:min(length(rsc), ngenes)]
+                       #}
+                       #ol <- getgenecldata(extgenes, ltrim = ltrim)
                        ol <- getgenecldata(genes = NULL, gcl = x, ltrim = ltrim)
                        s <- toJSON(ol)
-                       
                        res$header('Content-Type', 'application/javascript')
                        if(!is.null(req$params()$callback)) {
                            res$write(paste(req$params()$callback, "(", s, ")", sep = ""))
@@ -6246,8 +6152,8 @@ ViewPagodaApp <- setRefClass(
                    '/patterngenes.json' = { # report heatmap of genes most closely matching a given pattern
                        ngenes <- ifelse(is.null(req$params()$ngenes), 20, as.integer(req$params()$ngenes))
                        twosided <- ifelse(is.null(req$params()$twosided), FALSE, as.logical(req$params()$twosided))
-                       ltrim <- ifelse(is.null(req$params()$trim), 0/ncol(mat), as.numeric(req$params()$trim))
-                       pat <- fromJSON(URLdecode(req$POST()$pattern))
+                       ltrim <- ifelse(is.null(req$params()$trim), 1.1/ncol(mat), as.numeric(req$params()$trim))
+                       pat <- fromJSON(req$POST()$pattern)
                        # reorder the pattern back according to column clustering
                        pat[results$hvc$order] <- pat
                        patc <- .Call("matCorr", as.matrix(t(mat)), as.matrix(pat, ncol = 1) , PACKAGE = "scde")
@@ -6273,7 +6179,7 @@ ViewPagodaApp <- setRefClass(
                        if(exists("myGOTERM", envir = globalenv())) {
                            tpn <- paste(nams, mget(nams, get("myGOTERM", envir = globalenv()), ifnotfound = ""), sep = " ")
                        } else {
-                           tpn <- nams;
+                           tpn <- names(ii[tpi])
                        }
 
                        lgt <- data.frame(do.call(rbind, lapply(seq_along(tpn), function(i) c(id = names(ii[tpi[i]]), name = tpn[i], npc = npc[i], od = as.numeric(results$matvar[ii[tpi[i]]])/max(results$matvar), sign = as.numeric(results$matrcmcor[ii[tpi[i]]]), initsel = as.integer(results$matvar[ii[tpi[i]]] >= results$matvar[ii[tpi[1]]]*0.8)))))
@@ -6376,7 +6282,7 @@ ViewPagodaApp <- setRefClass(
 
                    },
                    '/testenr.json' = { # run an enrichment test
-                       selgenes <- fromJSON(URLdecode(req$POST()$genes))
+                       selgenes <- fromJSON(req$POST()$genes)
                        lgt <- calculate.go.enrichment(selgenes, rownames(mat), pvalue.cutoff = 0.99, env = renv, over.only = TRUE)$over
                        if(exists("myGOTERM", envir = globalenv())) {
                            lgt$nam <- paste(lgt$t, mget(as.character(lgt$t), get("myGOTERM", envir = globalenv()), ifnotfound = ""), sep = " ")
@@ -6415,129 +6321,18 @@ ViewPagodaApp <- setRefClass(
 
                    },
                    '/celltable.txt' = {
-                     
-                     matrix <- rbind(results$colcol[,results$hvc$order],round(results$rcm[rev(results$tvc$order), results$hvc$order],1))
-                     body <- paste(capture.output(write.table(matrix, sep = "\t",quote=F)), collapse = "\n")
-                     res$header('Content-Type', 'text/plain')
-                                        #res$header('"Content-disposition": attachment')
-                     res$write(body)
+                       matrix <- results$rcm[rev(results$tvc$order), results$hvc$order]
+                       body <- paste(capture.output(write.table(round(matrix, 1), sep = "\t")), collapse = "\n")
+                       res$header('Content-Type', 'text/plain')
+                       #res$header('"Content-disposition": attachment')
+                       res$write(body)
                    },
-                   {
-                     res$header('Location', 'index.html')
-                     res$write('Redirecting to <a href = "index.html" > index.html</a >  for interactive browsing.')
-                   }
-                   )
+{
+    res$header('Location', 'index.html')
+    res$write('Redirecting to <a href = "index.html" > index.html</a >  for interactive browsing.')
+}
+                       )
             res$finish()
         }
+            )
     )
-)
-
-
-
-# app for listing current PAGODA applications
-
-ListPagodaAppsApp <- setRefClass(
-  'ListPagodaAppsApp',
-  methods = list(
-    
-    initialize = function() {
-      callSuper()
-    },
-    call = function(env){
-      path <- env[['PATH_INFO']]
-      req <- Request$new(env)
-      res <- Response$new()
-      # default response
-      path <- env[['PATH_INFO']]
-      req <- Request$new(env)
-      res <- Response$new()
-      switch(path,
-             { # default
-               if(exists("___scde.server", envir = globalenv())) {
-                 server <- get("___scde.server", envir = globalenv())
-                 content <- '<table id="apps" class="table table-striped table-bordered" cellspacing="0" width="100%">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Cells</th>
-                <th>Genes</th>
-                <th>Pathways</th>
-                <th>Aspects</th>
-            </tr>
-        </thead>
-        <tbody>';
-                 for(a in server$appList) {
-                   if(class(a$app)[1]!="ViewPagodaApp") { next; }
-                   if(is.function(server$listenPort)) {
-                     url <- paste("http://", server$listenAddr, ":", server$listenPort(), a$path,"/index.html",sep='')
-                   } else {
-                     url <- paste("http://", server$listenAddr, ":", server$listenPort, a$path,"/index.html",sep='')
-                   }
-                   content <- paste(content,'
-            <tr>
-                <th><a href="',url,'">',a$name,'</a></th>
-                <th>',ncol(a$app$mat),'</th>
-                <th>',nrow(a$app$mat),'</th>
-                <th>',nrow(a$app$pathways),'</th>
-                <th>',nrow(a$app$results$rcm),'</th>
-            </tr>
-          ',sep='');
-                 }
-                 content <- paste(content,'</tbody>
-    </table>');
-               } else {
-                 content <- "<h3>Unable to locate internal web server</h3>"
-                 
-               }
-               
-               body <- paste('<!DOCTYPE html >
-				       <meta charset = "utf-8" >
-				       <html >
-				       <head >
-				       <title >PAGODA app list</title >
-				       <meta http-equiv = "Content-Type" content = "text/html charset = iso-8859-1" >
-				        <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/bootstrap/3.3.7/css/bootstrap.min.css" / >
-               <link rel = "stylesheet" type = "text/css" href = "http://pklab.med.harvard.edu/sde/bootstrap/3.3.7/css/dataTables.bootstrap.min.css" / >
-				      
-				       <link rel = "icon" type = "image/png" href = "http://pklab.med.harvard.edu/sde/pagoda.png" >
-				       <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/jquery/jquery-1.12.3.js" > </script >
-				       <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/bootstrap/3.3.6/jquery.dataTables.min.js" > </script >
-				       <script type = "text/javascript" src = "http://pklab.med.harvard.edu/sde/bootstrap/3.3.7/js/dataTables.bootstrap.min.js" > </script >
-                                       <script>$(document).ready(function() {
-                                                  $("#apps").DataTable({
-                                                    pageLength:25
-                                                  });
-                                               } );
-                                       </script>
-				       </head >
-				       <body > 
-
-     <div class="container">
-
-       <div class="header clearfix">
-
-        <h1 class="text-muted"><a href="http://pklab.med.harvard.edu/scde/">SCDE</a></h1>
-      </div>
-
-      
-      <div class="row marketing">
-        <div class="well">
-          <h4>PAGODA Apps</h4>
-
-',content,' 
-          </h4>
-        </div>
-      </div>
-    </div>
-</body >
-				       </html >
-				       ', sep = "")
-               res$header('"Content-Type": "text/html"')
-               res$write(body)
-             }
-      )
-      res$finish()
-    }
-  )
-)
-

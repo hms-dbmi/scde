@@ -1,7 +1,8 @@
 Package: scde
 Type: Package
 Title: Single Cell Differential Expression
-Version: 2.62.2
+Version: 2.26.2
+Date: 2016-01-20
 Description: The scde package implements a set of statistical methods for
     analyzing single-cell RNA-seq data. scde fits individual error models for
     single-cell RNA-seq measurements. These models can then be used for assessment
@@ -18,28 +19,34 @@ Description: The scde package implements a set of statistical methods for
     analysis" (Fan J, Salathia N, Liu R, Kaeser G, Yung Y, Herman J, Kaper F,
     Fan JB, Zhang K, Chun J, and Kharchenko PV, Nature Methods, doi:10.1038/nmeth.3734).
 Author: Peter Kharchenko [aut, cre],
-    Jean Fan [aut], Evan Biederstedt [aut]
+    Jean Fan [aut]
 Authors@R: c(
     person("Peter", "Kharchenko", role = c("aut", "cre"),
-		     email = "peter_kharchenko@hms.harvard.edu"),
+		     email = "Peter_Kharchenko@hms.harvard.edu"),
     person("Jean", "Fan", role = "aut",
-	         email = "jeanfan@fas.harvard.edu")
+    		   email = "jeanfan@jhu.edu",     
+		   comment = c(ORCID = "0000-0002-0212-5451"))
 	         )
-Maintainer: Evan Biederstedt <evan.biederstedt@gmail.com>
+Maintainer: Jean Fan <jeanfan@jhu.edu>
 URL: http://pklab.med.harvard.edu/scde
 BugReports: https://github.com/hms-dbmi/scde/issues
 License: GPL-2
 LazyData: true
-Depends: R (>= 3.0.0), flexmix (<= 2.3-13)
+Depends: R (>= 3.0.0), flexmix
 Imports: Rcpp (>= 0.10.4), RcppArmadillo (>= 0.5.400.2.0), mgcv, Rook,
         rjson, MASS, Cairo, RColorBrewer, edgeR, quantreg, methods,
-        nnet, RMTstat, extRemes, pcaMethods, BiocParallel, parallel,
-	AnnotationDbi
-Suggests: knitr, cba, fastcluster, WGCNA, GO.db, org.Hs.eg.db, rmarkdown
-biocViews: RNASeq, StatisticalMethod, DifferentialExpression, Bayesian,
-        Transcription, Software
+        nnet, RMTstat, extRemes, pcaMethods, BiocParallel, parallel
+Suggests: knitr, cba, fastcluster, WGCNA, GO.db, org.Hs.eg.db,
+        rmarkdown
+biocViews: ImmunoOncology, RNASeq, StatisticalMethod,
+        DifferentialExpression, Bayesian, Transcription, Software
 LinkingTo: Rcpp, RcppArmadillo
 VignetteBuilder: knitr
-Packaged: 2015-11-02 14:30:04 UTC; reyes
+Packaged: 2023-01-19 22:55:25 UTC; biocbuild
 RoxygenNote: 5.0.0
 NeedsCompilation: yes
+git_url: https://git.bioconductor.org/packages/scde
+git_branch: RELEASE_3_16
+git_last_commit: 42cdc08
+git_last_commit_date: 2023-01-19
+Date/Publication: 2023-01-19

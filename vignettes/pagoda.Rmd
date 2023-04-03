@@ -2,12 +2,7 @@
 title: "Getting Started with `pagoda` Routines"
 author: "Peter Kharchenko, Jean Fan"
 date: '`r Sys.Date()`'
-output:
-  md_document:
-    variant: markdown_github
-vignette: |
-  %\VignetteIndexEntry{Vignette Title} \usepackage[utf8]{inputenc}
-  %\VignetteEngine{knitr::rmarkdown}
+output: html_document
 ---
 
 # Pathway and Gene Set Overdispersion Analysis
@@ -26,7 +21,6 @@ opts_chunk$set(
     cache.path = 'cache/pagoda-',
     cache = TRUE
 )
-library(scde)
 ```
 
 ## Preparing data
@@ -34,6 +28,8 @@ library(scde)
 The analysis starts with a matrix of read counts. Here, we use the read count table and cell group annotations from [_Pollen et al._](www.ncbi.nlm.nih.gov/pubmed/25086649) can be loaded using the `data("pollen")` call. Some additional filters are also applied.
 
 ```{r, data}
+library(scde)
+
 data(pollen)
 # remove poor cells and genes
 cd <- clean.counts(pollen)
@@ -67,7 +63,7 @@ data(knn)
 
 The fitting process above wrote out `cell.models.pdf` file in the current directory showing model fits for the first 10 cells (see `max.model.plots` argument). The fitting process above wrote out `cell.models.pdf` file in the current directory showing model fits for the first 10 cells (see `max.model.plots` argument). Here's an example of such plot:
 
-![cell 3 model](figures/pagoda-cell.model.fits-0.png)
+![cell 3 model](https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-cell.model.fits-0.png)
 
 The two scatter plots on the left show observed (in a given cell) vs. expected (from k similar cells) expression magnitudes for each gene that is being used for model fitting. The second (from the left) scatter plot shows genes belonging to the drop-out component in red. The black dashed lines show 95% confidence band for the amplified genes (the grey dashed lines show confidence band for an alternative constant-theta model). The third plot shows drop-out probability as a function of magnitude, and the fourth plot shows negative binomial theta local regression fit as a function of magnitude (for the amplified component). 
 
@@ -201,33 +197,14 @@ show.app(app, "pollen", browse = TRUE, port = 1468)
 
 The `pagoda` app allows you to view the gene sets grouped within each aspect (row), as well as genes underlying the detected heterogeneity patterns. A screenshot of the app is provided below:
 
-![pagoda app](figures/pagoda-Screen_Shot_2015-06-07_at_4.53.46_PM.png)
+![pagoda app](https://github.com/hms-dbmi/scde/raw/master/vignettes/figures/pagoda-Screen_Shot_2015-06-07_at_4.53.46_PM.png)
+
+An interactive version of the full run (all GO terms tested) can also be found here: [http://pklab.med.harvard.edu/cgi-bin/R/rook/pollen.npc/index.html](http://pklab.med.harvard.edu/cgi-bin/R/rook/pollen.npc/index.html)
 
 Similar views can be obtained in the R session itself. For instance, here we'll view top 10 genes associated with the top two pathways in the neurogenesis cluster: "neurogenesis" (GO:0022008) and "generation of neurons" (GO:0048699)
 
 ```{r, showTopPathwayGenes, fig.height = 3.5, fig.width = 8}
 pagoda.show.pathways(c("GO:0022008","GO:0048699"), varinfo, go.env, cell.clustering = hc, margins = c(1,5), show.cell.dendrogram = TRUE, showRowLabels = TRUE, showPC = TRUE)
-```
-
-### Adding 2D embedding
-One can add a 2D embedding of the cells to aid visualization. The code below uses PAGODA's weighted Pearson correlation distance (that was used to derive hierarchical clustering) to generate a tSNE embedding of the cells:
-
-```{r, tSNE, fig.height=3.5, fig.width=3.5}
-library(Rtsne);
-# recalculate clustering distance .. we'll need to specify return.details=T
-cell.clustering <- pagoda.cluster.cells(tam,varinfo,include.aspects=TRUE,verbose=TRUE,return.details=T)
-# fix the seed to ensure reproducible results
-set.seed(0); 
-tSNE.pagoda <- Rtsne(cell.clustering$distance,is_distance=T,initial_dims=100,perplexity=10)
-par(mfrow=c(1,1), mar = c(2.5,2.5,2.0,0.5), mgp = c(2,0.65,0), cex = 1.0);
-plot(tSNE.pagoda$Y,col=adjustcolor(col.cols,alpha=0.5),cex=1,pch=19,xlab="",ylab="")
-```
-
-The resulting embedding can be passed into the PAGODA app to visualize individual aspects, genes, etc. within this embedding:
-```{r, tSNEapp, eval=FALSE}
-app <- make.pagoda.app(tamr2, tam, varinfo, go.env, pwpca, clpca, col.cols = col.cols, cell.clustering = hc, title = "NPCs", embedding = tSNE.pagoda$Y)
-# show app in the browser (port 1468)
-show.app(app, "pollen", browse = TRUE, port = 1468) 
 ```
 
 ## Controlling for undesired aspects of heterogeneity

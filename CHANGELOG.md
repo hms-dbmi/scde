@@ -2,4 +2,5 @@
 
 
 ## [2.26.2] 
-- Version from Bioconductor, April 2023. Bioconductor version: Release (3.16)
+- Version from Bioconductor, Packaged: 2023-January-19
+Bioconductor version: Release (3.16)
