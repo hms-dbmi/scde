@@ -12,7 +12,7 @@ The overall approach to pathways and gene set overdispersion analysis is detaile
 
 **For additional installation information, tutorials, and more, please visit [the SCDE website ☞](http://hms-dbmi.github.io/scde/) and [the Bioconductor package page](https://bioconductor.org/packages/release/bioc/html/scde.html)**
 
-**Note:** We recommend that users refer to the package [pagoda2](https://github.com/kharchenkolab/pagoda2). While we do continue to maintain the [Bioconductor package](https://bioconductor.org/packages/release/bioc/html/scde.html), we don't have the bandwidth to address all bugs and feature requests reported in this repo. 
+**Note:** We recommend that users also refer to the package [pagoda2](https://github.com/kharchenkolab/pagoda2). While we do continue to maintain the [Bioconductor package scde](https://bioconductor.org/packages/release/bioc/html/scde.html), we don't have the bandwidth to address all bugs and feature requests reported in this repo. 
 
 # Sample analyses and images
 
