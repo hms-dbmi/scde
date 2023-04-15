@@ -1,4 +1,2 @@
-## Use the R_HOME indirection to support installations of multiple R version
-PKG_LIBS = `$(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()"` $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-
-
+PKG_CXXFLAGS=$(SHLIB_OPENMP_CXXFLAGS) 
+PKG_LIBS=-L/usr/lib/ -L"." -lpthread -lm `$(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()"` $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(SHLIB_OPENMP_CXXFLAGS)

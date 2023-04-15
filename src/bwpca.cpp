@@ -1,4 +1,5 @@
 #include "bwpca.h"
+#include <random>
 #include <vector>
 #include <algorithm>
 #include <iostream>
@@ -24,8 +25,11 @@ void set_random_matrix(arma::mat& target,arma::mat& source) {
         ind[j]=j;
     } // set up initial index (1,2,3)
 
+    // The random number generator that we want to use (Mersenne Twister)
+    std::mt19937 rng(std::time(nullptr));
+
     for(int i=0;i<target.n_cols;i++) {
-        std::random_shuffle(ind.begin(), ind.end());
+        std::shuffle(ind.begin(), ind.end(), rng);  // NOTE: std::random_shuffler() was deprecated in C++14 and completely removed in C++17
         //std::sort(ind.start(), ind.end(), std::bind(compare_on_other,  _1, _2, rv));
         for(int j=0;j<target.n_rows;j++) {
             target(j,i)=source(ind[j],i);
@@ -41,8 +45,11 @@ void set_random_matrices(arma::mat& target1,arma::mat& source1,arma::mat& target
         ind[j]=j;
     } // set up initial index (1,2,3)
 
+    // The random number generator that we want to use (Mersenne Twister)
+    std::mt19937 rng(std::time(nullptr));
+
     for(int i=0;i<target1.n_cols;i++) {
-        std::random_shuffle(ind.begin(), ind.end());
+        std::shuffle(ind.begin(), ind.end(), rng);    // NOTE: std::random_shuffler() was deprecated in C++14 and completely removed in C++17
         //std::sort(ind.start(), ind.end(), std::bind(compare_on_other,  _1, _2, rv));
         for(int j=0;j<target1.n_rows;j++) {
             target1(j,i)=source1(ind[j],i);
