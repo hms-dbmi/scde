@@ -76,5 +76,5 @@ If you find `scde` useful for your publication, please cite:
 
 ```
 Kharchenko P, Fan J (2023). scde: Single Cell Differential Expression. 
-R package version 2.26.2, http://pklab.med.harvard.edu/scde.
+R package version 2.27.1, http://pklab.med.harvard.edu/scde.
 ```
