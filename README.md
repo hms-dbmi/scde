@@ -1,4 +1,4 @@
-[![](https://img.shields.io/badge/release%20version-2.26.2-green.svg)](https://www.bioconductor.org/packages/scde)
+[![](https://img.shields.io/badge/release%20version-2.27.1-green.svg)](https://www.bioconductor.org/packages/scde)
 
 # Overview of SCDE
 
